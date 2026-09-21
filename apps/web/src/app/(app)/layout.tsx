@@ -5,6 +5,9 @@ import { signOutAction } from "../(auth)/actions";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/learn", label: "Learn" },
+  { href: "/labs", label: "Labs" },
+  { href: "/ctf", label: "CTF" },
   { href: "/skills", label: "Skill Graph" },
   { href: "/settings", label: "Settings" },
 ];

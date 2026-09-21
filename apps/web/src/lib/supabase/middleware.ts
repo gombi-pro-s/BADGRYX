@@ -3,7 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
 import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/skills", "/settings", "/admin", "/instructor"];
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/skills",
+  "/settings",
+  "/admin",
+  "/instructor",
+  "/learn",
+  "/labs",
+  "/ctf",
+];
 const ADMIN_ONLY_PREFIXES = ["/admin"];
 
 /**

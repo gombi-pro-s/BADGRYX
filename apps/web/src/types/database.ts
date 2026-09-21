@@ -589,6 +589,10 @@ export interface Database {
         Args: { p_challenge_id: string; p_flag: string };
         Returns: CtfSubmissionRow;
       };
+      unlock_lab_hint: {
+        Args: { p_lab_instance_id: string; p_hint_id: string };
+        Returns: { lab_instance_id: string; hint_id: string; unlocked_at: string };
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
