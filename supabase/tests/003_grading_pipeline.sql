@@ -26,7 +26,7 @@ INSERT INTO public.quiz_choices (id, question_id, choice_text, is_correct) VALUE
 
 -- ---- Seed a lab with one flag ---------------------------------------------
 INSERT INTO public.labs (id, slug, title, category, difficulty, published) VALUES
-  ('70000000-0000-0000-0000-000000000001', 'sqli-101', 'SQLi 101', 'web', 'easy', true);
+  ('70000000-0000-0000-0000-000000000001', 'test-sqli-101', 'SQLi 101', 'web', 'easy', true);
 INSERT INTO public.lab_skills (lab_id, skill_id) VALUES
   ('70000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001');
 INSERT INTO public.lab_flags (lab_id, label, flag_hash, variant_seed) VALUES

@@ -10,6 +10,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] Next.js 16 App Router + TypeScript (strict) + Tailwind, builds clean
 - [x] ESLint clean, `tsc --noEmit` clean
 - [x] Design tokens (light + dark) established
+- [x] Pushed to GitHub (`main`, commit history from `3a3eaba`)
 - [ ] Flutter mobile app scaffolded (not started)
 - [ ] i18n framework in place (not started)
 - [ ] PWA / offline support (not started)
@@ -24,7 +25,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] OAuth/email confirmation callback route
 - [x] Session refresh via proxy (middleware), auth wall on protected routes
 - [x] e2e-tested: unauthenticated visitors are redirected from
-      `/dashboard`, `/skills`, `/settings`, `/admin`
+      `/dashboard`, `/skills`, `/settings`, `/admin`, `/learn`, `/labs`, `/ctf`
 - [ ] MFA
 - [ ] Application-layer rate limiting on auth endpoints (beyond Supabase's
       built-in limits)
@@ -39,15 +40,21 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       role, cannot escalate via UPDATE, cannot read another user's role rows
 - [x] Server-side role check helpers (`requireUser`/`requireRole`/`requireAdmin`)
       used by protected routes, not just middleware redirects
-- [ ] Admin UI for granting/revoking roles (schema supports it; no UI yet)
+- [x] Admin nav link only rendered for actual admins; `/admin` itself
+      re-verifies via `requireAdmin()`, independent of the link
+- [ ] Admin UI for granting/revoking *other users'* roles (an admin can
+      author content; there is no UI yet to promote another user to
+      instructor/moderator/admin — only directly in the database)
 
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 46 SQL regression assertions passing against a real Postgres instance
+- [x] 51 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
-      grading pipeline, and entitlements
+      grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
+- [x] 8 real bugs found and fixed during development, each with a regression
+      test — see `SECURITY_AUDIT.md` (AUDIT-001 through AUDIT-008)
 - [ ] Migrations applied to a real (non-local-test) Supabase project — see
       `MANUAL_SETUP.md` §2b (requires your Supabase project)
 - [ ] Firestore — N/A (Supabase chosen, see ADR 0001)
@@ -62,6 +69,9 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] Evidence unforgeable by client (no INSERT grant; grading-function-only writes)
 - [x] Real skill catalog seeded (38 skills, 8 categories)
 - [x] `/skills` page renders real per-user state from the database
+- [x] Proven end-to-end with real content: a seeded lesson + quiz + guided
+      lab + CTF challenge genuinely advance a skill from `NOT_STARTED` to
+      `DEMONSTRATED` (`supabase/tests/005_seeded_content_e2e.sql`)
 - [ ] "Prove Your Skill" matrix UI (per-skill breakdown of theory/quiz/
       guided/unguided/CTF/assessment/remediation/retest) — data model
       supports it; UI not built
@@ -73,8 +83,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       progress, records evidence, prevents cross-user submission
 - [x] `submit_ctf_flag()` — hashed flag verification, anti-cheat unique
       constraint, idempotent resubmission
-- [x] End-to-end tested (`supabase/tests/003_grading_pipeline.sql`)
-- [ ] No UI wired to these yet — no lessons/labs/CTF content authored/seeded
+- [x] `unlock_lab_hint()` — records a hint unlock for the caller's own lab instance
+- [x] End-to-end tested (`supabase/tests/003_grading_pipeline.sql`,
+      `supabase/tests/005_seeded_content_e2e.sql`)
+- [x] Wired to real learner-facing UI (`/learn/.../[lessonId]` embeds a live
+      quiz; `/labs/[labId]` and `/ctf/[challengeId]` submit flags directly)
 
 ## Entitlements / Billing
 
@@ -86,9 +99,40 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [ ] Live payment provider connected (deferred by design — ADR 0005)
 - [ ] Billing UI (plan comparison/upgrade page)
 
+## Content authoring (Admin CMS)
+
+- [x] Learning paths, modules, lessons — full CRUD, markdown content editor,
+      publish/draft toggle at every level, per-lesson skill tagging
+- [x] Labs — CRUD, skill tagging, leveled hints, flags (hashed server-side,
+      plaintext never stored/logged)
+- [x] Quizzes — CRUD, skill tagging, question/choice builder with
+      mark-correct checkboxes
+- [x] CTF challenges — CRUD, skill tagging, same server-side flag hashing
+- [x] One complete real content path seeded end-to-end (SQL injection: path
+      → module → lesson → quiz → guided lab → CTF challenge), not a stub —
+      see `supabase/migrations/20260921000014_seed_sample_content.sql`
+- [ ] Announcements, translations (not built — section 29's full content
+      type list is broader than what's built)
+- [ ] Bulk import/export of content
+
+## Learner-facing UI
+
+- [x] `/learn` — published paths, real markdown lesson rendering
+      (react-markdown), lesson-read tracking, embedded live quiz per lesson
+- [x] `/labs` — published labs, guided/unguided start flow, hint unlocking,
+      real flag submission and grading
+- [x] `/ctf` — published challenges (via the flag-hash-free public view),
+      real flag submission and grading, solved state persists
+- [x] Every one of the above uses live Supabase queries/RPCs — no mock data
+- [ ] Labs' actual sandboxed target environment is not provisioned (see
+      "Labs / Terminal / Cyber Range" below) — clearly labeled in the UI
+
 ## Labs / Terminal / Cyber Range
 
-- [ ] Lab engine runtime (schema exists; no provisioning/execution engine built)
+- [x] Lab bookkeeping (instances, hints, flags, progress) — real, tested
+- [ ] Lab engine runtime: no provisioning/execution engine for an actual
+      sandboxed target exists yet. `/labs/[labId]` explicitly labels this
+      rather than implying a live environment.
 - [ ] Terminal simulator (not started)
 - [ ] Cyber Range interconnected environments (not started)
 
@@ -100,10 +144,12 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## CTF / Arena / Exams / Capstones
 
 - [x] Schema + grading + anti-cheat constraint for CTF challenges
-- [x] Exam mode modeled via `quizzes.is_exam` (ADR 0004)
+- [x] Admin CMS + learner UI for CTF challenges (see above)
+- [x] Exam mode modeled via `quizzes.is_exam` (ADR 0004) — schema/grading
+      only, no dedicated exam-mode UI (timer, restricted hints) yet
 - [x] Capstone schema with staff-reviewed report submissions
 - [ ] Arena/mission UI, timers, leaderboard (not started)
-- [ ] Any actual lab/CTF/exam/capstone content authored (none seeded)
+- [ ] Capstone submission/review UI (schema + RLS only)
 
 ## AI Security Mentor / AI-assisted scanning
 
@@ -121,10 +167,12 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Admin / Instructor / Teams
 
 - [x] Organizations + org-scoped roles (schema + RLS)
-- [ ] Admin CMS UI (lessons/modules/paths/labs/challenges/hints/etc.)
+- [x] Admin CMS UI (learning paths/modules/lessons/labs/quizzes/CTF — see above)
 - [ ] Instructor dashboard (view org members' progress) — RLS supports it
       (`skill_evidence`/`user_skill_states`/`lab_progress` policies already
       grant instructor visibility); no UI built
+- [ ] Team management UI (invite members, assign org roles) — schema + RLS
+      only
 
 ## Privacy / Data protection
 
@@ -147,17 +195,24 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] Lint, typecheck, unit tests, production build, DB+RLS regression
       tests, secret scan, dependency audit, e2e smoke tests — all running
       in GitHub Actions (`.github/workflows/ci.yml`)
-- [x] All of the above verified passing locally before being committed
-- [ ] Verified green on an actual GitHub Actions run (blocked: this
-      session cannot push — see `MANUAL_SETUP.md` §1)
+- [x] All of the above verified passing locally before every commit
+- [x] Pushed to GitHub — Claude GitHub App access was granted mid-session
+      (previously blocked; see git history for the resolution)
+- [ ] Actually observed green on a real GitHub Actions run (verify by
+      checking the Actions tab on the repository)
 - [ ] Deploy job (no hosting target connected yet — see `MANUAL_SETUP.md` §5)
 
 ## Testing
 
-- [x] 46 SQL regression assertions (RLS + grading + entitlements)
+- [x] 51 SQL regression assertions (RLS + grading + entitlements + a full
+      seeded-content walkthrough)
 - [x] 26 unit tests (validation logic, env guards, UI component)
-- [x] 9 e2e smoke tests (public pages, auth wall, login error handling)
-- [ ] Test coverage for content model CRUD (no admin UI exists yet to test)
+- [x] 12 e2e smoke tests (public pages, auth wall across all protected
+      sections, login error handling)
+- [ ] Test coverage for admin CMS CRUD flows (built and manually verified
+      via typecheck/lint/build; no dedicated e2e tests exercising the forms
+      themselves yet — would need a real Supabase project or a more
+      elaborate local auth fixture than the current e2e setup has)
 - [ ] Load/performance testing (not started)
 
 ## Production readiness
@@ -166,7 +221,6 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [ ] Deployment target connected (`MANUAL_SETUP.md` §5)
 - [ ] Domain configured (`MANUAL_SETUP.md` §6, optional)
 - [ ] Production environment variables set (`MANUAL_SETUP.md` §2a, §7)
-- [ ] This work pushed to GitHub (blocked — `MANUAL_SETUP.md` §1)
 
 ## Mobile readiness
 
