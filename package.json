@@ -1,0 +1,25 @@
+{
+  "name": "icorepen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "iCorePen — cybersecurity learning, security-analysis, cyber-range and AI-assisted security platform.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "pnpm --filter @icorepen/web dev",
+    "build": "pnpm --filter @icorepen/web build",
+    "lint": "pnpm --filter @icorepen/web lint",
+    "typecheck": "pnpm --filter @icorepen/web typecheck",
+    "test": "pnpm --filter @icorepen/web test",
+    "test:e2e": "pnpm --filter @icorepen/web test:e2e"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "unrs-resolver",
+      "sharp"
+    ]
+  }
+}

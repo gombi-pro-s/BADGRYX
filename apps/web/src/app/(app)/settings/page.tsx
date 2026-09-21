@@ -1,0 +1,37 @@
+import type { Metadata } from "next";
+import { requireUser } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+import { ProfileForm } from "./profile-form";
+
+export const metadata: Metadata = { title: "Settings" };
+
+export default async function SettingsPage() {
+  const user = await requireUser();
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name, username, bio, timezone")
+    .eq("id", user.id)
+    .single();
+
+  return (
+    <div className="mx-auto max-w-2xl px-6 py-10">
+      <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
+      <p className="mt-1 text-sm text-foreground-muted">{user.email}</p>
+
+      <div className="mt-8 rounded-lg border border-border bg-surface p-6">
+        <h2 className="text-sm font-semibold text-foreground">Profile</h2>
+        <div className="mt-4">
+          <ProfileForm
+            initial={{
+              display_name: profile?.display_name ?? "",
+              username: profile?.username ?? "",
+              bio: profile?.bio ?? "",
+              timezone: profile?.timezone ?? "UTC",
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
