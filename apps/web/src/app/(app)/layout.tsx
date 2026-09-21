@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth/session";
+import { getUserRoles, requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "../(auth)/actions";
 
@@ -12,11 +12,12 @@ const NAV_ITEMS = [
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, username")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, roles] = await Promise.all([
+    supabase.from("profiles").select("display_name, username").eq("id", user.id).single(),
+    getUserRoles(user.id),
+  ]);
+  const isAdmin = roles.includes("admin");
+  const navItems = isAdmin ? [...NAV_ITEMS, { href: "/admin", label: "Admin" }] : NAV_ITEMS;
 
   return (
     <div className="flex min-h-screen">
@@ -27,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
         </div>
         <nav className="flex-1 space-y-1 p-3">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}

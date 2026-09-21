@@ -193,18 +193,18 @@ BEGIN
   RAISE NOTICE 'PASS: CTF flag awards points once, resubmission does not double-award';
 END $$;
 
--- Clients cannot read flag_hash even via the staff-oriented base table
--- (only through the *_public view / grading functions).
+-- A non-staff user gets zero rows from the base table (RLS filters every
+-- row out via is_staff()) -- not a grant-level permission error. This is
+-- the correct behavior: see the comment above ctf_challenges' RLS policy
+-- in the migration for why no REVOKE is needed or wanted here.
 DO $$
 DECLARE cnt int;
 BEGIN
-  BEGIN
-    SELECT count(*) INTO cnt FROM public.ctf_challenges;
-    RAISE EXCEPTION 'FAIL: authenticated user could select from ctf_challenges (flag_hash exposed)';
-  EXCEPTION WHEN others THEN
-    IF SQLSTATE = 'P0001' THEN RAISE; END IF;
-    RAISE NOTICE 'PASS: ctf_challenges base table (with flag_hash) is unreadable by non-staff (%)', SQLSTATE;
-  END;
+  SELECT count(*) INTO cnt FROM public.ctf_challenges;
+  IF cnt <> 0 THEN
+    RAISE EXCEPTION 'FAIL: non-staff user saw % rows of ctf_challenges (flag_hash exposed)', cnt;
+  END IF;
+  RAISE NOTICE 'PASS: non-staff sees zero rows of ctf_challenges (flag_hash never exposed)';
 END $$;
 
 DO $$
@@ -213,6 +213,26 @@ BEGIN
   SELECT count(*) INTO cnt FROM public.ctf_challenges_public WHERE id = '80000000-0000-0000-0000-000000000001';
   IF cnt <> 1 THEN RAISE EXCEPTION 'FAIL: public challenge view should show the published challenge'; END IF;
   RAISE NOTICE 'PASS: ctf_challenges_public exposes published challenges without flag_hash';
+END $$;
+
+-- Staff/admin must be able to read the base table directly (needed for CMS
+-- management: listing challenges, editing non-flag fields, etc.) -- this is
+-- exactly the access the earlier REVOKE SELECT accidentally destroyed.
+RESET ROLE;
+INSERT INTO public.user_roles (user_id, role) VALUES ('11111111-1111-1111-1111-111111111111', 'admin')
+  ON CONFLICT DO NOTHING;
+CALL test_act_as('11111111-1111-1111-1111-111111111111');
+DO $$
+DECLARE cnt int;
+DECLARE v_flag_hash text;
+BEGIN
+  SELECT count(*), max(flag_hash) INTO cnt, v_flag_hash FROM public.ctf_challenges
+    WHERE id = '80000000-0000-0000-0000-000000000001';
+  IF cnt <> 1 THEN RAISE EXCEPTION 'FAIL: admin could not read ctf_challenges directly (saw % rows)', cnt; END IF;
+  IF v_flag_hash IS NULL OR length(v_flag_hash) <> 64 THEN
+    RAISE EXCEPTION 'FAIL: admin read a row but flag_hash looked wrong: %', v_flag_hash;
+  END IF;
+  RAISE NOTICE 'PASS: admin can read ctf_challenges directly (CMS management works)';
 END $$;
 
 RESET ROLE;

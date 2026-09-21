@@ -75,6 +75,45 @@ currently-absent control, tracked for a later phase), `INFORMATIONAL`.
 - **Verification**: `apps/web/e2e/smoke.spec.ts` passes; manual DOM inspection confirms no nested interactive elements remain.
 - **Status**: `FIXED`.
 
+## AUDIT-006 — `REVOKE SELECT` on `ctf_challenges` blocked admins, not just non-staff
+
+- **Severity**: Medium (broke intended admin functionality; not an authorization bypass in the other direction)
+- **Confidence**: Confirmed
+- **Component**: `supabase/migrations/20260921000009_content_model_rls.sql`
+- **Description**: To keep `flag_hash` away from non-staff users, the migration ran `REVOKE SELECT ON public.ctf_challenges FROM anon, authenticated`, reasoning that RLS is row-level and can't hide a single column. That reasoning was correct but the fix was wrong: `authenticated` is one shared Postgres role for every logged-in user, admins included — Postgres role-level GRANT/REVOKE has no concept of "admin" within that role. Revoking SELECT from `authenticated` blocked every authenticated request against the table, including an admin's own, regardless of what the RLS policy said.
+- **Evidence**: While building the admin CMS for CTF challenge management, a test asserting an admin can read `ctf_challenges` directly (needed to list/edit challenges) failed with a permission-denied error.
+- **Impact**: Admins could not manage CTF challenges through their own authenticated session at all — the base table was unreadable to every logged-in role, not just non-staff. (Not an authorization bypass: the direction of the bug was over-restrictive, not under-restrictive — no evidence flag_hash was ever exposed to non-staff.)
+- **Root cause**: Conflating "hide a column from some rows" (which RLS genuinely cannot do) with this table's actual policy shape ("staff sees the full row, everyone else sees no row at all") — which RLS's `is_staff()` policy already handles completely correctly on its own, making the REVOKE both unnecessary and harmful.
+- **Fix**: Removed the `REVOKE SELECT` statement; the `ctf_challenges_staff_only` RLS policy alone now governs access (non-staff get zero rows via RLS, staff get full rows including `flag_hash`).
+- **Verification**: `supabase/tests/003_grading_pipeline.sql` now has both directions covered: non-staff sees zero rows (not an error), and a separate test confirms an admin can read the row including a well-formed `flag_hash` directly.
+- **Status**: `FIXED`.
+
+## AUDIT-007 — `tsc --noEmit` depended on stale build artifacts, would have broken CI on a fresh checkout
+
+- **Severity**: Low (build/CI reliability, not a security issue)
+- **Confidence**: Confirmed
+- **Component**: `apps/web/src/app/layout.tsx`
+- **Description**: The root layout used create-next-app's generated `LayoutProps<"/">` type, an ambient type declared in `.next/types/**/*.ts` — generated only by running `next dev` or `next build` first. `.next/` is (correctly) gitignored. `pnpm typecheck` passed locally only because a `.next` directory from earlier manual `pnpm build`/`pnpm dev` runs in this sandbox was still present; the moment it was removed (as it should be for a clean checkout, and as CI's `lint-typecheck` job — which runs `tsc --noEmit` without building first — would experience on every run), typecheck failed with `Cannot find name 'LayoutProps'`.
+- **Evidence**: Reproduced by deleting `.next` and rerunning `pnpm typecheck`, which failed; every other layout file in the app already used a plain `{ children: React.ReactNode }` prop type and was unaffected.
+- **Impact**: The `lint-typecheck` CI job would have failed on every run (it checks out a fresh clone with no `.next` directory), even though the code was otherwise correct — a false-negative CI failure blocking all future PRs until diagnosed.
+- **Root cause**: Relying on a generated ambient type in a file that typecheck must be able to validate standalone, without assuming a prior build step ran first.
+- **Fix**: Changed `RootLayout`'s prop type to `{ children: React.ReactNode }`, matching every other layout in the codebase.
+- **Verification**: Removed `.next` entirely and reran `pnpm typecheck` — passes clean.
+- **Status**: `FIXED`.
+
+## AUDIT-008 — `interface` Row types silently collapsed all Supabase query results to `never`
+
+- **Severity**: Low (type-safety/build correctness, not a runtime security issue — but see impact)
+- **Confidence**: Confirmed via isolated minimal reproduction
+- **Component**: `apps/web/src/types/database.ts`
+- **Description**: While expanding the hand-written `Database` type to cover the content model tables for the admin CMS, every query in the app (including pre-existing, previously-working ones like `profiles`) started typechecking as `never`, with no error pointing at a specific cause. Bisection down to a ~15-line reproduction found the exact trigger: declaring a multi-field Row type as `export interface ProfileRow {...}` and referencing it as `Row: ProfileRow` breaks `@supabase/postgrest-js`'s generic result inference for the *entire* `Database` type, not just that table. Changing only the declaration to `export type ProfileRow = {...}` (a type alias, structurally identical) fixed it completely, with no other change.
+- **Evidence**: `apps/web/src/types/database.ts`'s file header documents the isolated repro; git history shows the single-keyword change (`interface` → `type`) that fixed 24 simultaneous, seemingly unrelated typecheck errors.
+- **Impact**: This is a correctness/reliability finding, not an exploitable vulnerability — but it's exactly the kind of silent failure the "no half-finished implementations" and "don't claim something works without verifying" rules exist to catch: every Row type on every table would have typechecked as `never`, meaning TypeScript would silently stop catching real mistakes (wrong column names, wrong types) in any code touching the database, while still reporting *some* unrelated-looking errors that could mislead a developer into fixing the wrong thing.
+- **Root cause**: An apparent interaction between TypeScript's handling of `interface` vs `type` alias references inside deeply nested conditional/mapped types, specific to this combination of TypeScript and `@supabase/postgrest-js` versions.
+- **Fix**: Every Row type in `database.ts` uses `type X = {...}`, never `interface`. Documented prominently in the file header as a trap for future contributors.
+- **Verification**: `pnpm typecheck` clean after the change; isolated repro retained in the commit history/PR discussion for anyone who doubts it.
+- **Status**: `FIXED`.
+
 ---
 
 ## Verified controls (tested, not just asserted)

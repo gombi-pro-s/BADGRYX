@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     "iCorePen is a cybersecurity learning, security-analysis, cyber-range, CTF, OSINT, and AI-assisted security platform. Learn, investigate, practice, and prove real practical skill.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"

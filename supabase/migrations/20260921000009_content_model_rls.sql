@@ -195,16 +195,26 @@ CREATE POLICY ctf_events_select_published_or_staff ON public.ctf_events
 CREATE POLICY ctf_events_staff_write ON public.ctf_events
   FOR ALL TO authenticated USING (public.is_staff()) WITH CHECK (public.is_staff());
 
--- flag_hash lives on this table; RLS is row-level, not column-level, so it
--- cannot hide just that column from an otherwise-permitted SELECT. Instead,
--- anon/authenticated get NO select grant on the base table at all (only a
--- staff ALL policy exists) and read challenges through
--- public.ctf_challenges_public (below), which never selects flag_hash.
+-- flag_hash lives on this table. RLS is row-level, not column-level, but
+-- that's not actually a problem here: the ONLY policy on this table is
+-- "staff can see every column of every row; everyone else sees nothing at
+-- all" -- there is no case where a row is visible to a non-staff caller
+-- with just one column redacted, so the policy alone is sufficient.
+--
+-- Note: do NOT additionally REVOKE SELECT from `authenticated` here (an
+-- earlier version of this migration did, and it was a real bug -- see
+-- SECURITY_AUDIT.md AUDIT-006). Table-level GRANT/REVOKE applies to the
+-- Postgres ROLE, and `authenticated` is one shared role for every logged-in
+-- user regardless of app-level admin status -- an admin connects as
+-- `authenticated` too. Revoking SELECT from `authenticated` blocks admins
+-- from ever reading this table (including for CMS management), not just
+-- non-staff users; RLS's `is_staff()` check is what must do the filtering.
+-- Everyone (including staff) also still has public.ctf_challenges_public
+-- for the flag_hash-free published view.
 ALTER TABLE public.ctf_challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ctf_challenges FORCE ROW LEVEL SECURITY;
 CREATE POLICY ctf_challenges_staff_only ON public.ctf_challenges
   FOR ALL TO authenticated USING (public.is_staff()) WITH CHECK (public.is_staff());
-REVOKE SELECT ON public.ctf_challenges FROM anon, authenticated;
 
 CREATE VIEW public.ctf_challenges_public AS
   SELECT id, event_id, lab_id, slug, title, description, category, difficulty, points, published
