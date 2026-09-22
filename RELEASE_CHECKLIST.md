@@ -235,7 +235,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       multiple_choice/exact_text question builder; exact_text answers are
       hashed server-side on submit (same discipline as lab/CTF flags,
       never sent to the browser or stored in plaintext)
-- [ ] Learner investigation workspace UI (`/investigate`) — not built yet
+- [x] Learner investigation workspace UI — `/investigate` (list, with a
+      per-user solved/best-score badge) and `/investigate/[id]` (case
+      briefing, evidence artifacts as a real case board, a private
+      autosaved notes scratchpad, and a mixed multiple_choice/exact_text
+      answer form wired to `submit_investigation_answers()`); added to the
+      auth-wall middleware and app nav, e2e-tested alongside every other
+      protected route
+- [ ] "Ask Mentor" deep link from an investigation — deliberately not
+      added yet; `MentorContextType` doesn't have an `investigation` value,
+      and adding one touches the Mentor's context builder/prompt, out of
+      scope for this task
 - [ ] One complete real investigation seeded end-to-end — not built yet
 - [ ] Blue/Purple Team scenario linkage (not started)
 
@@ -414,7 +424,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       prompt + status transitions, lab terminal path resolution + command
       interpreter + real-permission enforcement + the seeded lab's
       solvability)
-- [x] 14 e2e smoke tests (public pages, auth wall across all protected
+- [x] 15 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`, login error handling)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified
       via typecheck/lint/build; no dedicated e2e tests exercising the forms
