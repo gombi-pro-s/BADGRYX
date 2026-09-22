@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "./profile-form";
@@ -32,6 +33,14 @@ export default async function SettingsPage() {
           />
         </div>
       </div>
+
+      <Link
+        href="/settings/billing"
+        className="mt-6 block rounded-lg border border-border bg-surface p-6 hover:border-border-strong"
+      >
+        <h2 className="text-sm font-semibold text-foreground">Billing</h2>
+        <p className="mt-1 text-xs text-foreground-subtle">View your plan and entitlements, or upgrade.</p>
+      </Link>
     </div>
   );
 }

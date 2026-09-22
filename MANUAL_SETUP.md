@@ -166,28 +166,111 @@ Anthropic.
 
 ---
 
-## 4. Payment provider (deferred by design — see ADR 0005)
+## 4. Payment provider (checkout + webhook code is real; only your account/keys are missing)
 
-**Required for**: whenever you're ready to accept real payments. Not
-required for anything currently built — the entitlement engine works today
-with `provider = 'manual'` admin-granted plans.
+**Required for**: accepting real payments. The checkout flow, webhook
+handlers, and signature verification for Stripe, Paystack, and
+Flutterwave are all fully implemented (see
+`docs/adr/0011-live-billing-integration.md`) — until you complete this
+section, `/settings/billing` simply shows each provider's upgrade button
+as "not configured" and its webhook endpoint returns 503. The entitlement
+engine works today regardless, with `provider = 'manual'` admin-granted
+plans.
 
-When you're ready:
+Configure as many of the three providers as you actually want to accept —
+each is fully independent; none of this is required for the others to
+work.
 
-1. **What**: Create an account with your chosen provider (Stripe is the
-   best-supported option for a Next.js app; Paystack/Flutterwave are
-   better fits if your primary market is Africa).
-2. **Where**: https://dashboard.stripe.com (or your chosen provider's
-   dashboard).
-3. **Exact value**: Create products/prices matching the rows you want in
-   `public.plans`; get your secret key and webhook signing secret.
-4. **Why**: Needed to actually charge customers; the current `plans`/
-   `subscriptions` schema is designed so this is additive (see ADR 0005) —
-   ask for this to be implemented once you have the account, and provide
-   the API keys as environment variables at that time.
-5. **Verify**: N/A until the webhook handler is implemented.
-6. **Expected result**: N/A yet.
-7. **Required for**: Production, once you want to charge money.
+### 4a. Stripe
+
+1. **What**: Create a Stripe account, a Product for the Pro plan, and a
+   recurring monthly Price on it ($19/month to match the seeded `pro`
+   plan's `price_cents`, or your own amount).
+2. **Where**: https://dashboard.stripe.com → Product catalog → Add product.
+3. **Exact value**: Copy the **Price ID** (starts `price_...`, not the
+   Product ID) into `STRIPE_PRICE_ID_PRO`. Copy your secret key
+   (Developers → API keys, starts `sk_...`, use the **test** key first)
+   into `STRIPE_SECRET_KEY`.
+4. **Webhook**: Developers → Webhooks → Add endpoint. URL:
+   `https://<your-site>/api/billing/webhook/stripe`. Events to send:
+   `checkout.session.completed` and `customer.subscription.deleted`. Copy
+   the **Signing secret** (starts `whsec_...`) into `STRIPE_WEBHOOK_SECRET`.
+5. **Why**: `STRIPE_SECRET_KEY` creates real Checkout Sessions server-side
+   (`lib/billing/stripe-client.ts`); `STRIPE_WEBHOOK_SECRET` is how the
+   webhook route (`lib/billing/stripe.ts`'s `verifyStripeSignature()`)
+   proves an incoming request really came from Stripe before it ever
+   calls `set_active_subscription()`.
+6. **Verify**: With all three Stripe vars set, log in, go to
+   `/settings/billing`, click "Upgrade with Stripe" — it should redirect
+   to a real Stripe Checkout page (test mode: use card `4242 4242 4242
+   4242`, any future expiry/CVC). After paying, you land back on
+   `/settings/billing?success=stripe`.
+7. **Expected result**: Within a few seconds (webhook delivery), the page
+   shows plan "Pro". `select * from public.subscriptions where
+   provider = 'stripe' order by created_at desc limit 1;` in the Supabase
+   SQL editor shows a real row with `status = 'active'`.
+
+### 4b. Paystack
+
+1. **What**: Create a Paystack account and a subscription Plan for Pro.
+2. **Where**: https://dashboard.paystack.com/#/plans → Create Plan.
+3. **Exact value**: Copy the **Plan code** (starts `PLN_...`) into
+   `PAYSTACK_PLAN_CODE_PRO`. Copy your secret key (Settings → API Keys &
+   Webhooks, starts `sk_...`, use the **test** key first) into
+   `PAYSTACK_SECRET_KEY`.
+4. **Webhook**: Same Settings → API Keys & Webhooks page → Webhook URL:
+   `https://<your-site>/api/billing/webhook/paystack`. Paystack signs
+   webhooks with this same secret key — there is no separate webhook
+   secret to copy.
+5. **Why**: Same division of labor as Stripe —
+   `lib/billing/paystack-client.ts` initializes a real transaction;
+   `lib/billing/paystack.ts`'s `verifyPaystackSignature()` checks the
+   `x-paystack-signature` header before any subscription changes.
+6. **Verify**: Click "Upgrade with Paystack" at `/settings/billing` — it
+   should redirect to a real Paystack payment page (test mode: use card
+   `4084 0840 8408 4081`, any future expiry, CVV `408`, OTP `123456`).
+7. **Expected result**: Same as Stripe's — plan shows "Pro", a
+   `provider = 'paystack'` row appears in `subscriptions`.
+
+### 4c. Flutterwave
+
+1. **What**: Create a Flutterwave account and a Payment Plan for Pro.
+2. **Where**: https://dashboard.flutterwave.com/dashboard/payment-plans →
+   Create Plan (recurring, monthly, matching your USD amount).
+3. **Exact value**: Copy the **Plan ID** into
+   `FLUTTERWAVE_PAYMENT_PLAN_ID_PRO`. Copy your secret key (Settings →
+   API, starts `FLWSECK_...`, use the **test** key first) into
+   `FLUTTERWAVE_SECRET_KEY`.
+4. **Webhook**: Settings → Webhooks. URL:
+   `https://<your-site>/api/billing/webhook/flutterwave`. Set a **Secret
+   Hash** — this is a literal string you invent (not derived from
+   anything), *not* an HMAC secret; Flutterwave echoes it back verbatim on
+   the `verif-hash` header of every webhook call. Copy the exact same
+   string into `FLUTTERWAVE_WEBHOOK_SECRET_HASH`.
+5. **Why**: `lib/billing/flutterwave-client.ts` creates a real payment
+   link; `lib/billing/flutterwave.ts`'s `verifyFlutterwaveSignature()`
+   does a constant-time comparison against `FLUTTERWAVE_WEBHOOK_SECRET_HASH`
+   — get this string wrong on either side and every webhook call is
+   silently rejected as unauthenticated.
+6. **Verify**: Click "Upgrade with Flutterwave" at `/settings/billing` —
+   it should redirect to a real Flutterwave payment page (test mode: see
+   Flutterwave's test card list in their docs, updated periodically).
+7. **Expected result**: Same as the others — plan shows "Pro", a
+   `provider = 'flutterwave'` row appears in `subscriptions`.
+8. **Known limitation**: unlike Stripe/Paystack, cancelling a
+   subscription on Flutterwave's side does not yet auto-downgrade the
+   user back to `free` in this build (see ADR 0011) — use an admin manual
+   comp (`set_active_subscription(..., 'manual')`) to handle that case
+   until a follow-up implements it.
+
+### 4d. Local webhook testing (before you have a public URL)
+
+Each provider's CLI can forward webhook events to `localhost` during
+development: Stripe CLI (`stripe listen --forward-to
+localhost:3000/api/billing/webhook/stripe`, prints a temporary
+`whsec_...` to use locally), or a tunnel tool (ngrok, Cloudflare Tunnel)
+pointed at your dev server for Paystack/Flutterwave, whose dashboards
+require a real HTTPS URL for webhook registration.
 
 ---
 

@@ -56,10 +56,19 @@ the same key once that phase is built. See
 [`docs/adr/0007-ai-mentor-grounding.md`](./docs/adr/0007-ai-mentor-grounding.md)
 for how it stays grounded in real data and cannot fabricate progress.
 
-**Billing**: entitlement engine is real and enforced server-side now
-(`plans`, `subscriptions`, `get_entitlement()`); a live payment provider
-(Stripe/Paystack/Flutterwave) is deliberately not connected yet. See
-[`docs/adr/0005-entitlements-before-billing.md`](./docs/adr/0005-entitlements-before-billing.md).
+**Billing**: entitlement engine is real and enforced server-side
+(`plans`, `subscriptions`, `get_entitlement()`). Live checkout and webhook
+handling for Stripe, Paystack, and Flutterwave are fully implemented
+(`/settings/billing`, `POST /api/billing/webhook/{stripe,paystack,
+flutterwave}`) — zero new dependencies, hand-rolled against each
+provider's REST API with Node's built-in `crypto` for signature
+verification, unit-tested without needing a real account. Only real API
+keys are missing in this build environment (see
+[MANUAL_SETUP.md §4](./MANUAL_SETUP.md)); without them a provider's
+upgrade button just shows "not configured" rather than crashing. See
+[`docs/adr/0005-entitlements-before-billing.md`](./docs/adr/0005-entitlements-before-billing.md)
+and
+[`docs/adr/0011-live-billing-integration.md`](./docs/adr/0011-live-billing-integration.md).
 
 ## What actually works today
 

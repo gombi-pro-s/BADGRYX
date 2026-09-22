@@ -50,7 +50,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 97 SQL regression assertions passing against a real Postgres instance
+- [x] 119 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -105,8 +105,53 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] `get_entitlement()` / `set_active_subscription()` — server-side only,
       tested against self-escalation attempts
 - [x] Webhook replay protection (unique constraint, tested)
-- [ ] Live payment provider connected (deferred by design — ADR 0005)
-- [ ] Billing UI (plan comparison/upgrade page)
+- [x] A real `pro` plan seeded with real, better-than-free entitlement
+      values (`20260922000015_seed_pro_plan.sql`) — previously only `free`
+      existed, so there was nothing to actually upgrade to
+- [x] Live payment provider integration — real, complete code for Stripe,
+      Paystack, and Flutterwave (checkout initiation + webhook signature
+      verification + processing), gated by environment variables exactly
+      like `ANTHROPIC_API_KEY` (see ADR 0011). Pure signature-verification
+      and request-building logic (`lib/billing/{stripe,paystack,
+      flutterwave}.ts`) is fully unit-tested (24 tests) without needing a
+      real account; the `fetch()` I/O wrappers
+      (`lib/billing/{stripe,paystack,flutterwave}-client.ts`) are
+      `server-only`-guarded, mirroring `lib/mentor/prompt.ts` vs
+      `client.ts`. Zero new npm dependencies — all three integrations are
+      hand-rolled against each provider's REST API with Node's built-in
+      `crypto`, not an SDK, the same "auditable in this repo, not trusted
+      to a third party" discipline as the terminal interpreter and scanner
+      rule engine
+- [x] Three webhook routes (`/api/billing/webhook/{stripe,paystack,
+      flutterwave}`), each idempotent via `billing_webhook_events`
+      (keyed by `(provider, provider_event_id)` — a unique-constraint hit
+      means "already processed," not an error), each running as
+      `service_role` and calling the same `set_active_subscription()` RPC
+      ADR 0005 already built
+- [x] `/settings/billing` UI — current plan + real entitlement values,
+      three "Upgrade with ..." buttons that create a real checkout
+      session and redirect; a provider with no configured keys renders as
+      a disabled "(not configured)" button rather than crashing
+- [x] `supabase/tests/004_entitlements.sql` extended: the real `pro` plan
+      (not the pre-existing escalation-prevention test fixture, which was
+      renamed off the now-real `pro` slug) grants real, better-than-free
+      entitlements once `set_active_subscription()` activates it
+- [ ] **This has NOT been tested against a real Stripe/Paystack/
+      Flutterwave account or a live webhook delivery** — no external
+      account or API keys exist in this build environment (see ADR 0011,
+      MANUAL_SETUP.md §4). Verified instead by: 24 unit tests covering
+      every signature-verification edge case (wrong secret, tampered
+      body, replay window, malformed/missing header) and request-building
+      logic for all three providers, a full production build succeeding
+      for all three webhook routes and `/settings/billing`, and a SQL
+      regression test proving the real `pro` plan's entitlements resolve
+      correctly once active. A real click-through and webhook delivery
+      needs a real provider account and keys — do that first (§4) if you
+      want this verified live.
+- [ ] Recurring-subscription cancellation auto-downgrade is only
+      implemented for Stripe and Paystack in this build; a Flutterwave
+      cancellation needs a manual admin comp until a follow-up adds it
+      (documented limitation, see ADR 0011)
 
 ## Content authoring (Admin CMS)
 
@@ -537,15 +582,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 118 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 119 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
-      capstone review lifecycle + the seeded standalone exam)
-- [x] 198 unit tests (validation logic, env guards, UI components including
+      capstone review lifecycle + the seeded standalone exam + the real
+      pro plan's entitlements)
+- [x] 222 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety, security scanner rule engine + enrichment prompt +
       status transitions, lab terminal path resolution + command
       interpreter + real-permission enforcement + the seeded lab's
-      solvability)
+      solvability, live billing signature verification + request-building
+      for Stripe/Paystack/Flutterwave)
 - [x] 19 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`, an
       invite link's `?next=` round-trip, login error handling)

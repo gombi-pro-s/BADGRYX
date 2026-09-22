@@ -45,6 +45,26 @@ export type PlatformRole = "user" | "instructor" | "moderator" | "admin";
 
 export type OrgRole = "member" | "instructor" | "team_owner" | "org_admin";
 
+export type BillingInterval = "free" | "month" | "year" | "lifetime";
+export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled" | "expired" | "incomplete";
+export type BillingSubjectType = "user" | "organization";
+export type WebhookEventStatus = "received" | "processed" | "failed" | "ignored";
+
+export type SubscriptionRow = {
+  id: string;
+  subject_type: BillingSubjectType;
+  subject_id: string;
+  plan_id: string;
+  status: SubscriptionStatus;
+  provider: string | null;
+  provider_customer_id: string | null;
+  provider_subscription_id: string | null;
+  current_period_start: string;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  trial_end: string | null;
+};
+
 export type SkillEvidenceType =
   | "theory"
   | "quiz"
@@ -627,7 +647,7 @@ export interface Database {
           description: string | null;
           price_cents: number;
           currency: string;
-          interval: "free" | "month" | "year" | "lifetime";
+          interval: BillingInterval;
           is_active: boolean;
           sort_order: number;
         };
@@ -635,16 +655,14 @@ export interface Database {
         Update: Record<string, never>;
         Relationships: [];
       };
+      plan_entitlements: {
+        Row: { plan_id: string; key: string; value: unknown };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       subscriptions: {
-        Row: {
-          id: string;
-          subject_type: "user" | "organization";
-          subject_id: string;
-          plan_id: string;
-          status: "trialing" | "active" | "past_due" | "canceled" | "expired" | "incomplete";
-          provider: string | null;
-          current_period_end: string | null;
-        };
+        Row: SubscriptionRow;
         Insert: Record<string, never>; // written only by set_active_subscription()
         Update: Record<string, never>;
         Relationships: [
@@ -656,6 +674,30 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      billing_webhook_events: {
+        Row: {
+          id: string;
+          provider: string;
+          provider_event_id: string;
+          event_type: string;
+          payload: Record<string, unknown>;
+          status: WebhookEventStatus;
+          error: string | null;
+          received_at: string;
+          processed_at: string | null;
+        };
+        // Only service_role writes here (the webhook handlers) -- no RLS
+        // INSERT/UPDATE policy exists for authenticated/anon at all.
+        Insert: {
+          provider: string;
+          provider_event_id: string;
+          event_type: string;
+          payload: Record<string, unknown>;
+          status?: WebhookEventStatus;
+        };
+        Update: Partial<{ status: WebhookEventStatus; error: string | null; processed_at: string | null }>;
+        Relationships: [];
       };
       organizations: {
         Row: OrganizationRow;
@@ -1124,6 +1166,20 @@ export interface Database {
       count_my_scan_enrichments_today: {
         Args: Record<string, never>;
         Returns: number;
+      };
+      set_active_subscription: {
+        Args: {
+          p_subject_type: BillingSubjectType;
+          p_subject_id: string;
+          p_plan_id: string;
+          p_status: SubscriptionStatus;
+          p_provider: string | null;
+          p_provider_customer_id?: string | null;
+          p_provider_subscription_id?: string | null;
+          p_current_period_end?: string | null;
+          p_trial_end?: string | null;
+        };
+        Returns: SubscriptionRow;
       };
       review_capstone_submission: {
         Args: { p_submission_id: string; p_status: CapstoneStatus; p_notes?: string | null };

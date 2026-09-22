@@ -49,8 +49,11 @@ DO $$
 DECLARE v_pro_plan_id uuid;
 BEGIN
   RESET ROLE;
+  -- Slug deliberately NOT 'pro' -- that's now a real seeded plan (see
+  -- 20260922000015_seed_pro_plan.sql), and this fixture must not collide
+  -- with it outside this test's own transaction rollback.
   INSERT INTO public.plans (id, slug, name, price_cents, interval) VALUES
-    ('a0000000-0000-0000-0000-000000000001', 'pro', 'Pro', 1999, 'month')
+    ('a0000000-0000-0000-0000-000000000001', 'test-plan-escalation-fixture', 'Pro', 1999, 'month')
   RETURNING id INTO v_pro_plan_id;
   INSERT INTO public.plan_entitlements (plan_id, key, value) VALUES
     (v_pro_plan_id, 'cyber_range_access', 'true');
@@ -171,6 +174,47 @@ BEGIN
     IF SQLSTATE = 'P0001' THEN RAISE; END IF;
     RAISE NOTICE 'PASS: client cannot forge a billing webhook event (%)', SQLSTATE;
   END;
+END $$;
+
+-- ============================================================================
+-- 6. The real seeded 'pro' plan (not the escalation-fixture plan above) --
+--    the one the live billing checkout flows actually grant -- has real
+--    entitlement values and, once active via set_active_subscription(),
+--    resolves through get_entitlement() exactly like any other plan.
+-- ============================================================================
+RESET ROLE;
+DO $$
+DECLARE v_pro_plan_id uuid; v_limit jsonb;
+BEGIN
+  SELECT id INTO v_pro_plan_id FROM public.plans WHERE slug = 'pro';
+  IF v_pro_plan_id IS NULL THEN
+    RAISE EXCEPTION 'FAIL: the real ''pro'' plan seeded by 20260922000015_seed_pro_plan.sql is missing';
+  END IF;
+
+  SELECT value INTO v_limit FROM public.plan_entitlements WHERE plan_id = v_pro_plan_id AND key = 'lab_instances_concurrent';
+  IF v_limit IS NULL OR v_limit::text = '1' THEN
+    RAISE EXCEPTION 'FAIL: the real pro plan should grant more than the free plan''s lab_instances_concurrent=1, got %', v_limit;
+  END IF;
+
+  PERFORM set_config('icorepen_test.pro_plan_id', v_pro_plan_id::text, false);
+END $$;
+
+-- set_active_subscription() only accepts an admin or service_role caller --
+-- exactly what a real webhook handler runs as (createAdminClient() ==
+-- service_role), and what a manual comp runs as (an admin session), never
+-- the subject's own session (already proven unable to in section 2 above).
+CALL test_act_as('33333333-3333-3333-3333-333333333333');
+DO $$
+DECLARE v_pro_plan_id uuid; v_limit jsonb;
+BEGIN
+  v_pro_plan_id := current_setting('icorepen_test.pro_plan_id')::uuid;
+  PERFORM public.set_active_subscription('user', '11111111-1111-1111-1111-111111111111', v_pro_plan_id, 'active', 'stripe');
+
+  SELECT public.get_entitlement('user', '11111111-1111-1111-1111-111111111111', 'cyber_range_access') INTO v_limit;
+  IF v_limit::text <> 'true' THEN
+    RAISE EXCEPTION 'FAIL: expected cyber_range_access=true on the real pro plan, got %', v_limit;
+  END IF;
+  RAISE NOTICE 'PASS: the real seeded pro plan grants real, better-than-free entitlements once active';
 END $$;
 
 RESET ROLE;
