@@ -8,6 +8,7 @@ const ADMIN_SECTIONS = [
   { href: "/admin/quizzes", label: "Quizzes" },
   { href: "/admin/ctf", label: "CTF Challenges" },
   { href: "/admin/investigations", label: "Investigations" },
+  { href: "/admin/capstones", label: "Capstones" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   "/learn",
   "/labs",
   "/ctf",
+  "/capstones",
   "/mentor",
   "/scanner",
   "/investigate",

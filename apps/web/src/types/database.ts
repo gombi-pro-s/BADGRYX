@@ -318,6 +318,30 @@ export type CtfSubmissionRow = {
   submitted_at: string;
 };
 
+export type CapstoneStatus = "submitted" | "under_review" | "passed" | "needs_revision";
+
+export type CapstoneRow = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  report_required: boolean;
+  published: boolean;
+  created_at: string;
+};
+
+export type CapstoneSubmissionRow = {
+  id: string;
+  capstone_id: string;
+  user_id: string;
+  report_content: string | null;
+  status: CapstoneStatus;
+  reviewer_id: string | null;
+  reviewer_notes: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+};
+
 export type InvestigationArtifactType =
   | "whois_record"
   | "email_headers"
@@ -834,6 +858,32 @@ export interface Database {
         Relationships: [];
       };
 
+      capstones: {
+        Row: CapstoneRow;
+        Insert: Partial<CapstoneRow> & { slug: string; title: string };
+        Update: Partial<CapstoneRow>;
+        Relationships: [];
+      };
+      capstone_skills: {
+        Row: { capstone_id: string; skill_id: string };
+        Insert: { capstone_id: string; skill_id: string };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      capstone_labs: {
+        Row: { capstone_id: string; lab_id: string };
+        Insert: { capstone_id: string; lab_id: string };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      capstone_submissions: {
+        Row: CapstoneSubmissionRow;
+        // Status/reviewer fields only ever change via review_capstone_submission().
+        Insert: { capstone_id: string; user_id: string; report_content?: string | null };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+
       investigations: {
         Row: InvestigationRow;
         Insert: Partial<InvestigationRow> & { slug: string; title: string; category: LabCategory; difficulty: DifficultyLevel };
@@ -1074,6 +1124,10 @@ export interface Database {
       count_my_scan_enrichments_today: {
         Args: Record<string, never>;
         Returns: number;
+      };
+      review_capstone_submission: {
+        Args: { p_submission_id: string; p_status: CapstoneStatus; p_notes?: string | null };
+        Returns: CapstoneSubmissionRow;
       };
       create_organization_invitation: {
         Args: { p_organization_id: string; p_email: string; p_role?: OrgRole };

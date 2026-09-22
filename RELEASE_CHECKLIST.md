@@ -288,7 +288,26 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       only, no dedicated exam-mode UI (timer, restricted hints) yet
 - [x] Capstone schema with staff-reviewed report submissions
 - [ ] Arena/mission UI, timers, leaderboard (not started)
-- [ ] Capstone submission/review UI (schema + RLS only)
+- [x] Capstone submission/review UI: `review_capstone_submission()` is now
+      the only way a submission's status changes (the blanket staff UPDATE
+      RLS policy was dropped, mirroring the scanner finding lifecycle in
+      ADR 0008) — it independently re-verifies staff status, blocks a
+      staff member from reviewing their own submission, and blocks
+      re-reviewing an already-passed submission. Added `'capstone'` to
+      `skill_evidence_type` and to `recompute_skill_state()`'s
+      DEMONSTRATED/MASTERED rules (the same independent-demonstration
+      weight as `unguided_lab`/`ctf`/`investigation`) — a passed capstone
+      now genuinely advances the skills it's tagged with via real
+      `skill_evidence`, and a `needs_revision` review records a real
+      failed attempt rather than being silently dropped; `capstone_skills`
+      existed since day one but was never actually used until this. 8 SQL
+      regression assertions (`supabase/tests/014_capstone_review.sql`).
+      Admin CMS at `/admin/capstones` (CRUD, skill tagging, related-lab
+      tagging, and an inline review queue per capstone with a
+      status/notes form). Learner UI at `/capstones` (published list with
+      a per-user latest-status badge) and `/capstones/[capstoneId]`
+      (description, linked skills/labs, submission history with reviewer
+      notes, and a report submission form)
 
 ## AI Security Mentor / AI-assisted scanning
 
@@ -495,17 +514,18 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 108 SQL regression assertions (RLS + grading + entitlements + a full
-      seeded-content walkthrough + org-instructor visibility + invitations)
+- [x] 116 SQL regression assertions (RLS + grading + entitlements + a full
+      seeded-content walkthrough + org-instructor visibility + invitations +
+      capstone review lifecycle)
 - [x] 198 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety, security scanner rule engine + enrichment prompt +
       status transitions, lab terminal path resolution + command
       interpreter + real-permission enforcement + the seeded lab's
       solvability)
-- [x] 17 e2e smoke tests (public pages, auth wall across all protected
-      sections including `/scanner`/`/orgs`, an invite link's `?next=`
-      round-trip, login error handling)
+- [x] 18 e2e smoke tests (public pages, auth wall across all protected
+      sections including `/scanner`/`/orgs`/`/capstones`, an invite link's
+      `?next=` round-trip, login error handling)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified
       via typecheck/lint/build; no dedicated e2e tests exercising the forms
       themselves yet — would need a real Supabase project or a more

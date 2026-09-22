@@ -144,12 +144,20 @@ for how it stays grounded in real data and cannot fabricate progress.
   limits; only an admin or `service_role` can change a subscription.
 - **Audit log**: append-only, RLS-protected, written only via
   `log_audit_event()`.
+- **Capstones** (`/capstones`): real, comprehensive projects a human
+  reviews by hand, not autograded. `review_capstone_submission()` is the
+  only way a submission's status changes (mirrors the scanner finding
+  lifecycle, ADR 0008) — it blocks a staff member from reviewing their own
+  submission and from re-reviewing an already-passed one. A passed capstone
+  genuinely advances every skill it's tagged with via real `skill_evidence`
+  (the same independent-demonstration weight as an unguided lab, CTF, or
+  investigation); a `needs_revision` review records a real failed attempt,
+  not a silent drop. Admin authoring + an inline review queue at
+  `/admin/capstones`.
 
-## What is designed but not yet UI-wired
+## What's not built yet
 
-Capstone submissions have a complete schema and RLS policies (staff-reviewed
-report submissions) but no learner-facing submission/review UI yet. See
-[`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
+See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (Blue/Purple Team scenarios, Cyber Range,
 Arena/exam timers, live billing, mobile app, i18n, PWA).
 
