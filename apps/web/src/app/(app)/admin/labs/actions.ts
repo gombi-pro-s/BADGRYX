@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { hashFlag } from "@/lib/security/flag-hash";
+import { environmentSpecSchema } from "@/lib/terminal/spec";
 import type { DifficultyLevel, LabCategory } from "@/types/database";
 
 export interface FormState {
@@ -204,6 +205,65 @@ export async function deleteFlagAction(labId: string, flagId: string) {
   await requireAdmin();
   const supabase = await createClient();
   const { error } = await supabase.from("lab_flags").delete().eq("id", flagId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/labs/${labId}`);
+}
+
+// ---- Terminal environment ---------------------------------------------------
+//
+// The spec is validated with the exact same zod schema
+// (lib/terminal/spec.ts's environmentSpecSchema) the terminal execution
+// engine parses it with, so a spec that saves here is guaranteed to be one
+// lib/terminal/execute.ts can actually run -- an admin can't save something
+// invalid and only discover it's broken when a learner hits it.
+
+const environmentFormSchema = z.object({
+  variant_seed: z.coerce.number().int().min(0).max(9999),
+  spec_json: z.string().trim().min(1, "Spec JSON is required."),
+});
+
+export async function saveEnvironmentAction(labId: string, _prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAdmin();
+  const parsed = environmentFormSchema.safeParse({
+    variant_seed: formData.get("variant_seed"),
+    spec_json: formData.get("spec_json"),
+  });
+  if (!parsed.success) return { error: firstIssue(parsed, "Invalid input.") };
+
+  let rawSpec: unknown;
+  try {
+    rawSpec = JSON.parse(parsed.data.spec_json);
+  } catch {
+    return { error: "Spec is not valid JSON." };
+  }
+
+  const specParsed = environmentSpecSchema.safeParse(rawSpec);
+  if (!specParsed.success) {
+    return { error: `Spec failed validation: ${specParsed.error.issues[0]?.message} (at ${specParsed.error.issues[0]?.path.join(".")})` };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("lab_environments").upsert(
+    {
+      lab_id: labId,
+      variant_seed: parsed.data.variant_seed,
+      // EnvironmentSpec has known fields, not an index signature -- jsonb
+      // storage doesn't care about that distinction (see the same cast in
+      // lib/terminal/execute.ts).
+      spec: specParsed.data as unknown as Record<string, unknown>,
+    },
+    { onConflict: "lab_id,variant_seed" },
+  );
+  if (error) return { error: error.message };
+
+  revalidatePath(`/admin/labs/${labId}`);
+  return { error: null };
+}
+
+export async function deleteEnvironmentAction(labId: string, environmentId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.from("lab_environments").delete().eq("id", environmentId);
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/labs/${labId}`);
 }

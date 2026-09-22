@@ -1,5 +1,5 @@
 import type { EnvironmentSpec, TerminalState } from "./spec";
-import { getEntry, isDirectory, isFile, listChildren, resolvePath } from "./path";
+import { canReadFile, getEntry, isDirectory, isFile, listChildren, resolvePath } from "./path";
 import { tokenize } from "./tokenize";
 
 export interface CommandResult {
@@ -45,6 +45,7 @@ function readTarget(spec: EnvironmentSpec, state: TerminalState, args: string[])
     return { error: `${target}: No such file or directory` };
   }
   if (entry.type !== "file") return { error: `${target}: Is a directory` };
+  if (!canReadFile(entry, state.user)) return { error: `${target}: Permission denied` };
   return { path, content: entry.content };
 }
 
@@ -132,6 +133,10 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
         outputs.push(`cat: ${target}: Is a directory`);
         continue;
       }
+      if (!canReadFile(entry, state.user)) {
+        outputs.push(`cat: ${target}: Permission denied`);
+        continue;
+      }
       outputs.push(entry.content);
       if (!newDiscovered.includes(path)) newDiscovered = [...newDiscovered, path];
     }
@@ -207,17 +212,26 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
       return { output: `grep: invalid pattern: ${pattern}`, state };
     }
 
-    const filesToSearch: string[] = recursive
-      ? Object.keys(spec.filesystem).filter(
-          (p) => isFile(spec, p) && (p === startPath || p.startsWith(startPath === "/" ? "/" : `${startPath}/`)),
-        )
-      : isFile(spec, startPath)
-        ? [startPath]
-        : [];
-
-    if (filesToSearch.length === 0 && !recursive) {
-      return { output: `grep: ${target}: No such file or directory`, state };
+    if (!recursive) {
+      const entry = getEntry(spec, startPath);
+      if (!entry || entry.type !== "file") {
+        return { output: `grep: ${target}: No such file or directory`, state };
+      }
+      if (!canReadFile(entry, state.user)) {
+        return { output: `grep: ${target}: Permission denied`, state };
+      }
     }
+
+    const filesToSearch: string[] = recursive
+      ? Object.keys(spec.filesystem).filter((p) => {
+          const entry = getEntry(spec, p);
+          return (
+            entry?.type === "file" &&
+            canReadFile(entry, state.user) &&
+            (p === startPath || p.startsWith(startPath === "/" ? "/" : `${startPath}/`))
+          );
+        })
+      : [startPath];
 
     const lines: string[] = [];
     for (const path of filesToSearch) {

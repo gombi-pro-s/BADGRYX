@@ -119,12 +119,13 @@ describe("executeCommand: cat", () => {
     expect(output).toContain("No such file or directory");
   });
 
-  it("cannot read the root-owned flag as a plain user (the file exists but this interpreter doesn't enforce perms beyond narrative -- confirmed readable regardless, since perms are descriptive not enforced in v1)", () => {
-    // Documented v1 limitation: `perms`/`owner` are rendered in `ls -l` but
-    // not enforced by cat/head/tail -- enforcing real Unix permission
-    // semantics (including sudo elevation actually mattering) is a
-    // deliberate scope boundary for now, same as no pipes/redirects.
+  it("refuses to read a root-owned, non-world-readable file as a plain user", () => {
     const { output } = executeCommand(fixtureSpec, start(), "cat /root/flag.txt");
+    expect(output).toBe("cat: /root/flag.txt: Permission denied");
+  });
+
+  it("can read the same file once elevated to root", () => {
+    const { output } = executeCommand(fixtureSpec, { ...start(), user: "root" }, "cat /root/flag.txt");
     expect(output).toBe("ICOREPEN{root_access_confirmed}");
   });
 });
@@ -217,6 +218,44 @@ describe("executeCommand: sudo", () => {
   it("cat's own discovered-path bookkeeping still applies when run via sudo", () => {
     const { state } = executeCommand(fixtureSpec, start(), "sudo cat /root/flag.txt");
     expect(state.discovered).toContain("/root/flag.txt");
+  });
+});
+
+describe("executeCommand: file permissions", () => {
+  it("the owner can read their own non-world-readable file", () => {
+    const { output } = executeCommand(fixtureSpec, start(), "cat .bash_history");
+    expect(output).toBe("ssh admin@10.0.0.5\ncat /var/backups/db.sql | grep password");
+  });
+
+  it("a non-owner cannot read another user's non-world-readable file", () => {
+    const { output } = executeCommand(fixtureSpec, { ...start(), user: "someoneelse" }, "cat /home/user/.bash_history");
+    expect(output).toBe("cat: /home/user/.bash_history: Permission denied");
+  });
+
+  it("root can read any file regardless of owner/perms", () => {
+    const { output } = executeCommand(fixtureSpec, { ...start(), user: "root" }, "cat /home/user/.bash_history");
+    expect(output).toContain("ssh admin@10.0.0.5");
+  });
+
+  it("head/tail/wc also refuse an unreadable file", () => {
+    expect(executeCommand(fixtureSpec, start(), "head /root/flag.txt").output).toBe("head: /root/flag.txt: Permission denied");
+    expect(executeCommand(fixtureSpec, start(), "tail /root/flag.txt").output).toBe("tail: /root/flag.txt: Permission denied");
+    expect(executeCommand(fixtureSpec, start(), "wc /root/flag.txt").output).toBe("wc: /root/flag.txt: Permission denied");
+  });
+
+  it("grep on a single unreadable file is refused", () => {
+    const { output } = executeCommand(fixtureSpec, start(), "grep ICOREPEN /root/flag.txt");
+    expect(output).toBe("grep: /root/flag.txt: Permission denied");
+  });
+
+  it("recursive grep silently skips unreadable files rather than leaking their content", () => {
+    const { output } = executeCommand(fixtureSpec, start(), "grep -r ICOREPEN /root");
+    expect(output).toBe("");
+  });
+
+  it("world-readable files with no explicit perms are readable by anyone", () => {
+    const { output } = executeCommand(fixtureSpec, { ...start(), user: "someoneelse" }, "cat notes.txt");
+    expect(output).toContain("TODO");
   });
 });
 

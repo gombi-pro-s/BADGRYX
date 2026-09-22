@@ -6,6 +6,7 @@ import { setLabSkillsAction, toggleLabPublishedAction } from "../actions";
 import { EditLabForm } from "./edit-lab-form";
 import { HintsManager } from "./hints-manager";
 import { FlagsManager } from "./flags-manager";
+import { EnvironmentManager } from "./environment-manager";
 
 export default async function AdminLabDetailPage({
   params,
@@ -15,7 +16,7 @@ export default async function AdminLabDetailPage({
   const { labId } = await params;
   const supabase = await createClient();
 
-  const [{ data: lab }, { data: allSkills }, { data: labSkills }, { data: hints }, { data: flags }] =
+  const [{ data: lab }, { data: allSkills }, { data: labSkills }, { data: hints }, { data: flags }, { data: environments }] =
     await Promise.all([
       supabase
         .from("labs")
@@ -26,6 +27,7 @@ export default async function AdminLabDetailPage({
       supabase.from("lab_skills").select("skill_id").eq("lab_id", labId),
       supabase.from("lab_hints").select("id, level, content, point_cost").eq("lab_id", labId),
       supabase.from("lab_flags").select("id, label, variant_seed").eq("lab_id", labId),
+      supabase.from("lab_environments").select("id, variant_seed, spec").eq("lab_id", labId).order("variant_seed"),
     ]);
 
   if (!lab) notFound();
@@ -67,9 +69,14 @@ export default async function AdminLabDetailPage({
         <HintsManager labId={lab.id} hints={hints ?? []} />
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="mb-6 rounded-lg border border-border bg-surface p-6">
         <h3 className="mb-4 text-sm font-semibold text-foreground">Flags</h3>
         <FlagsManager labId={lab.id} flags={flags ?? []} />
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface p-6">
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Terminal environment</h3>
+        <EnvironmentManager labId={lab.id} environments={environments ?? []} />
       </div>
     </div>
   );

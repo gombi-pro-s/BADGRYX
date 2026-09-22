@@ -158,8 +158,23 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] `labs.has_terminal` — a denormalized, non-secret flag (kept accurate
       by trigger) so the learner UI can offer a terminal launcher without
       ever querying `lab_environments` directly
-- [ ] Admin authoring UI for lab environments + a real seeded terminal lab
-      — not built yet
+- [x] Admin authoring UI for lab environments (`/admin/labs/[labId]`'s
+      "Terminal environment" section) — a JSON spec editor, validated
+      server-side against the exact same `environmentSpecSchema` the
+      execution engine parses with, so a spec that saves is guaranteed
+      runnable; multiple variants (by `variant_seed`) supported
+- [x] One complete real terminal lab seeded end-to-end: "Linux Privilege
+      Escalation: Misconfigured Sudo" (`linux-privesc-sudo-cat`) — a real,
+      well-known technique (an unrestricted sudo rule on `cat`, documented
+      in GTFOBins), not an invented puzzle. Proven actually solvable
+      through the interpreter (not just schema-valid) by
+      `lib/terminal/__tests__/seeded-lab.test.ts`, which also caught a real
+      design bug: the interpreter didn't enforce the `owner`/`perms` fields
+      it rendered in `ls -l`, so the flag was readable via plain `cat`
+      without ever needing `sudo`. Fixed by adding real (if simplified)
+      Unix read-permission enforcement to `cat`/`head`/`tail`/`wc`/`grep`
+      before this lab shipped — see `lib/terminal/path.ts`'s `canReadFile`.
+      8 more unit tests covering permission enforcement specifically
 - [ ] Terminal UI component wired into `/labs/[labId]` — not built yet
 - [ ] Lab engine runtime for an actual live/networked target (a real VM or
       container per attempt) is intentionally out of scope — the terminal
@@ -342,10 +357,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 - [x] 82 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
-- [x] 171 unit tests (validation logic, env guards, UI components, AI
+- [x] 183 unit tests (validation logic, env guards, UI components, AI
       Mentor prompt safety, security scanner rule engine + enrichment
-      prompt + status transitions, lab terminal path resolution +
-      command interpreter)
+      prompt + status transitions, lab terminal path resolution + command
+      interpreter + real-permission enforcement + the seeded lab's
+      solvability)
 - [x] 14 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`, login error handling)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified

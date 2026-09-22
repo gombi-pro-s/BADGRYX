@@ -90,13 +90,19 @@ END $$;
 
 -- ============================================================================
 -- 2. Staff CAN read lab_environments (needed to author/review it).
+--    Scoped to this test's own fixture lab, not a bare count(*), since
+--    real seeded content (supabase/migrations/20260922000007_seed_terminal_lab.sql)
+--    also has a lab_environments row and this test shouldn't be coupled to
+--    exactly how much of that exists.
 -- ============================================================================
 CALL test_act_as('33333333-3333-3333-3333-333333333333');
 DO $$
 DECLARE cnt int;
 BEGIN
-  SELECT count(*) INTO cnt FROM public.lab_environments;
-  IF cnt <> 1 THEN RAISE EXCEPTION 'FAIL: staff should see 1 lab_environments row, saw %', cnt; END IF;
+  SELECT count(*) INTO cnt FROM public.lab_environments le
+    JOIN public.labs l ON l.id = le.lab_id
+    WHERE l.slug = 'test-terminal-lab';
+  IF cnt <> 1 THEN RAISE EXCEPTION 'FAIL: staff should see 1 lab_environments row for the test lab, saw %', cnt; END IF;
   RAISE NOTICE 'PASS: staff can read lab_environments';
 END $$;
 

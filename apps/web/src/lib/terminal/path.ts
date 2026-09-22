@@ -39,6 +39,25 @@ export function isFile(spec: EnvironmentSpec, path: string): boolean {
   return getEntry(spec, path)?.type === "file";
 }
 
+/**
+ * Real (if simplified) Unix read-permission check: root can read anything;
+ * the declared owner is checked against the owner triad of `perms`
+ * ("rwxr-xr-x" -- positions 0-2), everyone else against the "other" triad
+ * (positions 6-8). No group modeling in v1. Defaults to world-readable
+ * ("rw-r--r--") when a file declares no perms, matching a typical default
+ * umask. This is what actually makes a "misconfigured sudo" / privilege
+ * escalation lab meaningful -- without it, `cat` would happily return any
+ * file's content regardless of ownership, and sudo would never matter.
+ */
+export function canReadFile(entry: FilesystemEntry, user: string): boolean {
+  if (user === "root") return true;
+  const perms = entry.perms ?? "rw-r--r--";
+  if (entry.owner && entry.owner === user) {
+    return perms[0] === "r";
+  }
+  return perms[6] === "r";
+}
+
 export interface DirectoryChild {
   name: string;
   path: string;

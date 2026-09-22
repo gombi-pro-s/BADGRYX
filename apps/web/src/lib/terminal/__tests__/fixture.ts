@@ -25,7 +25,7 @@ export const fixtureSpec: EnvironmentSpec = {
       type: "file",
       content: "-- dump\nINSERT INTO users (username, password) VALUES ('admin', 'hunter2');\n-- end",
       owner: "root",
-      perms: "rw-------",
+      perms: "rw-r--r--",
     },
     "/root/flag.txt": { type: "file", content: "ICOREPEN{root_access_confirmed}", owner: "root", perms: "rw-------" },
     "/tmp": { type: "dir", owner: "root", perms: "rwxrwxrwt" },
