@@ -78,12 +78,12 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 150 SQL regression assertions passing against a real Postgres instance
+- [x] 154 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
-- [x] 9 real bugs found and fixed during development — see
-      `SECURITY_AUDIT.md` (AUDIT-001 through AUDIT-009). 8 of the 9 have a
+- [x] 10 real bugs found and fixed during development — see
+      `SECURITY_AUDIT.md` (AUDIT-001 through AUDIT-010). 9 of the 10 have a
       dedicated regression test; AUDIT-009 (a context-type allowlist drift
       between `/mentor`'s page and its API route) was instead fixed
       structurally, by replacing both hand-duplicated arrays with one
@@ -635,7 +635,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       a user who had ever granted a role, created an org, authored
       content, reviewed a capstone, or been logged to `audit_log` (i.e.
       almost any admin) would have failed outright with a foreign key
-      violation. See `docs/adr/0012-account-deletion.md`.
+      violation. See `docs/adr/0012-account-deletion.md`. A related,
+      separately-discovered gap — `subscriptions.subject_id` (polymorphic,
+      so it can't carry a normal FK at all) leaving orphaned subscription
+      rows behind on deletion — was found and fixed afterward; see
+      `SECURITY_AUDIT.md` AUDIT-010.
 - [x] User-facing "delete my account" flow — `/settings/privacy`: type
       your exact email to confirm, then `deleteMyAccountAction()`
       audit-logs the deletion (while the session is still valid) and
@@ -704,12 +708,12 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 150 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 154 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
       capstone review lifecycle + the seeded standalone exam + the real
       pro plan's entitlements + admin role management + org-scoped audit
       log coverage + account deletion + org member management + login
-      rate limiting)
+      rate limiting + subscription cleanup on user/org deletion)
 - [x] 230 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety including the EXPLAIN_FINDING grounding, security

@@ -127,6 +127,19 @@ currently-absent control, tracked for a later phase), `INFORMATIONAL`.
 - **Verification**: `tsc --noEmit` clean; manually traced both call sites to confirm they now import the same constant.
 - **Status**: `FIXED`.
 
+## AUDIT-010 — `subscriptions.subject_id` has no real foreign key, so deleting a user or organization orphaned their subscription row forever
+
+- **Severity**: Medium (data-integrity/privacy hygiene, not an access-control break — an orphaned row was never readable by anyone once its subject was gone, RLS on `subscriptions` is subject-scoped)
+- **Confidence**: Confirmed by direct reproduction against the local test DB
+- **Component**: `public.subscriptions` (`supabase/migrations/20260921000011_entitlements.sql`)
+- **Description**: `subscriptions.subject_id` is deliberately polymorphic — it holds either an `auth.users.id` or an `organizations.id` depending on `subject_type`, so it structurally cannot carry a normal single-table foreign key. ADR 0012's account-deletion work fixed all 8 *attribution* columns referencing `auth.users` (`granted_by`, `created_by`, etc.), but `subject_id` is neither of ADR 0012's two categories — it's not attribution, and it has no FK at all to be missing an `ON DELETE` clause on. That combination meant nothing was checking it.
+- **Evidence**: Reproduced directly: inserted a real `subscriptions` row for a test user (`subject_type = 'user'`), deleted that user from `auth.users`, then queried `subscriptions WHERE subject_id = <the deleted id>` — the row was still there, `DELETE FROM auth.users` succeeded with no error (nothing to violate), and nothing cleaned it up.
+- **Impact**: Every deleted user's (and every deleted organization's) subscription history would accumulate permanently as orphaned rows referencing a subject that no longer exists — silent data hygiene rot, not immediately visible in any UI (RLS already made these rows unreadable by anyone once the subject was gone) but a real, growing correctness gap in the schema, and exactly the kind of thing `SELECT * FROM subscriptions` on the Supabase dashboard would eventually surface as confusing.
+- **Root cause**: A polymorphic reference column, by definition, can't use a normal `REFERENCES` constraint — the schema needs an explicit substitute (a trigger) for what a real FK would otherwise enforce, and none was added when `subscriptions` was designed.
+- **Fix**: Two `AFTER DELETE` triggers (`supabase/migrations/20260922000023_subscription_cleanup_on_delete.sql`) on `auth.users` and `public.organizations`, each deleting matching `subscriptions` rows for that subject — mirroring the `AFTER INSERT` triggers that already exist on both tables for the opposite direction (`handle_new_user_free_plan`, `handle_new_organization`). Deletion (not nulling) is correct here because `subject_id` is ownership, not attribution — the row's entire reason to exist is that specific user or organization.
+- **Verification**: `supabase/tests/021_subscription_cleanup_on_delete.sql` — deleting a user with a real (trigger-created) free-plan subscription removes exactly that row, leaves a different user's and an unrelated organization's subscriptions untouched, and deleting an organization removes its own subscription row too.
+- **Status**: `FIXED`.
+
 ---
 
 ## Verified controls (tested, not just asserted)
