@@ -1,5 +1,6 @@
 "use client";
 
+import Script from "next/script";
 import { useActionState } from "react";
 import { signUpAction, type AuthActionState } from "../actions";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { FormError, Input, Label } from "@/components/ui/input";
 
 const initialState: AuthActionState = { error: null };
 
-export function SignupForm() {
+export function SignupForm({ turnstileSiteKey }: { turnstileSiteKey: string | null }) {
   const [state, formAction, pending] = useActionState(signUpAction, initialState);
 
   return (
@@ -23,6 +24,15 @@ export function SignupForm() {
           At least 12 characters, with uppercase, lowercase, and a number.
         </p>
       </div>
+      {turnstileSiteKey && (
+        <>
+          {/* Cloudflare's script implicitly renders every .cf-turnstile div it finds
+              and injects a hidden "cf-turnstile-response" input into this form itself
+              -- no explicit JS API call needed. See MANUAL_SETUP.md §8. */}
+          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" async defer />
+          <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />
+        </>
+      )}
       <FormError>{state.error}</FormError>
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Creating account..." : "Create account"}

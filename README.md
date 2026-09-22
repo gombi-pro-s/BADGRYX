@@ -195,6 +195,12 @@ and
   This is the one place in the schema that grants `EXECUTE` to the `anon`
   Postgres role, since a login attempt is by definition pre-session. See
   [`docs/adr/0014-login-rate-limiting.md`](./docs/adr/0014-login-rate-limiting.md).
+- **Bot protection on signup**: real Cloudflare Turnstile integration
+  (`apps/web/src/lib/turnstile/`), enforced in `signUpAction()`. Same
+  "fully real, gracefully not-configured without keys" shape as the
+  billing providers — without `TURNSTILE_SECRET_KEY`/
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` set, `/signup` renders no widget and
+  behaves exactly as before.
 - **Capstones** (`/capstones`): real, comprehensive projects a human
   reviews by hand, not autograded. `review_capstone_submission()` is the
   only way a submission's status changes (mirrors the scanner finding

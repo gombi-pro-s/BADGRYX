@@ -12,7 +12,7 @@ export default function SignupPage() {
         Start learning, practicing, and proving real security skill.
       </p>
       <div className="mt-6">
-        <SignupForm />
+        <SignupForm turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? null} />
       </div>
       <p className="mt-6 text-center text-sm text-foreground-muted">
         Already have an account?{" "}

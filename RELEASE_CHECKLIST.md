@@ -38,8 +38,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       IP-keyed — a deliberate, documented trade-off, see
       `docs/adr/0014-login-rate-limiting.md`. 6 SQL regression assertions
       (`supabase/tests/020_login_rate_limiting.sql`)
-- [ ] CAPTCHA/bot protection on signup (a different attack — account
-      creation abuse, not credential guessing — still unaddressed)
+- [x] CAPTCHA/bot protection on signup: Cloudflare Turnstile, fully wired
+      end to end (`apps/web/src/lib/turnstile/` — `turnstile.ts` pure
+      request/response logic, `turnstile-client.ts` the real
+      `siteverify` call, `env.ts` the `isTurnstileConfigured()` guard) and
+      enforced in `signUpAction()`. Same "real integration, graceful
+      no-op without real keys" shape as the billing providers: without
+      `NEXT_PUBLIC_TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY` configured
+      (see `MANUAL_SETUP.md` §8), `/signup` renders no widget and nothing
+      is enforced — identical to today's behavior, not a broken signup
+      flow. 6 unit tests for the pure verify-request/response logic
+      (`apps/web/src/lib/turnstile/__tests__/turnstile.test.ts`)
 
 ## Authorization / RBAC
 
@@ -680,13 +689,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       pro plan's entitlements + admin role management + org-scoped audit
       log coverage + account deletion + org member management + login
       rate limiting)
-- [x] 222 unit tests (validation logic, env guards, UI components including
+- [x] 228 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety, security scanner rule engine + enrichment prompt +
       status transitions, lab terminal path resolution + command
       interpreter + real-permission enforcement + the seeded lab's
       solvability, live billing signature verification + request-building
-      for Stripe/Paystack/Flutterwave)
+      for Stripe/Paystack/Flutterwave, Turnstile verify-request/response
+      logic)
 - [x] 19 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`, an
       invite link's `?next=` round-trip, login error handling)

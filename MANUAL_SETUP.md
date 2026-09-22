@@ -339,6 +339,43 @@ to catch config drift against real values instead of placeholders).
 
 ---
 
+## 8. Bot protection on signup (optional)
+
+**Required for**: blocking automated account-creation spam. The signup
+form's server action, `signUpAction()`, already contains the real
+verification call
+(`apps/web/src/lib/turnstile/turnstile-client.ts`'s `verifyTurnstileToken()`)
+— until you complete this section, `/signup` simply renders no CAPTCHA
+widget at all and every signup proceeds unchecked, exactly as it does
+today.
+
+1. **What**: Create a free Cloudflare account and a Turnstile widget (no
+   domain ownership/DNS changes to your existing site required — Turnstile
+   is independent of whether Cloudflare is your DNS/CDN provider).
+2. **Where**: https://dash.cloudflare.com/?to=/:account/turnstile → Add
+   site. Widget mode: "Managed" (Cloudflare's recommendation; invisible
+   unless it needs to challenge the visitor).
+3. **Exact value**: Copy the **Site Key** into
+   `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and the **Secret Key** into
+   `TURNSTILE_SECRET_KEY`.
+4. **Why**: The site key is safe to ship to the browser (it only lets a
+   page *request* a challenge) and renders the widget on `/signup`; the
+   secret key is what `verifyTurnstileToken()` uses server-side to confirm
+   the token the widget produced is real, against Cloudflare's
+   `siteverify` endpoint — the same "public key renders, secret key
+   verifies" split every payment provider above uses.
+5. **Verify**: With both vars set, visit `/signup` — a Turnstile widget
+   should appear above the "Create account" button. Submitting without
+   completing it (or with a stale/replayed token) is rejected with
+   "Verification failed. Please try again."; completing it normally lets
+   signup proceed exactly as before.
+6. **Expected result**: Automated signup requests that never load/solve
+   the widget can no longer create accounts at all.
+7. **Required for**: optional — every signup path works identically
+   without this configured, just without bot protection.
+
+---
+
 ## What's already handled without your action
 
 - Local database testing (`scripts/run-sql-tests.sh`) needs no Supabase

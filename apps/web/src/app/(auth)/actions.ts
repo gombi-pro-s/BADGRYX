@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { emailSchema, passwordSchema } from "@/lib/auth/validation";
+import { isTurnstileConfigured } from "@/lib/turnstile/env";
+import { verifyTurnstileToken } from "@/lib/turnstile/turnstile-client";
 
 export interface AuthActionState {
   error: string | null;
@@ -22,6 +24,18 @@ export async function signUpAction(
   const passwordResult = passwordSchema.safeParse(password);
   if (!passwordResult.success) {
     return { error: passwordResult.error.issues[0]?.message ?? "Invalid password." };
+  }
+
+  // Only enforced when a real Turnstile site is configured (see
+  // MANUAL_SETUP.md §8) -- without it, signup behaves exactly as before,
+  // the same "not configured" graceful degradation as the billing
+  // providers.
+  if (isTurnstileConfigured()) {
+    const turnstileToken = String(formData.get("cf-turnstile-response") ?? "");
+    const verified = await verifyTurnstileToken(turnstileToken);
+    if (!verified) {
+      return { error: "Verification failed. Please try again." };
+    }
   }
 
   const supabase = await createClient();
