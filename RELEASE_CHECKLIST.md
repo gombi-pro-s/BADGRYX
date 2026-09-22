@@ -196,10 +196,16 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       ownership isolation, cross-user insert/transition rejection, illegal
       state transitions rejected, full legal attack → fix → retest path,
       idempotent re-assertion, audit log coverage
-- [ ] Deterministic static-analysis rule engine (secrets, SQLi, XSS, command
+- [x] Deterministic static-analysis rule engine (`lib/scanner/rules/*.ts`):
+      12 rule modules covering secrets, SQL injection, XSS, command
       injection, path traversal, insecure eval, weak crypto, insecure CORS,
-      insecure cookies, cleartext HTTP, prototype pollution, unsafe
-      deserialization) — schema supports it; no rules implemented yet
+      insecure cookies, cleartext HTTP, prototype pollution, and unsafe
+      deserialization — pure functions, no model call, no network access.
+      Explicitly heuristic (regex/pattern-based, not a real parser or
+      dataflow analysis) and documented as such; that's why every finding
+      carries a `verification_status` and feeds the attack → fix → retest
+      workflow rather than being asserted as ground truth. 44 unit tests
+      (true positive + false positive per rule)
 - [ ] Scan orchestration (`POST /api/scanner/scan`) — not built
 - [ ] AI-assisted enrichment layer (explanation/triage only, never inventing
       findings) — not built
@@ -252,7 +258,8 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 - [x] 68 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
-- [x] 41 unit tests (validation logic, env guards, UI component, AI Mentor prompt safety)
+- [x] 85 unit tests (validation logic, env guards, UI component, AI Mentor
+      prompt safety, security scanner rule engine)
 - [x] 13 e2e smoke tests (public pages, auth wall across all protected
       sections, login error handling)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified

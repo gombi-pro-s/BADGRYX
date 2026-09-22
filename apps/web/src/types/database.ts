@@ -300,6 +300,96 @@ export type MentorMessageRow = {
   created_at: string;
 };
 
+export type ScanStatus = "queued" | "running" | "completed" | "failed";
+export type ScanTargetType = "pasted_snippet" | "uploaded_files";
+export type ScanFindingSeverity = "critical" | "high" | "medium" | "low" | "info";
+export type ScanFindingConfidence = "high" | "medium" | "low";
+export type ScanFindingCategory =
+  | "secrets"
+  | "sql_injection"
+  | "xss"
+  | "command_injection"
+  | "path_traversal"
+  | "insecure_eval"
+  | "weak_cryptography"
+  | "insecure_cors"
+  | "insecure_cookies"
+  | "cleartext_http"
+  | "prototype_pollution"
+  | "unsafe_deserialization"
+  | "other";
+export type ScanFindingVerificationStatus = "true_positive" | "false_positive" | "needs_review" | "informational";
+export type ScanFindingStatus =
+  | "discovered"
+  | "remediation_required"
+  | "fix_applied"
+  | "retested"
+  | "verified_fixed"
+  | "false_positive"
+  | "wont_fix";
+
+export type ScanRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  target_type: ScanTargetType;
+  status: ScanStatus;
+  total_files: number;
+  total_findings: number;
+  findings_by_severity: Record<string, number>;
+  error_message: string | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+};
+
+export type ScanFileRow = {
+  id: string;
+  scan_id: string;
+  filename: string;
+  language: string | null;
+  content: string;
+  size_bytes: number;
+  content_sha256: string;
+  created_at: string;
+};
+
+export type ReferenceLink = { title: string; url: string };
+
+export type ScanFindingRow = {
+  id: string;
+  scan_id: string;
+  file_id: string;
+  rule_id: string;
+  category: ScanFindingCategory;
+  title: string;
+  severity: ScanFindingSeverity;
+  confidence: ScanFindingConfidence;
+  line_start: number;
+  line_end: number;
+  evidence: string;
+  explanation: string;
+  impact: string;
+  remediation: string;
+  secure_example: string | null;
+  reference_links: ReferenceLink[];
+  verification_status: ScanFindingVerificationStatus;
+  ai_enriched: boolean;
+  status: ScanFindingStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ScanFindingStatusEventRow = {
+  id: number;
+  finding_id: string;
+  actor_id: string;
+  from_status: ScanFindingStatus;
+  to_status: ScanFindingStatus;
+  note: string | null;
+  created_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -595,6 +685,68 @@ export interface Database {
         Update: Record<string, never>;
         Relationships: [];
       };
+
+      scans: {
+        Row: ScanRow;
+        Insert: {
+          user_id: string;
+          title: string;
+          target_type: ScanTargetType;
+          status?: ScanStatus;
+          error_message?: string | null;
+          started_at?: string | null;
+          completed_at?: string | null;
+        };
+        Update: Partial<{
+          status: ScanStatus;
+          error_message: string | null;
+          started_at: string | null;
+          completed_at: string | null;
+        }>;
+        Relationships: [];
+      };
+      scan_files: {
+        Row: ScanFileRow;
+        Insert: {
+          scan_id: string;
+          filename: string;
+          language?: string | null;
+          content: string;
+          size_bytes: number;
+          content_sha256: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      scan_findings: {
+        Row: ScanFindingRow;
+        Insert: {
+          scan_id: string;
+          file_id: string;
+          rule_id: string;
+          category: ScanFindingCategory;
+          title: string;
+          severity: ScanFindingSeverity;
+          confidence: ScanFindingConfidence;
+          line_start: number;
+          line_end: number;
+          evidence: string;
+          explanation: string;
+          impact: string;
+          remediation: string;
+          secure_example?: string | null;
+          reference_links?: ReferenceLink[];
+          verification_status?: ScanFindingVerificationStatus;
+        };
+        Update: Record<string, never>; // status changes only via transition_scan_finding_status()
+        Relationships: [];
+      };
+      scan_finding_status_events: {
+        Row: ScanFindingStatusEventRow;
+        Insert: Record<string, never>; // written only by transition_scan_finding_status()
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: {
       quiz_questions_for_attempt: {
@@ -664,6 +816,10 @@ export interface Database {
           p_metadata?: Record<string, unknown>;
         };
         Returns: number;
+      };
+      transition_scan_finding_status: {
+        Args: { p_finding_id: string; p_new_status: ScanFindingStatus; p_note?: string | null };
+        Returns: ScanFindingRow;
       };
     };
     Enums: Record<string, never>;
