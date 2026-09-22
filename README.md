@@ -163,7 +163,12 @@ and
 - **Entitlements**: every user gets a real `free` plan on signup with real
   limits; only an admin or `service_role` can change a subscription.
 - **Audit log**: append-only, RLS-protected, written only via
-  `log_audit_event()`.
+  `log_audit_event()`. Covers grading, billing, platform roles, capstone
+  review, the scanner, the Mentor, every content type's publish toggle,
+  and the full organization invitation lifecycle — the last of these is
+  genuinely organization-scoped, so an org's own admin sees their org's
+  trail through the same RLS branch a platform admin uses, not a special
+  case.
 - **Capstones** (`/capstones`): real, comprehensive projects a human
   reviews by hand, not autograded. `review_capstone_submission()` is the
   only way a submission's status changes (mirrors the scanner finding

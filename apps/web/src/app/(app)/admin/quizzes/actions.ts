@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { logPublishToggle } from "@/lib/audit";
 import type { HintPolicy, QuestionType } from "@/types/database";
 
 export interface FormState {
@@ -57,6 +58,7 @@ export async function toggleQuizPublishedAction(quizId: string, published: boole
   const supabase = await createClient();
   const { error } = await supabase.from("quizzes").update({ published }).eq("id", quizId);
   if (error) throw new Error(error.message);
+  await logPublishToggle(supabase, "quiz", quizId, published);
   revalidatePath("/admin/quizzes");
   revalidatePath(`/admin/quizzes/${quizId}`);
 }

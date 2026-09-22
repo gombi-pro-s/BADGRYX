@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { hashInvestigationAnswer } from "@/lib/security/answer-hash";
+import { logPublishToggle } from "@/lib/audit";
 import type { DifficultyLevel, InvestigationArtifactType, LabCategory } from "@/types/database";
 
 export interface FormState {
@@ -115,6 +116,7 @@ export async function toggleInvestigationPublishedAction(investigationId: string
   const supabase = await createClient();
   const { error } = await supabase.from("investigations").update({ published }).eq("id", investigationId);
   if (error) throw new Error(error.message);
+  await logPublishToggle(supabase, "investigation", investigationId, published);
   revalidatePath("/admin/investigations");
   revalidatePath(`/admin/investigations/${investigationId}`);
 }

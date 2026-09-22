@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { logPublishToggle } from "@/lib/audit";
 import type { CapstoneStatus } from "@/types/database";
 
 export interface FormState {
@@ -83,6 +84,7 @@ export async function toggleCapstonePublishedAction(capstoneId: string, publishe
   const supabase = await createClient();
   const { error } = await supabase.from("capstones").update({ published }).eq("id", capstoneId);
   if (error) throw new Error(error.message);
+  await logPublishToggle(supabase, "capstone", capstoneId, published);
   revalidatePath("/admin/capstones");
   revalidatePath(`/admin/capstones/${capstoneId}`);
 }

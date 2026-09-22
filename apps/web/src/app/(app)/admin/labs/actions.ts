@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { hashFlag } from "@/lib/security/flag-hash";
 import { environmentSpecSchema } from "@/lib/terminal/spec";
+import { logPublishToggle } from "@/lib/audit";
 import type { DifficultyLevel, LabCategory } from "@/types/database";
 
 export interface FormState {
@@ -107,6 +108,7 @@ export async function toggleLabPublishedAction(labId: string, published: boolean
   const supabase = await createClient();
   const { error } = await supabase.from("labs").update({ published }).eq("id", labId);
   if (error) throw new Error(error.message);
+  await logPublishToggle(supabase, "lab", labId, published);
   revalidatePath("/admin/labs");
   revalidatePath(`/admin/labs/${labId}`);
 }

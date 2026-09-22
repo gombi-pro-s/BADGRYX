@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { hashFlag } from "@/lib/security/flag-hash";
+import { logPublishToggle } from "@/lib/audit";
 import type { CtfChallengeRow, DifficultyLevel, LabCategory } from "@/types/database";
 
 export interface FormState {
@@ -124,6 +125,7 @@ export async function toggleChallengePublishedAction(challengeId: string, publis
   const supabase = await createClient();
   const { error } = await supabase.from("ctf_challenges").update({ published }).eq("id", challengeId);
   if (error) throw new Error(error.message);
+  await logPublishToggle(supabase, "ctf_challenge", challengeId, published);
   revalidatePath("/admin/ctf");
   revalidatePath(`/admin/ctf/${challengeId}`);
 }

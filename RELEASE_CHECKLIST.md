@@ -60,7 +60,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 128 SQL regression assertions passing against a real Postgres instance
+- [x] 132 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -573,10 +573,33 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Logging / Auditing
 
 - [x] Append-only audit log, server-attributed, admin/org-admin readable only
-- [ ] Audit events wired into every section-34 action (only
-      `quiz.attempt.submitted`, `lab.flag.submitted`, `ctf.flag.submitted`,
-      `subscription.changed` currently log — login/role-change/etc. not
-      yet instrumented from application code)
+- [x] Audit coverage, real and growing (not every section-34 action, but a
+      meaningful, honestly-scoped set): grading (`quiz.attempt.submitted`,
+      `lab.flag.submitted`, `ctf.flag.submitted`,
+      `investigation.answers.submitted`), billing
+      (`subscription.changed`), platform roles
+      (`user_role.granted`/`user_role.revoked`), capstone review
+      (`capstone.submission.reviewed`), scanner (`scan.completed`, finding
+      status transitions, enrichment), the AI Mentor
+      (`mentor.message.sent`), and — new this phase — the full
+      organization invitation lifecycle (`organization.created`,
+      `org.invitation.created`, `org.invitation.accepted`,
+      `org.invitation.revoked`, all real `organization_id`-scoped so an
+      org's own admin can see their org's trail via the RLS branch that
+      already existed but nothing populated) and every content type's
+      publish/unpublish toggle (`learning_path`/`module`/`lesson`/`lab`/
+      `quiz`/`ctf_challenge`/`investigation`/`capstone` `.published`/
+      `.unpublished`, 8 call sites). 4 new SQL regression assertions
+      (`supabase/tests/017_audit_log_expansion.sql`) prove the org
+      invitation events are genuinely organization-scoped, not just
+      logged — a different org's admin cannot read them
+- [ ] Still not instrumented, an honest scope boundary rather than an
+      oversight: login/logout/password-reset (Supabase Auth's own system
+      has separate logging for these; wiring this app's `audit_log` to
+      every auth event would need an Auth hook, out of scope here), and
+      fine-grained content CRUD (create/edit/delete of an individual
+      lesson/question/etc., as opposed to its publish state, which is the
+      signal actually worth a support/debugging trail)
 
 ## CI/CD
 
@@ -592,10 +615,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 128 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 132 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
       capstone review lifecycle + the seeded standalone exam + the real
-      pro plan's entitlements + admin role management)
+      pro plan's entitlements + admin role management + org-scoped audit
+      log coverage)
 - [x] 222 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety, security scanner rule engine + enrichment prompt +

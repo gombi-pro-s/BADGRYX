@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { requireOrgAdmin } from "@/lib/auth/org";
 import { createClient } from "@/lib/supabase/server";
+import { logAuditEvent } from "@/lib/audit";
 import type { OrgRole } from "@/types/database";
 
 export interface FormState {
@@ -46,6 +47,8 @@ export async function createOrganizationAction(_prev: FormState, formData: FormD
   if (error || !data) {
     return { error: error?.code === "23505" ? "That slug is already in use." : (error?.message ?? "Failed to create organization.") };
   }
+
+  await logAuditEvent(supabase, "organization.created", "organization", data.id, data.id, { slug: parsed.data.slug });
 
   redirect(`/orgs/${data.id}`);
 }
@@ -90,6 +93,7 @@ export async function revokeInvitationAction(organizationId: string, invitationI
     .update({ revoked_at: new Date().toISOString() })
     .eq("id", invitationId);
   if (error) throw new Error(error.message);
+  await logAuditEvent(supabase, "org.invitation.revoked", "organization_invitation", invitationId, organizationId);
   revalidatePath(`/orgs/${organizationId}`);
 }
 

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { logPublishToggle } from "@/lib/audit";
 
 export interface FormState {
   error: string | null;
@@ -84,6 +85,7 @@ export async function togglePathPublishedAction(pathId: string, published: boole
   const supabase = await createClient();
   const { error } = await supabase.from("learning_paths").update({ published }).eq("id", pathId);
   if (error) throw new Error(error.message);
+  await logPublishToggle(supabase, "learning_path", pathId, published);
   revalidatePath("/admin/paths");
   revalidatePath(`/admin/paths/${pathId}`);
 }
@@ -127,6 +129,7 @@ export async function toggleModulePublishedAction(pathId: string, moduleId: stri
   const supabase = await createClient();
   const { error } = await supabase.from("modules").update({ published }).eq("id", moduleId);
   if (error) throw new Error(error.message);
+  await logPublishToggle(supabase, "module", moduleId, published);
   revalidatePath(`/admin/paths/${pathId}`);
   revalidatePath(`/admin/paths/${pathId}/${moduleId}`);
 }
@@ -216,6 +219,7 @@ export async function toggleLessonPublishedAction(
   const supabase = await createClient();
   const { error } = await supabase.from("lessons").update({ published }).eq("id", lessonId);
   if (error) throw new Error(error.message);
+  await logPublishToggle(supabase, "lesson", lessonId, published);
   revalidatePath(`/admin/paths/${pathId}/${moduleId}`);
   revalidatePath(`/admin/paths/${pathId}/${moduleId}/${lessonId}`);
 }
