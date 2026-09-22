@@ -51,7 +51,8 @@ export type SkillEvidenceType =
   | "ctf"
   | "assessment"
   | "remediation"
-  | "retest";
+  | "retest"
+  | "investigation";
 
 export type SkillEvidenceOutcome = "passed" | "failed" | "partial";
 
@@ -280,6 +281,79 @@ export type CtfSubmissionRow = {
   user_id: string;
   correct: boolean;
   points_awarded: number;
+  submitted_at: string;
+};
+
+export type InvestigationArtifactType =
+  | "whois_record"
+  | "email_headers"
+  | "social_media_profile"
+  | "file_metadata"
+  | "log_excerpt"
+  | "network_capture_summary"
+  | "document_excerpt"
+  | "chat_transcript";
+export type InvestigationQuestionType = "exact_text" | "multiple_choice";
+
+export type InvestigationRow = {
+  id: string;
+  slug: string;
+  title: string;
+  briefing: string | null;
+  category: LabCategory;
+  difficulty: DifficultyLevel;
+  objectives: unknown;
+  estimated_minutes: number;
+  points: number;
+  passing_score: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InvestigationArtifactRow = {
+  id: string;
+  investigation_id: string;
+  artifact_type: InvestigationArtifactType;
+  title: string;
+  content: string;
+  order_index: number;
+};
+
+export type InvestigationQuestionRow = {
+  id: string;
+  investigation_id: string;
+  question_text: string;
+  question_type: InvestigationQuestionType;
+  order_index: number;
+  points: number;
+  answer_hash: string | null;
+};
+
+export type InvestigationChoiceRow = {
+  id: string;
+  question_id: string;
+  choice_text: string;
+  is_correct: boolean;
+  order_index: number;
+};
+
+export type InvestigationInstanceRow = {
+  id: string;
+  investigation_id: string;
+  user_id: string;
+  notes: string;
+  started_at: string;
+  updated_at: string;
+};
+
+export type InvestigationSubmissionRow = {
+  id: string;
+  investigation_id: string;
+  user_id: string;
+  answers: Record<string, unknown>;
+  score: number;
+  passed: boolean;
   submitted_at: string;
 };
 
@@ -710,6 +784,58 @@ export interface Database {
         Relationships: [];
       };
 
+      investigations: {
+        Row: InvestigationRow;
+        Insert: Partial<InvestigationRow> & { slug: string; title: string; category: LabCategory; difficulty: DifficultyLevel };
+        Update: Partial<InvestigationRow>;
+        Relationships: [];
+      };
+      investigation_skills: {
+        Row: { investigation_id: string; skill_id: string };
+        Insert: { investigation_id: string; skill_id: string };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      investigation_artifacts: {
+        Row: InvestigationArtifactRow;
+        Insert: Partial<InvestigationArtifactRow> & {
+          investigation_id: string;
+          artifact_type: InvestigationArtifactType;
+          title: string;
+          content: string;
+        };
+        Update: Partial<InvestigationArtifactRow>;
+        Relationships: [];
+      };
+      investigation_questions: {
+        Row: InvestigationQuestionRow;
+        Insert: Partial<InvestigationQuestionRow> & {
+          investigation_id: string;
+          question_text: string;
+          question_type: InvestigationQuestionType;
+        };
+        Update: Partial<InvestigationQuestionRow>;
+        Relationships: [];
+      };
+      investigation_choices: {
+        Row: InvestigationChoiceRow;
+        Insert: Partial<InvestigationChoiceRow> & { question_id: string; choice_text: string };
+        Update: Partial<InvestigationChoiceRow>;
+        Relationships: [];
+      };
+      investigation_instances: {
+        Row: InvestigationInstanceRow;
+        Insert: { investigation_id: string; user_id: string; notes?: string };
+        Update: Partial<{ notes: string }>;
+        Relationships: [];
+      };
+      investigation_submissions: {
+        Row: InvestigationSubmissionRow;
+        Insert: Record<string, never>; // written only by submit_investigation_answers()
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+
       mentor_conversations: {
         Row: MentorConversationRow;
         Insert: { user_id: string; context_type?: MentorContextType; context_id?: string | null; title?: string | null };
@@ -828,6 +954,23 @@ export interface Database {
         };
         Relationships: [];
       };
+      investigation_questions_for_attempt: {
+        Row: {
+          investigation_id: string;
+          slug: string;
+          title: string;
+          passing_score: number;
+          question_id: string;
+          question_text: string;
+          question_type: InvestigationQuestionType;
+          order_index: number;
+          points: number;
+          choice_id: string | null;
+          choice_text: string | null;
+          choice_order_index: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       get_entitlement: {
@@ -845,6 +988,10 @@ export interface Database {
       submit_ctf_flag: {
         Args: { p_challenge_id: string; p_flag: string };
         Returns: CtfSubmissionRow;
+      };
+      submit_investigation_answers: {
+        Args: { p_investigation_id: string; p_answers: Record<string, string[] | string> };
+        Returns: InvestigationSubmissionRow;
       };
       unlock_lab_hint: {
         Args: { p_lab_instance_id: string; p_hint_id: string };

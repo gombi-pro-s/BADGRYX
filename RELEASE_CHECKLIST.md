@@ -50,7 +50,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 82 SQL regression assertions passing against a real Postgres instance
+- [x] 91 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -205,7 +205,34 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## OSINT / Forensics / Blue-Purple Team
 
-- [ ] Investigation workspace (not started)
+- [x] Investigation workspace schema: `investigations`, `investigation_artifacts`
+      (public case evidence -- WHOIS records, email headers, log excerpts,
+      chat transcripts; real synthetic text data, not a claim of doing
+      actual image/PCAP forensics), `investigation_questions`/
+      `investigation_choices` (mixed multiple_choice + exact_text, hidden
+      answer key exposed safely via `investigation_questions_for_attempt`,
+      same pattern as `quiz_questions_for_attempt`), `investigation_instances`
+      (a genuinely private per-user notes scratchpad -- not even
+      staff-readable, unlike almost every other owner-scoped table in this
+      app), `investigation_submissions`
+- [x] `submit_investigation_answers()` — grades multiple_choice by set
+      equality and exact_text by normalized (trimmed/lowercased) SHA-256
+      comparison, mirroring `submit_quiz_attempt()`/`submit_lab_flag()`;
+      records `skill_evidence`
+- [x] Added `'investigation'` to `skill_evidence_type` and to
+      `recompute_skill_state()`'s DEMONSTRATED/MASTERED rules, alongside
+      `unguided_lab`/`ctf` — independent correct answers are the same
+      category of unguided demonstration
+- [x] 9 SQL regression assertions
+      (`supabase/tests/010_investigation_rls.sql`): artifact visibility
+      follows `published`, answer key hidden but the safe view works,
+      mixed-type grading (including answer normalization) reaches
+      `DEMONSTRATED`, a wrong exact-text answer fails independently of a
+      correct multiple-choice one, and the notes-privacy model (not even
+      staff can read another user's notes)
+- [ ] Admin CRUD for investigations — not built yet
+- [ ] Learner investigation workspace UI (`/investigate`) — not built yet
+- [ ] One complete real investigation seeded end-to-end — not built yet
 - [ ] Blue/Purple Team scenario linkage (not started)
 
 ## CTF / Arena / Exams / Capstones
@@ -376,7 +403,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 82 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 91 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
 - [x] 193 unit tests (validation logic, env guards, UI components, AI
       Mentor prompt safety, security scanner rule engine + enrichment
