@@ -92,6 +92,14 @@ for how it stays grounded in real data and cannot fabricate progress.
   only in the user's actual Skill Graph data — never fabricated, and
   structurally unable to write skill evidence (see ADR 0007). Rate-limited
   through the real entitlement engine.
+- **Security scanner** (`/scanner`): a real deterministic static-analysis
+  rule engine (12 rule modules — secrets, SQL injection, XSS, command
+  injection, path traversal, insecure eval, weak crypto, insecure CORS,
+  insecure cookies, cleartext HTTP, prototype pollution, unsafe
+  deserialization) scans pasted or uploaded source, with an optional
+  AI-enrichment step that can only improve a finding's explanation text,
+  never invent or reclassify one (see ADR 0008). Each finding has a real,
+  tested attack → fix → retest status lifecycle enforced server-side.
 - **Entitlements**: every user gets a real `free` plan on signup with real
   limits; only an admin or `service_role` can change a subscription.
 - **Audit log**: append-only, RLS-protected, written only via
@@ -101,12 +109,7 @@ for how it stays grounded in real data and cannot fabricate progress.
 
 Capstone submissions and instructor dashboards have a complete schema and
 RLS policies (an instructor can already see their org members' real
-progress at the database level) but no UI yet. The security scanner's
-schema (`scans`/`scan_files`/`scan_findings`, a tested attack → fix →
-retest status lifecycle — see
-[`docs/adr/0008-scanner-finding-lifecycle.md`](./docs/adr/0008-scanner-finding-lifecycle.md))
-is also in place with no rule engine, orchestration, or UI wired to it yet.
-See
+progress at the database level) but no UI yet. See
 [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (security scanner, lab sandbox/terminal
 engine, OSINT/forensics workspace, Blue/Purple Team scenarios, Cyber

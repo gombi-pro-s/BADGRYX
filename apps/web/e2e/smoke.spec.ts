@@ -69,6 +69,11 @@ test.describe("auth wall", () => {
     await expect(page).toHaveURL(/\/login\?next=%2Fmentor/);
   });
 
+  test("an unauthenticated visitor is redirected away from /scanner", async ({ page }) => {
+    await page.goto("/scanner");
+    await expect(page).toHaveURL(/\/login\?next=%2Fscanner/);
+  });
+
   test("an unauthenticated visitor is redirected away from an admin-only route", async ({ page }) => {
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/login/);

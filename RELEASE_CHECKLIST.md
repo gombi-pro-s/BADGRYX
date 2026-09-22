@@ -239,8 +239,32 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       caller's own activity
 - [x] 8 unit tests for the enrichment prompt (evidence isolation, injection
       resistance, structural non-fabrication) — `lib/scanner/__tests__/enrichment-prompt.test.ts`
-- [ ] `/scanner` UI (upload/paste, findings display, posture dashboard,
-      attack → fix → retest workflow) — not built
+- [x] `/scanner` UI — paste-or-upload form (`ScanUploader`), a posture
+      summary aggregated across the user's last 20 scans
+      (`findings_by_severity`, server-computed), a past-scans list, and a
+      scan detail page (`/scanner/[scanId]`) with per-finding evidence/
+      explanation/impact/remediation/secure-example/references, an
+      "Enrich with AI" action, and attack → fix → retest status buttons
+      (calling `transition_scan_finding_status()` directly, same pattern
+      as the Labs workspace's RPC calls — the DB, not the UI, is what
+      actually enforces which transitions are legal)
+- [x] `/scanner` added to the auth-wall middleware and app nav; e2e-tested
+      (`e2e/smoke.spec.ts`) alongside every other protected route
+- [x] `SeverityBadge` / `FindingStatusBadge` components + 14 unit tests;
+      3 more for the UI's transition-map (`lib/scanner/status-transitions.ts`)
+      asserting it matches the database function's edge set exactly, so a
+      change to one without the other fails a test
+- [ ] Manually clicking through an authenticated scan (paste code → view
+      findings → transition status → enrich) has NOT been done — this
+      sandbox has no real Supabase Auth server (see `scripts/local-test-db.sh`'s
+      hand-rolled auth stub, built only for the SQL test harness), so there's
+      no way to log in a browser session here. Verified instead by: `tsc
+      --noEmit`, ESLint, a full production build succeeding for
+      `/scanner` and `/scanner/[scanId]`, 14 e2e tests including the new
+      `/scanner` auth-wall redirect, and 114 unit tests. A real
+      authenticated click-through needs a provisioned Supabase project
+      (`MANUAL_SETUP.md` §2) — do that first if you want this verified
+      live.
 
 ## Reports
 
@@ -288,10 +312,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 - [x] 74 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
-- [x] 97 unit tests (validation logic, env guards, UI component, AI Mentor
-      prompt safety, security scanner rule engine)
-- [x] 13 e2e smoke tests (public pages, auth wall across all protected
-      sections, login error handling)
+- [x] 114 unit tests (validation logic, env guards, UI components, AI
+      Mentor prompt safety, security scanner rule engine + enrichment
+      prompt + status transitions)
+- [x] 14 e2e smoke tests (public pages, auth wall across all protected
+      sections including `/scanner`, login error handling)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified
       via typecheck/lint/build; no dedicated e2e tests exercising the forms
       themselves yet — would need a real Supabase project or a more

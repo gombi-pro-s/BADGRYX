@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/labs", label: "Labs" },
   { href: "/ctf", label: "CTF" },
   { href: "/mentor", label: "AI Mentor" },
+  { href: "/scanner", label: "Scanner" },
   { href: "/skills", label: "Skill Graph" },
   { href: "/settings", label: "Settings" },
 ];
