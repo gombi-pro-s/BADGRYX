@@ -79,7 +79,15 @@ export default async function LessonPage({
       >
         &larr; Back
       </Link>
-      <h1 className="mb-6 text-2xl font-semibold text-foreground">{lesson.title}</h1>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold text-foreground">{lesson.title}</h1>
+        <Link
+          href={`/mentor?contextType=lesson&contextId=${lesson.id}`}
+          className="shrink-0 text-xs font-medium text-accent hover:underline"
+        >
+          Ask Mentor
+        </Link>
+      </div>
       <article className="prose prose-sm max-w-none text-foreground [&_a]:text-accent [&_code]:text-accent [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:font-semibold [&_p]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border [&_pre]:bg-background-subtle [&_pre]:p-3 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6">
         <ReactMarkdown>{lesson.content_markdown}</ReactMarkdown>
       </article>

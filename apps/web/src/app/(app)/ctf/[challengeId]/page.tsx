@@ -42,7 +42,15 @@ export default async function CtfChallengePage({
         <span>&middot;</span>
         <span>{challenge.points} pts</span>
       </div>
-      <h1 className="mb-4 text-2xl font-semibold text-foreground">{challenge.title}</h1>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold text-foreground">{challenge.title}</h1>
+        <Link
+          href={`/mentor?contextType=ctf&contextId=${challenge.id}`}
+          className="shrink-0 text-xs font-medium text-accent hover:underline"
+        >
+          Ask Mentor
+        </Link>
+      </div>
       {challenge.description && (
         <p className="mb-8 whitespace-pre-wrap text-sm text-foreground-muted">{challenge.description}</p>
       )}

@@ -50,9 +50,11 @@ that both clients need lives in the database (RLS + functions) or in Next.js
 Route Handlers, not inside React components, so the Flutter app can use it
 too.
 
-**AI provider**: Anthropic Claude, for the AI Security Mentor and
-AI-assisted parts of the security scanner (not yet wired into code — see
-release checklist).
+**AI provider**: Anthropic Claude. Powers the AI Security Mentor (`/mentor`)
+today; the AI-assisted reasoning layer of the security scanner will reuse
+the same key once that phase is built. See
+[`docs/adr/0007-ai-mentor-grounding.md`](./docs/adr/0007-ai-mentor-grounding.md)
+for how it stays grounded in real data and cannot fabricate progress.
 
 **Billing**: entitlement engine is real and enforced server-side now
 (`plans`, `subscriptions`, `get_entitlement()`); a live payment provider
@@ -73,9 +75,23 @@ release checklist).
   `/skills` once logged in.
 - **Grading pipeline**: `submit_quiz_attempt()`, `submit_lab_flag()`,
   `submit_ctf_flag()` — each independently verifies the outcome server-side
-  (hidden answer keys, hashed flags) before writing any skill evidence. No
-  UI is wired to these yet (no lessons/labs/CTF content authored), but the
-  functions are real, tested end-to-end, and callable via RPC today.
+  (hidden answer keys, hashed flags) before writing any skill evidence.
+  Wired to real learner-facing UI (see below), not just callable via RPC.
+- **Admin CMS**: full authoring UI at `/admin` for learning paths, modules,
+  lessons (markdown), labs (hints + hashed flags), quizzes (question/choice
+  builder), and CTF challenges — all enforced by the same staff-only RLS
+  policies as everything else, not a service-role bypass.
+- **Learner UI**: `/learn`, `/labs`, `/ctf` — real markdown lessons with
+  embedded live quizzes, guided/unguided lab attempts with hint unlocking,
+  and CTF flag submission, all backed by live queries/RPCs.
+- **Real seeded content**: one complete path (SQL injection: lesson → quiz
+  → guided lab → CTF challenge) proves the whole pipeline works end to end
+  — a test user answers the real quiz, submits the real flags, and the
+  `sql-injection` skill genuinely reaches `DEMONSTRATED`.
+- **AI Security Mentor** (`/mentor`): real Anthropic API calls grounded
+  only in the user's actual Skill Graph data — never fabricated, and
+  structurally unable to write skill evidence (see ADR 0007). Rate-limited
+  through the real entitlement engine.
 - **Entitlements**: every user gets a real `free` plan on signup with real
   limits; only an admin or `service_role` can change a subscription.
 - **Audit log**: append-only, RLS-protected, written only via
@@ -83,13 +99,13 @@ release checklist).
 
 ## What is designed but not yet UI-wired
 
-Content authoring (lessons/labs/CTF challenges) has a complete schema and
-grading functions but no admin CMS UI yet to create content through, and no
-learner-facing UI to consume it (no seeded lessons/labs exist). See the
-release checklist for the full list of remaining phases (security scanner,
-lab engine/terminal, OSINT/forensics workspace, Blue/Purple Team scenarios,
-Cyber Range, CTF/Arena UI, exams/capstones UI, AI Mentor, admin CMS, live
-billing, mobile app, i18n, PWA).
+Capstone submissions and instructor dashboards have a complete schema and
+RLS policies (an instructor can already see their org members' real
+progress at the database level) but no UI yet. See
+[`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
+tracked list of what remains (security scanner, lab sandbox/terminal
+engine, OSINT/forensics workspace, Blue/Purple Team scenarios, Cyber
+Range, Arena/exam timers, live billing, mobile app, i18n, PWA).
 
 ## Local development
 

@@ -124,20 +124,32 @@ project with local development).
 
 ---
 
-## 3. Anthropic API key (for the AI Security Mentor — not yet wired into code)
+## 3. Anthropic API key (powers the AI Security Mentor)
 
-**Required for**: whenever the AI Mentor / AI-assisted scanning phase is
-implemented. Not required for anything currently built.
+**Required for**: the AI Mentor (`/mentor`, `POST /api/mentor/chat`) to
+actually respond. Without this, every Mentor request fails with a 502
+("The Mentor is temporarily unavailable") — the rest of the app is
+unaffected. Not required for the (not-yet-built) AI-assisted security
+scanner, which will reuse this same key once it exists.
 
 1. **What**: Create an Anthropic API key.
 2. **Where**: https://console.anthropic.com → API Keys.
 3. **Exact value**: Copy the key into `ANTHROPIC_API_KEY` (server-only env
-   var — never `NEXT_PUBLIC_*`).
-4. **Why**: Powers the AI Mentor and the AI-assisted reasoning layer of the
-   security scanner described in the product spec.
-5. **Verify**: N/A yet — no code path calls this key today.
-6. **Expected result**: N/A yet.
-7. **Required for**: a future phase (see `RELEASE_CHECKLIST.md`).
+   var — never `NEXT_PUBLIC_*`; guarded by `lib/env.ts`'s `server-only`
+   import the same way the Supabase service_role key is).
+4. **Why**: Powers `lib/mentor/client.ts`, which calls the Anthropic
+   Messages API (model: `claude-sonnet-5`) with a system prompt grounded
+   in the user's real Skill Graph data (see
+   `docs/adr/0007-ai-mentor-grounding.md`).
+5. **Verify**: Log in, open `/mentor`, and send a message.
+6. **Expected result**: A real response from Claude, referencing your
+   actual skill states if you have any progress recorded. The daily
+   request counter in the top-right of the Mentor chat should increment.
+7. **Cost note**: Each Mentor plan's `ai_mentor_daily_requests` entitlement
+   (10/day on the free plan — see `plan_entitlements` in
+   `supabase/migrations/20260921000011_entitlements.sql`) is the only
+   built-in cost control today. Watch usage in the Anthropic console while
+   this is new, and lower the free-plan limit via that table if needed.
 
 ---
 

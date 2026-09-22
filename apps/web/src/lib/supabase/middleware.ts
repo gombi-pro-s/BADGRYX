@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   "/learn",
   "/labs",
   "/ctf",
+  "/mentor",
 ];
 const ADMIN_ONLY_PREFIXES = ["/admin"];
 

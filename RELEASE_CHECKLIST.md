@@ -25,7 +25,8 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] OAuth/email confirmation callback route
 - [x] Session refresh via proxy (middleware), auth wall on protected routes
 - [x] e2e-tested: unauthenticated visitors are redirected from
-      `/dashboard`, `/skills`, `/settings`, `/admin`, `/learn`, `/labs`, `/ctf`
+      `/dashboard`, `/skills`, `/settings`, `/admin`, `/learn`, `/labs`,
+      `/ctf`, `/mentor`
 - [ ] MFA
 - [ ] Application-layer rate limiting on auth endpoints (beyond Supabase's
       built-in limits)
@@ -49,7 +50,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 51 SQL regression assertions passing against a real Postgres instance
+- [x] 57 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -153,8 +154,32 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## AI Security Mentor / AI-assisted scanning
 
-- [ ] Not started. `ANTHROPIC_API_KEY` reserved in `.env.example` but no
-      code path uses it yet.
+- [x] `/mentor` chat UI (mode selector: Explain/Hint/Teach/Analyze Failure;
+      conversation history; daily quota display)
+- [x] `POST /api/mentor/chat` — real Anthropic API calls (model
+      `claude-sonnet-5`), grounded only in real, server-fetched Skill Graph
+      data (never client-asserted) — see ADR 0007
+- [x] Rate limiting via the real entitlement engine
+      (`ai_mentor_daily_requests`), not a separate ad hoc limiter
+- [x] Structural (not just prompted) guarantee that the Mentor cannot write
+      skill_evidence/user_skill_states — no INSERT grant exists for the
+      Mentor's code path, matching the grading pipeline's own design
+- [x] System prompt separates SYSTEM INSTRUCTIONS / mode instructions /
+      TRUSTED APPLICATION DATA from the untrusted user message (passed as a
+      separate API turn, never concatenated into the system prompt) — unit
+      tested (`lib/mentor/__tests__/prompt.test.ts`, 15 assertions)
+- [x] "Ask Mentor" entry points from lab, lesson, and CTF challenge pages
+- [x] Only unlocked lab hints are ever included in context; flags are never
+      queried by any Mentor code path
+- [ ] Not implemented: EXPLAIN_FINDING / REVIEW_REPORT / REVIEW_METHODOLOGY
+      modes are wired into the API/UI but honestly tell the user those
+      platform features (scanner, reports) don't exist yet, rather than
+      inventing content — real implementation waits on the scanner/reports
+      phases
+- [ ] AI-assisted reasoning layer for the security scanner (waits on the
+      scanner itself, not started)
+- [ ] Response streaming (current implementation is request/response, not
+      token-by-token)
 
 ## Security scanning engine
 
@@ -204,10 +229,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 51 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 57 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
-- [x] 26 unit tests (validation logic, env guards, UI component)
-- [x] 12 e2e smoke tests (public pages, auth wall across all protected
+- [x] 41 unit tests (validation logic, env guards, UI component, AI Mentor prompt safety)
+- [x] 13 e2e smoke tests (public pages, auth wall across all protected
       sections, login error handling)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified
       via typecheck/lint/build; no dedicated e2e tests exercising the forms

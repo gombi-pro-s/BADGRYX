@@ -263,6 +263,43 @@ export type CtfSubmissionRow = {
   submitted_at: string;
 };
 
+export type MentorContextType = "skill" | "lesson" | "lab" | "ctf" | "general";
+export type MentorMode =
+  | "explain"
+  | "hint"
+  | "teach"
+  | "analyze_failure"
+  | "explain_command"
+  | "explain_finding"
+  | "explain_code"
+  | "guide_investigation"
+  | "review_methodology"
+  | "generate_quiz"
+  | "prepare_assessment"
+  | "explain_remediation"
+  | "review_report";
+export type MentorMessageRole = "user" | "assistant";
+
+export type MentorConversationRow = {
+  id: string;
+  user_id: string;
+  context_type: MentorContextType;
+  context_id: string | null;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MentorMessageRow = {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  role: MentorMessageRole;
+  mode: MentorMode | null;
+  content: string;
+  created_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -494,6 +531,12 @@ export interface Database {
         Update: Partial<{ status: LabInstanceStatus }>;
         Relationships: [];
       };
+      lab_hint_unlocks: {
+        Row: { id: string; lab_instance_id: string; hint_id: string; unlocked_at: string };
+        Insert: Record<string, never>; // written only by unlock_lab_hint()
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       lab_submissions: {
         Row: LabSubmissionRow;
         Insert: Record<string, never>; // written only by submit_lab_flag()
@@ -530,6 +573,25 @@ export interface Database {
       ctf_submissions: {
         Row: CtfSubmissionRow;
         Insert: Record<string, never>; // written only by submit_ctf_flag()
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+
+      mentor_conversations: {
+        Row: MentorConversationRow;
+        Insert: { user_id: string; context_type?: MentorContextType; context_id?: string | null; title?: string | null };
+        Update: Partial<{ title: string | null }>;
+        Relationships: [];
+      };
+      mentor_messages: {
+        Row: MentorMessageRow;
+        Insert: {
+          conversation_id: string;
+          user_id: string;
+          role: MentorMessageRole;
+          mode?: MentorMode | null;
+          content: string;
+        };
         Update: Record<string, never>;
         Relationships: [];
       };
@@ -592,6 +654,16 @@ export interface Database {
       unlock_lab_hint: {
         Args: { p_lab_instance_id: string; p_hint_id: string };
         Returns: { lab_instance_id: string; hint_id: string; unlocked_at: string };
+      };
+      log_audit_event: {
+        Args: {
+          p_action: string;
+          p_target_type?: string | null;
+          p_target_id?: string | null;
+          p_organization_id?: string | null;
+          p_metadata?: Record<string, unknown>;
+        };
+        Returns: number;
       };
     };
     Enums: Record<string, never>;
