@@ -166,5 +166,25 @@ async function buildFocusDetail(
     return { type: "investigation", title: data.title, description: data.briefing };
   }
 
+  if (focusType === "finding") {
+    // RLS on scan_findings is owner-scoped (via its scan) + staff-readable,
+    // exactly like every other table queried here -- this can never return
+    // another user's finding through the caller's own client.
+    const { data } = await supabase
+      .from("scan_findings")
+      .select("title, category, severity, evidence, explanation, impact, remediation")
+      .eq("id", focusId)
+      .maybeSingle();
+    if (!data) return null;
+    const description = [
+      `Category: ${data.category} | Severity: ${data.severity}`,
+      `Evidence (the actual flagged code):\n${data.evidence}`,
+      `Explanation: ${data.explanation}`,
+      `Impact: ${data.impact}`,
+      `Remediation: ${data.remediation}`,
+    ].join("\n\n");
+    return { type: "finding", title: data.title, description };
+  }
+
   return null;
 }

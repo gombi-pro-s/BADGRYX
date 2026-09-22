@@ -438,11 +438,24 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] "Ask Mentor" entry points from lab, lesson, and CTF challenge pages
 - [x] Only unlocked lab hints are ever included in context; flags are never
       queried by any Mentor code path
-- [ ] Not implemented: EXPLAIN_FINDING / REVIEW_REPORT / REVIEW_METHODOLOGY
-      modes are wired into the API/UI but honestly tell the user those
-      platform features (scanner, reports) don't exist yet, rather than
-      inventing content — real implementation waits on the scanner/reports
-      phases
+- [x] EXPLAIN_FINDING is real: this entry had gone stale (it said "the
+      scanner ... [doesn't] exist yet," true when first written but not
+      since the scanner shipped). `MentorContextType` gained a `finding`
+      value
+      (`supabase/migrations/20260922000022_mentor_finding_context.sql`),
+      `buildFocusDetail()` grounds it in the caller's own real
+      `scan_findings` row (category/severity/evidence/explanation/impact/
+      remediation, RLS-scoped the same as every other table here), and
+      each finding's "Details" panel now has an "Ask Mentor" link. 2 new
+      unit tests assert the mode actually uses this real data and that
+      neither `review_report` nor `review_methodology` claims the
+      scanner itself is unimplemented.
+- [ ] Not implemented: REVIEW_REPORT / REVIEW_METHODOLOGY — this platform
+      genuinely has no written-report feature (a document a learner
+      produces and the Mentor reviews), so these two honestly tell the
+      user that rather than inventing a report to discuss; unlike
+      EXPLAIN_FINDING above, there is no underlying data these could
+      ground themselves in yet
 - [ ] AI-assisted reasoning layer for the security scanner (waits on the
       scanner itself, not started)
 - [ ] Response streaming (current implementation is request/response, not
@@ -689,14 +702,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       pro plan's entitlements + admin role management + org-scoped audit
       log coverage + account deletion + org member management + login
       rate limiting)
-- [x] 228 unit tests (validation logic, env guards, UI components including
+- [x] 230 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
-      prompt safety, security scanner rule engine + enrichment prompt +
-      status transitions, lab terminal path resolution + command
-      interpreter + real-permission enforcement + the seeded lab's
-      solvability, live billing signature verification + request-building
-      for Stripe/Paystack/Flutterwave, Turnstile verify-request/response
-      logic)
+      prompt safety including the EXPLAIN_FINDING grounding, security
+      scanner rule engine + enrichment prompt + status transitions, lab
+      terminal path resolution + command interpreter + real-permission
+      enforcement + the seeded lab's solvability, live billing signature
+      verification + request-building for Stripe/Paystack/Flutterwave,
+      Turnstile verify-request/response logic)
 - [x] 19 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`, an
       invite link's `?next=` round-trip, login error handling)

@@ -47,9 +47,30 @@ describe("buildMentorSystemPrompt", () => {
     },
   );
 
-  it("tells the truth about unimplemented scanner/report modes instead of inventing content", () => {
+  it("tells the truth about the unimplemented report feature instead of inventing content", () => {
     const prompt = buildMentorSystemPrompt("review_report", emptyContext);
     expect(prompt).toMatch(/not implemented yet/i);
+  });
+
+  it("never claims the scanner itself is unimplemented -- only report generation is", () => {
+    const prompt = buildMentorSystemPrompt("review_methodology", emptyContext);
+    expect(prompt).not.toMatch(/scanner.{0,20}not implemented/i);
+  });
+
+  it("grounds EXPLAIN_FINDING in a real scan finding's own data, not a disclaimer", () => {
+    const context: MentorContext = {
+      ...emptyContext,
+      focus: {
+        type: "finding",
+        title: "SQL injection via string concatenation",
+        description: "Category: injection | Severity: high\n\nRemediation: use a parameterized query.",
+      },
+    };
+    const prompt = buildMentorSystemPrompt("explain_finding", context);
+    expect(prompt).toContain("MODE: EXPLAIN_FINDING");
+    expect(prompt).toContain("SQL injection via string concatenation");
+    expect(prompt).toContain("use a parameterized query");
+    expect(prompt).not.toMatch(/not implemented yet/i);
   });
 
   it("renders real skill states into the trusted data section", () => {

@@ -51,9 +51,10 @@ function modeInstructions(mode: MentorMode): string {
     case "explain_code":
       return "# MODE: EXPLAIN_CODE\nExplain what the given code does and, if relevant to the user's focus, why it may be a security concern.";
     case "explain_finding":
+      return "# MODE: EXPLAIN_FINDING\nExplain the security finding in TRUSTED APPLICATION DATA below (a real result from this user's own scan): what the flagged code does, why it's a security issue, and how the remediation actually fixes it. If no finding is in context, say you need them to open it from a specific finding's 'Ask Mentor' link.";
     case "review_report":
     case "review_methodology":
-      return "# MODE: (scanner/report feature)\nThis platform's security scanner and report generation are not implemented yet. Say so plainly rather than inventing a finding or report to discuss.";
+      return "# MODE: (report feature)\nThis platform's written-report generation feature is not implemented yet (the scanner itself is real -- see any finding's own explanation/impact/remediation). Say so plainly rather than inventing a report to review.";
     case "guide_investigation":
       return "# MODE: GUIDE_INVESTIGATION\nHelp the user structure their investigation (what to check next, what evidence to capture) without doing the investigation for them.";
     case "generate_quiz":

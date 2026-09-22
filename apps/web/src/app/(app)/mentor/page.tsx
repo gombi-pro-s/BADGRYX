@@ -7,7 +7,7 @@ import { MentorChat } from "./mentor-chat";
 
 export const metadata: Metadata = { title: "AI Mentor" };
 
-const VALID_CONTEXT_TYPES: MentorContextType[] = ["skill", "lesson", "lab", "ctf", "investigation", "general"];
+const VALID_CONTEXT_TYPES: MentorContextType[] = ["skill", "lesson", "lab", "ctf", "investigation", "finding", "general"];
 
 export default async function MentorPage({
   searchParams,
@@ -95,6 +95,10 @@ async function resolveFocusTitle(
   }
   if (contextType === "investigation") {
     const { data } = await supabase.from("investigations").select("title").eq("id", contextId).maybeSingle();
+    return { data: data?.title ?? null };
+  }
+  if (contextType === "finding") {
+    const { data } = await supabase.from("scan_findings").select("title").eq("id", contextId).maybeSingle();
     return { data: data?.title ?? null };
   }
   return { data: null };

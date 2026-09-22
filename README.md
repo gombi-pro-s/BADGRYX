@@ -151,9 +151,11 @@ and
   only in the user's actual Skill Graph data — never fabricated, and
   structurally unable to write skill evidence (see ADR 0007). Rate-limited
   through the real entitlement engine. "Ask Mentor" deep links exist from
-  lessons, labs, CTF challenges, and investigations, each grounding the
-  Mentor's focus in that specific item's real title/description (and, for
-  labs, only the hints the user has actually unlocked).
+  lessons, labs, CTF challenges, investigations, and scanner findings,
+  each grounding the Mentor's focus in that specific item's real title/
+  description (labs: only the hints the user has actually unlocked;
+  findings: the finding's real category/severity/evidence/explanation/
+  impact/remediation, RLS-scoped to the caller's own scan).
 - **Security scanner** (`/scanner`): a real deterministic static-analysis
   rule engine (12 rule modules — secrets, SQL injection, XSS, command
   injection, path traversal, insecure eval, weak crypto, insecure CORS,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { SeverityBadge } from "@/components/severity-badge";
@@ -98,13 +99,21 @@ export function FindingCard({ finding: initialFinding, filename }: { finding: Fi
             {finding.line_end !== finding.line_start ? `-${finding.line_end}` : ""} &middot; {finding.rule_id}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="shrink-0 text-xs font-medium text-accent hover:underline"
-        >
-          {expanded ? "Collapse" : "Details"}
-        </button>
+        <div className="flex shrink-0 items-center gap-3">
+          <Link
+            href={`/mentor?contextType=finding&contextId=${finding.id}`}
+            className="text-xs font-medium text-accent hover:underline"
+          >
+            Ask Mentor
+          </Link>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-xs font-medium text-accent hover:underline"
+          >
+            {expanded ? "Collapse" : "Details"}
+          </button>
+        </div>
       </div>
 
       {expanded && (
