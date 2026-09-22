@@ -404,11 +404,58 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 - [x] Organizations + org-scoped roles (schema + RLS)
 - [x] Admin CMS UI (learning paths/modules/lessons/labs/quizzes/CTF — see above)
-- [ ] Instructor dashboard (view org members' progress) — RLS supports it
-      (`skill_evidence`/`user_skill_states`/`lab_progress` policies already
-      grant instructor visibility); no UI built
-- [ ] Team management UI (invite members, assign org roles) — schema + RLS
-      only
+- [x] Org-instructor visibility extended to all 8 gradeable-outcome tables:
+      `skill_evidence`/`user_skill_states`/`lab_instances`/`lab_progress`
+      (already had it) plus `quiz_attempts`/`ctf_submissions`/
+      `capstone_submissions`/`investigation_submissions` (added in
+      `20260922000012_org_instructor_visibility_and_invitations.sql`) — an
+      instructor/team_owner/org_admin can see a fellow org member's real
+      graded results everywhere skill evidence is produced, not just some of
+      them
+- [x] Invitation lifecycle: `create_organization_invitation()` (generates
+      and hashes a random token, enforces `seat_limit` for real, only
+      callable by an org admin/team owner) and
+      `accept_organization_invitation()` (validates not-revoked/not-
+      accepted/not-expired/matching-email before creating membership) — see
+      `docs/adr/0010-org-invitations-manual-link.md` for why there's no
+      email send (no email provider is configured anywhere in this app; the
+      raw link is shown once in the admin UI for manual sharing, same
+      honesty as the billing deferral in ADR 0005)
+- [x] 11 SQL regression assertions
+      (`supabase/tests/013_org_instructor_visibility_and_invitations.sql`):
+      an org instructor sees a fellow member's real quiz/CTF/capstone/
+      investigation results (via the real grading RPCs, not planted rows);
+      an instructor of an unrelated org sees none of it; a plain
+      (non-instructor) org member also can't; invitation accept happy path,
+      double-accept rejection, wrong-email rejection, expired/revoked
+      rejection, seat_limit genuinely enforced, and only an org admin/team
+      owner can create an invitation
+- [x] Org UI: `/orgs` (list the user's organizations, create one — creator
+      auto-becomes `team_owner` via the existing trigger), `/orgs/[orgId]`
+      (member roster; org admins additionally get an invite-link generator
+      and a pending-invitations list with revoke), `/invite/[token]` (an
+      accept-invitation page outside the app's auth-walled route group
+      specifically so an unauthenticated visitor's `?next=` redirect
+      round-trips back to the same invite link after login/signup — see the
+      ADR)
+- [x] Instructor dashboard (`/orgs/[orgId]/dashboard`) — a real per-member
+      table (skills proven/in-progress, labs completed, quizzes passed, CTF
+      solved, investigations passed), built entirely from the
+      now-RLS-covered tables above; nothing self-reported
+- [ ] Manually clicking through the org/invite/dashboard flow in a browser
+      has NOT been done — same sandbox limitation as every other UI phase
+      this session (no real Supabase project to authenticate against here;
+      see the `/scanner` entry above). Verified instead by: 108 SQL
+      regression assertions (13 files, all passing), `tsc --noEmit`, ESLint,
+      a full production build succeeding for every new route, and 17 e2e
+      tests including the 2 new ones for `/orgs` and `/invite/[token]`'s
+      auth-wall redirects. A real click-through needs a provisioned
+      Supabase project (`MANUAL_SETUP.md` §2).
+- [ ] Removing/demoting a member, or changing their role, has no dedicated
+      UI yet (the RLS policies and `organization_members` UPDATE/DELETE
+      paths already support it — see
+      `supabase/migrations/20260921000005_identity_rls_policies.sql` — this
+      is a UI gap only)
 
 ## Privacy / Data protection
 
@@ -440,15 +487,16 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 97 SQL regression assertions (RLS + grading + entitlements + a full
-      seeded-content walkthrough)
+- [x] 108 SQL regression assertions (RLS + grading + entitlements + a full
+      seeded-content walkthrough + org-instructor visibility + invitations)
 - [x] 193 unit tests (validation logic, env guards, UI components, AI
       Mentor prompt safety, security scanner rule engine + enrichment
       prompt + status transitions, lab terminal path resolution + command
       interpreter + real-permission enforcement + the seeded lab's
       solvability)
-- [x] 15 e2e smoke tests (public pages, auth wall across all protected
-      sections including `/scanner`, login error handling)
+- [x] 17 e2e smoke tests (public pages, auth wall across all protected
+      sections including `/scanner`/`/orgs`, an invite link's `?next=`
+      round-trip, login error handling)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified
       via typecheck/lint/build; no dedicated e2e tests exercising the forms
       themselves yet — would need a real Supabase project or a more

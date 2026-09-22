@@ -110,6 +110,18 @@ for how it stays grounded in real data and cannot fabricate progress.
   pretext, and malware C2 beaconing) prove the OSINT/forensics workspace
   the same way — each a set of internally consistent artifacts a learner
   has to correlate to answer correctly, not a single isolated fact.
+- **Organizations / instructor dashboard** (`/orgs`): create an
+  organization (the creator becomes its `team_owner`), invite members by
+  email (an org admin/team owner generates a real random invitation link —
+  there is no email service configured in this app, so the link is shown
+  once for the admin to share manually, honestly, same as the billing
+  deferral in ADR 0005) via `create_organization_invitation()`/
+  `accept_organization_invitation()`, and view a real per-member dashboard
+  (`/orgs/[orgId]/dashboard`) of skill states, lab completions, and
+  quiz/CTF/investigation results — enforced by RLS extending the same
+  org-instructor visibility pattern across all 8 gradeable-outcome tables,
+  not a service-role bypass. See
+  [`docs/adr/0010-org-invitations-manual-link.md`](./docs/adr/0010-org-invitations-manual-link.md).
 - **AI Security Mentor** (`/mentor`): real Anthropic API calls grounded
   only in the user's actual Skill Graph data — never fabricated, and
   structurally unable to write skill evidence (see ADR 0007). Rate-limited
@@ -129,13 +141,11 @@ for how it stays grounded in real data and cannot fabricate progress.
 
 ## What is designed but not yet UI-wired
 
-Capstone submissions and instructor dashboards have a complete schema and
-RLS policies (an instructor can already see their org members' real
-progress at the database level) but no UI yet. See
+Capstone submissions have a complete schema and RLS policies (staff-reviewed
+report submissions) but no learner-facing submission/review UI yet. See
 [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
-tracked list of what remains (security scanner, lab sandbox/terminal
-engine, OSINT/forensics workspace, Blue/Purple Team scenarios, Cyber
-Range, Arena/exam timers, live billing, mobile app, i18n, PWA).
+tracked list of what remains (Blue/Purple Team scenarios, Cyber Range,
+Arena/exam timers, live billing, mobile app, i18n, PWA).
 
 ## Local development
 

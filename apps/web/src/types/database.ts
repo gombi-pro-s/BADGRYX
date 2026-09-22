@@ -43,6 +43,8 @@ export type SkillState =
 
 export type PlatformRole = "user" | "instructor" | "moderator" | "admin";
 
+export type OrgRole = "member" | "instructor" | "team_owner" | "org_admin";
+
 export type SkillEvidenceType =
   | "theory"
   | "quiz"
@@ -90,6 +92,38 @@ export type ProfileRow = {
   onboarding_completed_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type OrganizationRow = {
+  id: string;
+  slug: string;
+  name: string;
+  created_by: string;
+  seat_limit: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OrganizationMemberRow = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: OrgRole;
+  invited_by: string | null;
+  joined_at: string;
+};
+
+export type OrganizationInvitationRow = {
+  id: string;
+  organization_id: string;
+  email: string;
+  role: OrgRole;
+  invited_by: string;
+  token_hash: string;
+  expires_at: string;
+  accepted_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
 };
 
 export type LearningPathRow = {
@@ -594,17 +628,27 @@ export interface Database {
         ];
       };
       organizations: {
-        Row: {
-          id: string;
-          slug: string;
-          name: string;
-          created_by: string;
-          seat_limit: number | null;
-          created_at: string;
-          updated_at: string;
-        };
+        Row: OrganizationRow;
         Insert: { slug: string; name: string; created_by: string };
         Update: Partial<{ name: string; seat_limit: number | null }>;
+        Relationships: [];
+      };
+      organization_members: {
+        Row: OrganizationMemberRow;
+        // A member's own row is inserted only by the handle_new_organization()
+        // trigger or accept_organization_invitation(); an org admin adding
+        // someone directly still goes through this table's real INSERT RLS
+        // policy (org_members_write_org_admin), not a client-trusted role.
+        Insert: { organization_id: string; user_id: string; role?: OrgRole; invited_by?: string | null };
+        Update: Partial<{ role: OrgRole }>;
+        Relationships: [];
+      };
+      organization_invitations: {
+        Row: OrganizationInvitationRow;
+        // Never inserted directly from the client -- the raw token must be
+        // generated and hashed server-side. See create_organization_invitation().
+        Insert: Record<string, never>;
+        Update: Partial<{ revoked_at: string }>;
         Relationships: [];
       };
 
@@ -1024,6 +1068,14 @@ export interface Database {
       count_my_scan_enrichments_today: {
         Args: Record<string, never>;
         Returns: number;
+      };
+      create_organization_invitation: {
+        Args: { p_organization_id: string; p_email: string; p_role?: OrgRole };
+        Returns: string;
+      };
+      accept_organization_invitation: {
+        Args: { p_token: string };
+        Returns: OrganizationMemberRow;
       };
     };
     Enums: Record<string, never>;
