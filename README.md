@@ -91,14 +91,25 @@ for how it stays grounded in real data and cannot fabricate progress.
   browser directly — only the output of a command the learner actually ran
   server-side. See
   [`docs/adr/0009-lab-terminal-server-side.md`](./docs/adr/0009-lab-terminal-server-side.md).
+- **OSINT/forensics investigation workspace** (`/investigate`): real case
+  files with evidence artifacts (WHOIS records, email headers, log
+  excerpts, chat transcripts) a learner correlates to answer structured
+  questions, graded deterministically server-side against a hidden answer
+  key (mixed multiple-choice and hashed exact-text answers) — never by an
+  AI's judgment call. A private, autosaved notes scratchpad that not even
+  staff can read.
 - **Real seeded content**: one complete path (SQL injection: lesson → quiz
   → guided lab → CTF challenge) proves the whole pipeline works end to end
   — a test user answers the real quiz, submits the real flags, and the
-  `sql-injection` skill genuinely reaches `DEMONSTRATED`. A second seeded
-  lab, "Linux Privilege Escalation: Misconfigured Sudo", proves the
-  terminal simulator the same way — a real, well-known technique (an
-  unrestricted sudo rule on `cat`), solvable only by actually running the
-  right commands in the terminal, not by reading page source.
+  `sql-injection` skill genuinely reaches `DEMONSTRATED`. Four seeded
+  terminal labs (privilege escalation, secrets enumeration, forensics, and
+  service enumeration) prove the terminal simulator the same way — real,
+  well-known techniques, solvable only by actually running the right
+  commands, not by reading page source. A seeded investigation, "Phishing
+  Campaign: The Fake Invoice," proves the OSINT/forensics workspace the
+  same way — four internally consistent artifacts (spoofed headers, a
+  WHOIS record, an incident chat log, a VPN login log) that a learner has
+  to correlate to answer correctly.
 - **AI Security Mentor** (`/mentor`): real Anthropic API calls grounded
   only in the user's actual Skill Graph data — never fabricated, and
   structurally unable to write skill evidence (see ADR 0007). Rate-limited

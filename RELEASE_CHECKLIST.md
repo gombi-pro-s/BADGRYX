@@ -50,7 +50,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 91 SQL regression assertions passing against a real Postgres instance
+- [x] 92 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -246,7 +246,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       added yet; `MentorContextType` doesn't have an `investigation` value,
       and adding one touches the Mentor's context builder/prompt, out of
       scope for this task
-- [ ] One complete real investigation seeded end-to-end — not built yet
+- [x] One complete real investigation seeded end-to-end: "Phishing
+      Campaign: The Fake Invoice" (`phishing-fake-invoice`) — 4 internally
+      consistent artifacts (spoofed email headers, a WHOIS record for the
+      lookalike domain registered 3 days before the attack, an internal
+      incident-response chat transcript, and a VPN login log proving
+      credential theft actually succeeded) and 5 questions (mixed
+      multiple_choice/exact_text) that require correlating timestamps and
+      details across all four. Proven genuinely solvable through the real
+      grading RPC (not just schema-valid) by
+      `supabase/tests/011_seeded_investigation_e2e.sql`, including
+      realistic messy-case/whitespace input on the exact_text answers
 - [ ] Blue/Purple Team scenario linkage (not started)
 
 ## CTF / Arena / Exams / Capstones
@@ -417,7 +427,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 91 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 92 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
 - [x] 193 unit tests (validation logic, env guards, UI components, AI
       Mentor prompt safety, security scanner rule engine + enrichment
