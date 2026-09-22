@@ -73,9 +73,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] Proven end-to-end with real content: a seeded lesson + quiz + guided
       lab + CTF challenge genuinely advance a skill from `NOT_STARTED` to
       `DEMONSTRATED` (`supabase/tests/005_seeded_content_e2e.sql`)
-- [ ] "Prove Your Skill" matrix UI (per-skill breakdown of theory/quiz/
-      guided/unguided/CTF/assessment/remediation/retest) — data model
-      supports it; UI not built
+- [x] "Prove Your Skill" matrix UI — `/skills` now renders a real per-skill
+      table with one column per `skill_evidence_type` (theory/quiz/
+      guided_lab/unguided_lab/ctf/assessment/remediation/retest); each cell
+      is the best real outcome (passed/partial/failed/not attempted) from
+      that user's actual `skill_evidence` rows, computed with the same
+      "ever passed wins" priority the state machine itself uses, not a
+      fabricated summary. `/skills/[skillId]` adds a per-skill detail page:
+      prerequisites, a plain-language explanation of the current state
+      lifted directly from `recompute_skill_state()`'s documented rules,
+      and the full real evidence history (type/outcome/source/score/hint
+      level/timestamp)
 
 ## Grading pipeline
 
@@ -489,9 +497,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 - [x] 108 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations)
-- [x] 193 unit tests (validation logic, env guards, UI components, AI
-      Mentor prompt safety, security scanner rule engine + enrichment
-      prompt + status transitions, lab terminal path resolution + command
+- [x] 198 unit tests (validation logic, env guards, UI components including
+      the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
+      prompt safety, security scanner rule engine + enrichment prompt +
+      status transitions, lab terminal path resolution + command
       interpreter + real-permission enforcement + the seeded lab's
       solvability)
 - [x] 17 e2e smoke tests (public pages, auth wall across all protected

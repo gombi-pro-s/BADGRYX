@@ -559,6 +559,12 @@ export interface Database {
         Update: Record<string, never>;
         Relationships: [];
       };
+      skill_prerequisites: {
+        Row: { skill_id: string; prerequisite_skill_id: string };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       user_skill_states: {
         Row: {
           user_id: string;

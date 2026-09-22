@@ -71,8 +71,14 @@ for how it stays grounded in real data and cannot fabricate progress.
   explicit regression test, not just a design intent.
 - **Skill Graph**: real skill catalog (38 skills across 8 categories), a
   documented state machine (`NOT_STARTED` → ... → `MASTERED` /
-  `NEEDS_REVIEW`), computed server-side from evidence. Viewable at
-  `/skills` once logged in.
+  `NEEDS_REVIEW`), computed server-side from evidence. `/skills` renders it
+  as a real "Prove Your Skill" matrix — one column per evidence type
+  (theory/quiz/guided lab/unguided lab/CTF/assessment/remediation/retest),
+  each cell the actual best outcome from that user's own graded history,
+  never a placeholder grid. `/skills/[skillId]` drills into one skill's
+  prerequisites, a plain-language explanation of its current state (lifted
+  from the same rules the database enforces), and its full evidence
+  timeline.
 - **Grading pipeline**: `submit_quiz_attempt()`, `submit_lab_flag()`,
   `submit_ctf_flag()` — each independently verifies the outcome server-side
   (hidden answer keys, hashed flags) before writing any skill evidence.
