@@ -96,7 +96,15 @@ export default async function InvestigationDetailPage({
         <span>&middot;</span>
         <span>{investigation.points} pts</span>
       </div>
-      <h1 className="mb-3 text-2xl font-semibold text-foreground">{investigation.title}</h1>
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold text-foreground">{investigation.title}</h1>
+        <Link
+          href={`/mentor?contextType=investigation&contextId=${investigation.id}`}
+          className="shrink-0 text-xs font-medium text-accent hover:underline"
+        >
+          Ask Mentor
+        </Link>
+      </div>
       {skillNames.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-1.5">
           {skillNames.map((name) => (

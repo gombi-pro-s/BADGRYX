@@ -323,10 +323,15 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       answer form wired to `submit_investigation_answers()`); added to the
       auth-wall middleware and app nav, e2e-tested alongside every other
       protected route
-- [ ] "Ask Mentor" deep link from an investigation — deliberately not
-      added yet; `MentorContextType` doesn't have an `investigation` value,
-      and adding one touches the Mentor's context builder/prompt, out of
-      scope for this task
+- [x] "Ask Mentor" deep link from an investigation — `MentorContextType`
+      gained an `investigation` value
+      (`supabase/migrations/20260922000021_mentor_investigation_context.sql`),
+      `buildFocusDetail()` grounds it in the real `investigations.title`/
+      `briefing`, and `/investigate/[investigationId]` links to
+      `/mentor?contextType=investigation&contextId=...`, mirroring the
+      existing lab/CTF/lesson deep links. The `MODE: GUIDE_INVESTIGATION`
+      prompt instructions already existed and needed no change — only the
+      context type and the link were missing
 - [x] One complete real investigation seeded end-to-end: "Phishing
       Campaign: The Fake Invoice" (`phishing-fake-invoice`) — 4 internally
       consistent artifacts (spoofed email headers, a WHOIS record for the

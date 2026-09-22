@@ -7,7 +7,7 @@ import { MentorChat } from "./mentor-chat";
 
 export const metadata: Metadata = { title: "AI Mentor" };
 
-const VALID_CONTEXT_TYPES: MentorContextType[] = ["skill", "lesson", "lab", "ctf", "general"];
+const VALID_CONTEXT_TYPES: MentorContextType[] = ["skill", "lesson", "lab", "ctf", "investigation", "general"];
 
 export default async function MentorPage({
   searchParams,
@@ -91,6 +91,10 @@ async function resolveFocusTitle(
   }
   if (contextType === "ctf") {
     const { data } = await supabase.from("ctf_challenges_public").select("title").eq("id", contextId).maybeSingle();
+    return { data: data?.title ?? null };
+  }
+  if (contextType === "investigation") {
+    const { data } = await supabase.from("investigations").select("title").eq("id", contextId).maybeSingle();
     return { data: data?.title ?? null };
   }
   return { data: null };

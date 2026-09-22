@@ -156,5 +156,15 @@ async function buildFocusDetail(
     return { type: "ctf", title: data.title, description: data.description };
   }
 
+  if (focusType === "investigation") {
+    const { data } = await supabase
+      .from("investigations")
+      .select("title, briefing")
+      .eq("id", focusId)
+      .maybeSingle();
+    if (!data) return null;
+    return { type: "investigation", title: data.title, description: data.briefing };
+  }
+
   return null;
 }

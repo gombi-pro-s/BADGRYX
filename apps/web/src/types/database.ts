@@ -456,7 +456,7 @@ export type InvestigationSubmissionRow = {
   submitted_at: string;
 };
 
-export type MentorContextType = "skill" | "lesson" | "lab" | "ctf" | "general";
+export type MentorContextType = "skill" | "lesson" | "lab" | "ctf" | "investigation" | "general";
 export type MentorMode =
   | "explain"
   | "hint"
