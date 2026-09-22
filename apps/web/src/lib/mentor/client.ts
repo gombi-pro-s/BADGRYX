@@ -22,19 +22,29 @@ export interface MentorTurn {
  * `messages` turn, never concatenated into the system prompt -- that
  * boundary is what lets the system instructions describe it as untrusted
  * input rather than trusted configuration.
+ *
+ * Streams token-by-token via the Anthropic SDK's `messages.stream()`
+ * (`.on('text', ...)` fires each text delta as it arrives), so the caller
+ * (the API route) can forward each delta to the client immediately instead
+ * of waiting for the full response. `onDelta` is called synchronously for
+ * each chunk; the function itself resolves once the full message is
+ * complete, returning the same full text a non-streaming call would have.
  */
-export async function callMentor(params: {
-  mode: MentorMode;
-  context: MentorContext;
-  history: MentorTurn[];
-  newUserMessage: string;
-}): Promise<string> {
+export async function streamMentorReply(
+  params: {
+    mode: MentorMode;
+    context: MentorContext;
+    history: MentorTurn[];
+    newUserMessage: string;
+  },
+  onDelta: (text: string) => void,
+): Promise<string> {
   const client = new Anthropic({ apiKey: getAnthropicApiKey() });
 
   const system = buildMentorSystemPrompt(params.mode, params.context);
   const trimmedHistory = params.history.slice(-MAX_HISTORY_TURNS);
 
-  const response = await client.messages.create({
+  const stream = client.messages.stream({
     model: MODEL,
     max_tokens: MAX_TOKENS,
     system,
@@ -44,7 +54,10 @@ export async function callMentor(params: {
     ],
   });
 
-  const textBlock = response.content.find((block) => block.type === "text");
+  stream.on("text", onDelta);
+
+  const finalMessage = await stream.finalMessage();
+  const textBlock = finalMessage.content.find((block) => block.type === "text");
   if (!textBlock || textBlock.type !== "text") {
     throw new Error("Mentor response contained no text content.");
   }

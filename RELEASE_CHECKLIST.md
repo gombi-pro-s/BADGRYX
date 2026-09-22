@@ -466,8 +466,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       started," but the scanner and its AI enrichment layer both shipped
       earlier in this session). See "AI-assisted enrichment layer" under
       Security scanning engine below for the real, tested implementation.
-- [ ] Response streaming (current implementation is request/response, not
-      token-by-token)
+- [x] Response streaming: `POST /api/mentor/chat` now returns a
+      `ReadableStream` of newline-delimited JSON events (`delta`/`done`/
+      `error`) instead of one JSON blob, using the Anthropic SDK's
+      `messages.stream()` + `.on('text', ...)` — the Mentor's reply
+      renders token-by-token in `mentor-chat.tsx` as Anthropic produces
+      it, not after the full response completes. DB persistence
+      (`mentor_messages`, audit log) still happens once, after the stream
+      completes, using the accumulated final text via `.finalMessage()` —
+      not per-token. The NDJSON parsing itself is pure and unit-tested
+      (`lib/mentor/ndjson.ts`, 7 assertions) independent of any real
+      stream/network mock.
 
 ## Security scanning engine
 
@@ -721,14 +730,15 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       pro plan's entitlements + admin role management + org-scoped audit
       log coverage + account deletion + org member management + login
       rate limiting + subscription cleanup on user/org deletion)
-- [x] 230 unit tests (validation logic, env guards, UI components including
+- [x] 237 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
-      prompt safety including the EXPLAIN_FINDING grounding, security
-      scanner rule engine + enrichment prompt + status transitions, lab
-      terminal path resolution + command interpreter + real-permission
-      enforcement + the seeded lab's solvability, live billing signature
-      verification + request-building for Stripe/Paystack/Flutterwave,
-      Turnstile verify-request/response logic)
+      prompt safety including the EXPLAIN_FINDING grounding, streaming
+      NDJSON parsing, security scanner rule engine + enrichment prompt +
+      status transitions, lab terminal path resolution + command
+      interpreter + real-permission enforcement + the seeded lab's
+      solvability, live billing signature verification + request-building
+      for Stripe/Paystack/Flutterwave, Turnstile verify-request/response
+      logic)
 - [x] 19 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`, an
       invite link's `?next=` round-trip, login error handling)

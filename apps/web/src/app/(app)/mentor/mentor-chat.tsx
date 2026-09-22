@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { MentorContextType, MentorMode } from "@/types/database";
 import type { MentorQuota } from "@/lib/mentor/rate-limit";
+import { parseNdjsonLines, type MentorStreamEvent } from "@/lib/mentor/ndjson";
 
 interface Message {
   role: "user" | "assistant";
@@ -59,17 +60,60 @@ export function MentorChat({
           contextId: contextId ?? undefined,
         }),
       });
-      const body = await res.json();
+
       if (!res.ok) {
-        throw new Error(body.error ?? "Something went wrong.");
+        // A non-streaming JSON error response -- quota/validation/auth
+        // failures are all rejected before any streaming begins.
+        const errorBody = await res.json().catch(() => null);
+        throw new Error(errorBody?.error ?? "Something went wrong.");
       }
-      setConversationId(body.conversationId);
-      setQuota(body.quota);
-      setMessages((prev) => [...prev, { role: "assistant", content: body.message }]);
+      if (!res.body) {
+        throw new Error("No response body.");
+      }
+
+      // A placeholder the streamed text deltas fill in as they arrive, so
+      // the Mentor's reply appears token-by-token instead of all at once.
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let streamError: string | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const { events, remainder } = parseNdjsonLines(buffer);
+        buffer = remainder;
+
+        for (const raw of events) {
+          const event = raw as MentorStreamEvent;
+          if (event.type === "delta") {
+            setMessages((prev) => {
+              const next = [...prev];
+              const last = next[next.length - 1];
+              next[next.length - 1] = { ...last, content: last.content + event.text };
+              return next;
+            });
+          } else if (event.type === "done") {
+            setConversationId(event.conversationId);
+            setQuota(event.quota);
+          } else if (event.type === "error") {
+            streamError = event.error;
+          }
+        }
+      }
+
+      if (streamError) {
+        throw new Error(streamError);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
-      // Roll back the optimistic user message on failure so retrying doesn't duplicate it.
-      setMessages((prev) => prev.slice(0, -1));
+      // Roll back the optimistic user message (and any empty/partial
+      // assistant placeholder) on failure so retrying doesn't duplicate it.
+      setMessages((prev) => (prev[prev.length - 1]?.role === "assistant" ? prev.slice(0, -2) : prev.slice(0, -1)));
       setInput(trimmed);
     } finally {
       setPending(false);
@@ -116,7 +160,9 @@ export function MentorChat({
             </div>
           </div>
         ))}
-        {pending && <p className="text-xs text-foreground-subtle">Thinking...</p>}
+        {pending && (messages[messages.length - 1]?.role !== "assistant" || messages[messages.length - 1]?.content === "") && (
+          <p className="text-xs text-foreground-subtle">Thinking...</p>
+        )}
       </div>
 
       {error && <p className="border-t border-danger/30 bg-danger-muted px-4 py-2 text-sm text-danger">{error}</p>}

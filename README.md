@@ -155,7 +155,9 @@ and
   each grounding the Mentor's focus in that specific item's real title/
   description (labs: only the hints the user has actually unlocked;
   findings: the finding's real category/severity/evidence/explanation/
-  impact/remediation, RLS-scoped to the caller's own scan).
+  impact/remediation, RLS-scoped to the caller's own scan). Responses
+  stream token-by-token (Anthropic SDK's `messages.stream()` over a
+  newline-delimited-JSON `ReadableStream`), not request/response.
 - **Security scanner** (`/scanner`): a real deterministic static-analysis
   rule engine (12 rule modules — secrets, SQL injection, XSS, command
   injection, path traversal, insecure eval, weak crypto, insecure CORS,

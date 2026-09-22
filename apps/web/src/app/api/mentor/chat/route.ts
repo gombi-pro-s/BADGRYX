@@ -4,7 +4,8 @@ import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { buildMentorContext, ALL_MENTOR_CONTEXT_TYPES } from "@/lib/mentor/context";
 import { checkMentorQuota } from "@/lib/mentor/rate-limit";
-import { callMentor, type MentorTurn } from "@/lib/mentor/client";
+import { streamMentorReply, type MentorTurn } from "@/lib/mentor/client";
+import type { MentorStreamEvent } from "@/lib/mentor/ndjson";
 import type { MentorContextType, MentorMode } from "@/types/database";
 
 const MENTOR_MODES: MentorMode[] = [
@@ -90,45 +91,65 @@ export async function POST(request: Request) {
 
   const context = await buildMentorContext(supabase, user.id, contextType, contextId ?? null);
 
-  let assistantText: string;
-  try {
-    assistantText = await callMentor({ mode, context, history, newUserMessage: message });
-  } catch (err) {
-    console.error("Mentor call failed:", err);
-    return NextResponse.json(
-      { error: "The Mentor is temporarily unavailable. Please try again shortly." },
-      { status: 502 },
-    );
-  }
+  // Streams the response as newline-delimited JSON events -- {type:"delta"}
+  // per text chunk as Anthropic produces it, then a single terminal
+  // {type:"done"} (with conversationId/quota, mirroring the old single JSON
+  // response) or {type:"error"}. DB persistence happens once the full text
+  // is known, after the stream completes -- the client sees text arrive
+  // token-by-token well before that.
+  const encoder = new TextEncoder();
+  const responseStream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      function send(event: MentorStreamEvent) {
+        controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+      }
 
-  const { error: userMsgError } = await supabase.from("mentor_messages").insert({
-    conversation_id: resolvedConversationId,
-    user_id: user.id,
-    role: "user",
-    mode,
-    content: message,
-  });
-  const { error: assistantMsgError } = await supabase.from("mentor_messages").insert({
-    conversation_id: resolvedConversationId,
-    user_id: user.id,
-    role: "assistant",
-    mode,
-    content: assistantText,
-  });
-  if (userMsgError || assistantMsgError) {
-    console.error("Failed to persist Mentor message:", userMsgError ?? assistantMsgError);
-  }
+      let assistantText: string;
+      try {
+        assistantText = await streamMentorReply({ mode, context, history, newUserMessage: message }, (delta) =>
+          send({ type: "delta", text: delta }),
+        );
+      } catch (err) {
+        console.error("Mentor call failed:", err);
+        send({ type: "error", error: "The Mentor is temporarily unavailable. Please try again shortly." });
+        controller.close();
+        return;
+      }
 
-  await supabase.rpc("log_audit_event", {
-    p_action: "mentor.message.sent",
-    p_target_type: "mentor_conversation",
-    p_target_id: resolvedConversationId,
-    p_metadata: { mode },
+      const { error: userMsgError } = await supabase.from("mentor_messages").insert({
+        conversation_id: resolvedConversationId,
+        user_id: user.id,
+        role: "user",
+        mode,
+        content: message,
+      });
+      const { error: assistantMsgError } = await supabase.from("mentor_messages").insert({
+        conversation_id: resolvedConversationId,
+        user_id: user.id,
+        role: "assistant",
+        mode,
+        content: assistantText,
+      });
+      if (userMsgError || assistantMsgError) {
+        console.error("Failed to persist Mentor message:", userMsgError ?? assistantMsgError);
+      }
+
+      await supabase.rpc("log_audit_event", {
+        p_action: "mentor.message.sent",
+        p_target_type: "mentor_conversation",
+        p_target_id: resolvedConversationId,
+        p_metadata: { mode },
+      });
+
+      const usedAfterThisMessage = quota.used + 1;
+      send({
+        type: "done",
+        conversationId: resolvedConversationId,
+        quota: { used: usedAfterThisMessage, limit: quota.limit, allowed: usedAfterThisMessage < quota.limit },
+      });
+      controller.close();
+    },
   });
 
-  return NextResponse.json({
-    conversationId: resolvedConversationId,
-    message: assistantText,
-    quota: { used: quota.used + 1, limit: quota.limit },
-  });
+  return new Response(responseStream, { headers: { "Content-Type": "application/x-ndjson; charset=utf-8" } });
 }
