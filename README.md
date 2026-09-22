@@ -84,6 +84,13 @@ for how it stays grounded in real data and cannot fabricate progress.
 - **Learner UI**: `/learn`, `/labs`, `/ctf` — real markdown lessons with
   embedded live quizzes, guided/unguided lab attempts with hint unlocking,
   and CTF flag submission, all backed by live queries/RPCs.
+- **Lab terminal simulator**: labs with an authored environment get a real
+  interactive terminal (`ls`/`cat`/`grep`/`sudo`/... against a virtual
+  filesystem, with genuine Unix-style read permissions enforced). The
+  environment's content, including any flag text, is never sent to the
+  browser directly — only the output of a command the learner actually ran
+  server-side. See
+  [`docs/adr/0009-lab-terminal-server-side.md`](./docs/adr/0009-lab-terminal-server-side.md).
 - **Real seeded content**: one complete path (SQL injection: lesson → quiz
   → guided lab → CTF challenge) proves the whole pipeline works end to end
   — a test user answers the real quiz, submits the real flags, and the

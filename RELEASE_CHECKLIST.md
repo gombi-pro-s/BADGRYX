@@ -125,8 +125,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] `/ctf` — published challenges (via the flag-hash-free public view),
       real flag submission and grading, solved state persists
 - [x] Every one of the above uses live Supabase queries/RPCs — no mock data
-- [ ] Labs' actual sandboxed target environment is not provisioned (see
-      "Labs / Terminal / Cyber Range" below) — clearly labeled in the UI
+- [x] Labs with an authored environment (`has_terminal`) get a real
+      interactive terminal simulator (see "Labs / Terminal / Cyber Range"
+      below); labs without one clearly label that in the UI rather than
+      implying a live environment
 
 ## Labs / Terminal / Cyber Range
 
@@ -175,7 +177,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       Unix read-permission enforcement to `cat`/`head`/`tail`/`wc`/`grep`
       before this lab shipped — see `lib/terminal/path.ts`'s `canReadFile`.
       8 more unit tests covering permission enforcement specifically
-- [ ] Terminal UI component wired into `/labs/[labId]` — not built yet
+- [x] Terminal UI component (`/labs/[labId]/terminal.tsx`) — a real
+      scrollback + input, up/down-arrow command recall, connects on mount
+      via a silent "learn the real cwd/user/hostname" call (never asserted
+      by the client), persists and replays the real transcript across page
+      reloads. Wired into `/labs/[labId]`, shown only when `lab.has_terminal`
+      is true and the learner has a running instance; the "not provisioned
+      yet" warning banner now only shows for labs that genuinely have no
+      terminal
 - [ ] Lab engine runtime for an actual live/networked target (a real VM or
       container per attempt) is intentionally out of scope — the terminal
       simulator is a deterministic virtual environment, not a provisioned

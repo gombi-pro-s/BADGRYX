@@ -13,6 +13,8 @@ const COMMAND_MAX_LENGTH = 2000;
 export interface TerminalExecutionResult {
   output: string;
   cwd: string;
+  user: string;
+  hostname: string;
 }
 
 function parseState(raw: unknown, fallback: TerminalState): TerminalState {
@@ -93,15 +95,20 @@ export async function runTerminalCommand(
     .eq("id", instance.id);
   if (updateError) throw new Error(`Failed to persist terminal state: ${updateError.message}`);
 
-  const { error: logError } = await supabase.from("lab_terminal_commands").insert({
-    lab_instance_id: instance.id,
-    user_id: userId,
-    command: commandLine,
-    output,
-    cwd_before: cwdBefore,
-    cwd_after: newState.cwd,
-  });
-  if (logError) console.error("Failed to log terminal command:", logError);
+  // An empty command is used by the client as a silent "connect" call to
+  // learn the initial prompt (cwd/user/hostname) before any real command
+  // has run -- not worth cluttering the transcript with.
+  if (commandLine.trim().length > 0) {
+    const { error: logError } = await supabase.from("lab_terminal_commands").insert({
+      lab_instance_id: instance.id,
+      user_id: userId,
+      command: commandLine,
+      output,
+      cwd_before: cwdBefore,
+      cwd_after: newState.cwd,
+    });
+    if (logError) console.error("Failed to log terminal command:", logError);
+  }
 
-  return { output, cwd: newState.cwd };
+  return { output, cwd: newState.cwd, user: newState.user, hostname: spec.hostname };
 }
