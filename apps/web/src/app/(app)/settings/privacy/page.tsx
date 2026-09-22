@@ -14,7 +14,11 @@ export default async function PrivacyPage() {
         &larr; Settings
       </Link>
       <h1 className="mb-1 text-2xl font-semibold text-foreground">Privacy &amp; data</h1>
-      <p className="mb-8 text-sm text-foreground-muted">{user.email}</p>
+      <p className="mb-1 text-sm text-foreground-muted">{user.email}</p>
+      <p className="mb-8 text-xs text-foreground-subtle">
+        See this project&apos;s <code>DATA_RETENTION.md</code> for exactly what&apos;s stored, for how long, and what
+        deleting your account does to each category of data.
+      </p>
 
       <div className="mb-6 rounded-lg border border-border bg-surface p-6">
         <h2 className="text-sm font-semibold text-foreground">Export your data</h2>

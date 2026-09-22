@@ -661,7 +661,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       session can see other users' rows on several tables by RLS design,
       and this route's job is "your own data," not "everything your
       session can see"
-- [ ] Documented retention policy (not written)
+- [x] Documented retention policy — `DATA_RETENTION.md`, a per-table-category
+      breakdown (owned data deleted via CASCADE, attribution nulled, the
+      audit log and staff-authored content retained indefinitely with a
+      stated reason why, `login_attempts`' 15-minute self-expiry, and the
+      subscription-cleanup triggers from AUDIT-010), including an honest
+      "not yet configured" for backups (no real Supabase project exists)
+      and a called-out limitation in `billing_webhook_events`' raw payload
+      retention rather than leaving it undocumented
 
 ## Logging / Auditing
 

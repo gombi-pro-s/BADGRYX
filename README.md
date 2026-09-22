@@ -320,4 +320,6 @@ also happens to work locally if you do have a machine for it.
   outstanding, honestly tracked.
 - [`SECURITY_AUDIT.md`](./SECURITY_AUDIT.md) — security findings and their
   status.
+- [`DATA_RETENTION.md`](./DATA_RETENTION.md) — exactly what's stored, for
+  how long, and what account deletion actually does, per table category.
 - [`docs/adr/`](./docs/adr/) — why the architecture is shaped the way it is.
