@@ -230,7 +230,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `DEMONSTRATED`, a wrong exact-text answer fails independently of a
       correct multiple-choice one, and the notes-privacy model (not even
       staff can read another user's notes)
-- [ ] Admin CRUD for investigations — not built yet
+- [x] Admin CRUD for investigations (`/admin/investigations`) — case
+      metadata, skill tagging, evidence artifacts manager, and a mixed
+      multiple_choice/exact_text question builder; exact_text answers are
+      hashed server-side on submit (same discipline as lab/CTF flags,
+      never sent to the browser or stored in plaintext)
 - [ ] Learner investigation workspace UI (`/investigate`) — not built yet
 - [ ] One complete real investigation seeded end-to-end — not built yet
 - [ ] Blue/Purple Team scenario linkage (not started)
