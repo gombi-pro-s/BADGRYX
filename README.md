@@ -105,11 +105,11 @@ for how it stays grounded in real data and cannot fabricate progress.
   terminal labs (privilege escalation, secrets enumeration, forensics, and
   service enumeration) prove the terminal simulator the same way — real,
   well-known techniques, solvable only by actually running the right
-  commands, not by reading page source. A seeded investigation, "Phishing
-  Campaign: The Fake Invoice," proves the OSINT/forensics workspace the
-  same way — four internally consistent artifacts (spoofed headers, a
-  WHOIS record, an incident chat log, a VPN login log) that a learner has
-  to correlate to answer correctly.
+  commands, not by reading page source. Four seeded investigations (a
+  phishing campaign, a data breach timeline, a social-engineering
+  pretext, and malware C2 beaconing) prove the OSINT/forensics workspace
+  the same way — each a set of internally consistent artifacts a learner
+  has to correlate to answer correctly, not a single isolated fact.
 - **AI Security Mentor** (`/mentor`): real Anthropic API calls grounded
   only in the user's actual Skill Graph data — never fabricated, and
   structurally unable to write skill evidence (see ADR 0007). Rate-limited

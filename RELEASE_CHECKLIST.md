@@ -50,7 +50,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 92 SQL regression assertions passing against a real Postgres instance
+- [x] 97 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -257,6 +257,19 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       grading RPC (not just schema-valid) by
       `supabase/tests/011_seeded_investigation_e2e.sql`, including
       realistic messy-case/whitespace input on the exact_text answers
+- [x] Three more real investigations, proving the workspace on distinct
+      evidence-correlation patterns: **Data Breach Timeline
+      Reconstruction** (a firewall transfer log + file metadata + a team
+      chat log trace initial access to a leaked, never-rotated
+      service-account password), **Social Engineering Pretext Analysis**
+      (a helpdesk call transcript + a public social media profile + a
+      spoofed follow-up email show how a caller built false credibility
+      from public OSINT), **Malware Beaconing: Identify the C2 Server** (a
+      network capture summary + a Startup-folder persistence artifact + a
+      WHOIS record). None require privilege escalation or a terminal --
+      pure evidence correlation. Proven genuinely solvable (correct
+      answers pass, wrong answers genuinely fail) by
+      `supabase/tests/012_more_seeded_investigations_e2e.sql`
 - [ ] Blue/Purple Team scenario linkage (not started)
 
 ## CTF / Arena / Exams / Capstones
@@ -427,7 +440,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 92 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 97 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
 - [x] 193 unit tests (validation logic, env guards, UI components, AI
       Mentor prompt safety, security scanner rule engine + enrichment
