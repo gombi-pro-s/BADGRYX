@@ -114,6 +114,19 @@ currently-absent control, tracked for a later phase), `INFORMATIONAL`.
 - **Verification**: `pnpm typecheck` clean after the change; isolated repro retained in the commit history/PR discussion for anyone who doubts it.
 - **Status**: `FIXED`.
 
+## AUDIT-009 — `/api/mentor/chat`'s context-type allowlist fell behind the UI's, breaking two just-added "Ask Mentor" deep links
+
+- **Severity**: Medium (a real, user-facing functional break, not a data-exposure issue)
+- **Confidence**: Confirmed (found by re-reading the route immediately after adding the second new context type, before any user could hit it)
+- **Component**: `apps/web/src/app/api/mentor/chat/route.ts`
+- **Description**: `/mentor`'s own page component validates its `?contextType=` search param against one hand-written array; `POST /api/mentor/chat`'s zod request schema validated `contextType` against a second, separately hand-written array. When `'investigation'` and then `'finding'` were added to `MentorContextType` (two consecutive phases this session), both were added to the page's array and to `buildFocusDetail()`, but the API route's copy was missed entirely.
+- **Evidence**: Found by re-reading `route.ts` right after the `'finding'` addition landed — `CONTEXT_TYPES` there still read `["skill", "lesson", "lab", "ctf", "general"]`.
+- **Impact**: Every "Ask Mentor" link added for investigations and scanner findings would render the `/mentor` page correctly (the page's own array was right) but fail the moment the user sent an actual message — `zod`'s `.enum()` would reject `contextType: "investigation"`/`"finding"` with a 400 "Invalid request," making both brand-new deep links functionally broken end to end despite compiling and rendering cleanly.
+- **Root cause**: The same logical constant (every valid `MentorContextType`) was duplicated across two files with no shared source of truth, so adding a new context type required remembering to update both — an easy step to miss, and nothing (not `tsc`, not lint, not the existing test suite) would have caught the drift.
+- **Fix**: Both arrays replaced with one exported constant, `ALL_MENTOR_CONTEXT_TYPES` (`apps/web/src/lib/mentor/context.ts`), imported by both `/mentor/page.tsx` and the chat route. A third context type can now only be added correctly, not incorrectly-in-one-place.
+- **Verification**: `tsc --noEmit` clean; manually traced both call sites to confirm they now import the same constant.
+- **Status**: `FIXED`.
+
 ---
 
 ## Verified controls (tested, not just asserted)

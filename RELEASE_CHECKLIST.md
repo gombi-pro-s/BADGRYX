@@ -82,8 +82,13 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
-- [x] 8 real bugs found and fixed during development, each with a regression
-      test — see `SECURITY_AUDIT.md` (AUDIT-001 through AUDIT-008)
+- [x] 9 real bugs found and fixed during development — see
+      `SECURITY_AUDIT.md` (AUDIT-001 through AUDIT-009). 8 of the 9 have a
+      dedicated regression test; AUDIT-009 (a context-type allowlist drift
+      between `/mentor`'s page and its API route) was instead fixed
+      structurally, by replacing both hand-duplicated arrays with one
+      shared exported constant, which makes that specific bug class
+      impossible to reintroduce rather than merely tested for
 - [ ] Migrations applied to a real (non-local-test) Supabase project — see
       `MANUAL_SETUP.md` §2b (requires your Supabase project)
 - [ ] Firestore — N/A (Supabase chosen, see ADR 0001)
@@ -456,8 +461,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       user that rather than inventing a report to discuss; unlike
       EXPLAIN_FINDING above, there is no underlying data these could
       ground themselves in yet
-- [ ] AI-assisted reasoning layer for the security scanner (waits on the
-      scanner itself, not started)
+- [x] AI-assisted reasoning layer for the security scanner — this entry
+      was a stale duplicate (it said "waits on the scanner itself, not
+      started," but the scanner and its AI enrichment layer both shipped
+      earlier in this session). See "AI-assisted enrichment layer" under
+      Security scanning engine below for the real, tested implementation.
 - [ ] Response streaming (current implementation is request/response, not
       token-by-token)
 

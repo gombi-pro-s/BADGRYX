@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import { buildMentorContext } from "@/lib/mentor/context";
+import { buildMentorContext, ALL_MENTOR_CONTEXT_TYPES } from "@/lib/mentor/context";
 import { checkMentorQuota } from "@/lib/mentor/rate-limit";
 import { callMentor, type MentorTurn } from "@/lib/mentor/client";
 import type { MentorContextType, MentorMode } from "@/types/database";
@@ -22,13 +22,11 @@ const MENTOR_MODES: MentorMode[] = [
   "explain_remediation",
   "review_report",
 ];
-const CONTEXT_TYPES: MentorContextType[] = ["skill", "lesson", "lab", "ctf", "general"];
-
 const requestSchema = z.object({
   conversationId: z.uuid().optional(),
   mode: z.enum(MENTOR_MODES as [MentorMode, ...MentorMode[]]),
   message: z.string().trim().min(1).max(4000),
-  contextType: z.enum(CONTEXT_TYPES as [MentorContextType, ...MentorContextType[]]).default("general"),
+  contextType: z.enum(ALL_MENTOR_CONTEXT_TYPES as [MentorContextType, ...MentorContextType[]]).default("general"),
   contextId: z.uuid().optional(),
 });
 

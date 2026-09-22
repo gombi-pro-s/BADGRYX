@@ -16,6 +16,26 @@ export interface EvidenceSummary {
   occurredAt: string;
 }
 
+/**
+ * Single source of truth for every valid MentorContextType, used by both
+ * the /mentor page (to validate its ?contextType= search param) and
+ * POST /api/mentor/chat (to validate the request body) -- previously these
+ * were two separately hand-maintained arrays, and the API route's copy
+ * fell behind when 'investigation'/'finding' were added, so a chat sent
+ * from either deep link would have been rejected with a 400 (see
+ * SECURITY_AUDIT.md AUDIT-009). A single exported constant makes that
+ * class of bug structurally harder to reintroduce.
+ */
+export const ALL_MENTOR_CONTEXT_TYPES: MentorContextType[] = [
+  "skill",
+  "lesson",
+  "lab",
+  "ctf",
+  "investigation",
+  "finding",
+  "general",
+];
+
 export interface FocusDetail {
   type: MentorContextType;
   title: string;

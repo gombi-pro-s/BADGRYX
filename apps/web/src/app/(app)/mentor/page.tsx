@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { checkMentorQuota } from "@/lib/mentor/rate-limit";
+import { ALL_MENTOR_CONTEXT_TYPES } from "@/lib/mentor/context";
 import type { MentorContextType } from "@/types/database";
 import { MentorChat } from "./mentor-chat";
 
 export const metadata: Metadata = { title: "AI Mentor" };
-
-const VALID_CONTEXT_TYPES: MentorContextType[] = ["skill", "lesson", "lab", "ctf", "investigation", "finding", "general"];
 
 export default async function MentorPage({
   searchParams,
@@ -15,7 +14,7 @@ export default async function MentorPage({
   searchParams: Promise<{ contextType?: string; contextId?: string }>;
 }) {
   const { contextType: rawContextType, contextId } = await searchParams;
-  const contextType: MentorContextType = VALID_CONTEXT_TYPES.includes(rawContextType as MentorContextType)
+  const contextType: MentorContextType = ALL_MENTOR_CONTEXT_TYPES.includes(rawContextType as MentorContextType)
     ? (rawContextType as MentorContextType)
     : "general";
 
