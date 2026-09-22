@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth/session";
 
 const ADMIN_SECTIONS = [
   { href: "/admin", label: "Overview" },
+  { href: "/admin/users", label: "Users" },
   { href: "/admin/paths", label: "Learning Paths" },
   { href: "/admin/labs", label: "Labs" },
   { href: "/admin/quizzes", label: "Quizzes" },

@@ -43,6 +43,22 @@ export type SkillState =
 
 export type PlatformRole = "user" | "instructor" | "moderator" | "admin";
 
+export type UserRoleRow = {
+  id: string;
+  user_id: string;
+  role: PlatformRole;
+  granted_by: string | null;
+  granted_at: string;
+};
+
+export interface AdminUserSearchResult {
+  user_id: string;
+  email: string | null;
+  username: string | null;
+  display_name: string | null;
+  roles: PlatformRole[];
+}
+
 export type OrgRole = "member" | "instructor" | "team_owner" | "org_admin";
 
 export type BillingInterval = "free" | "month" | "year" | "lifetime";
@@ -572,14 +588,11 @@ export interface Database {
         Relationships: [];
       };
       user_roles: {
-        Row: {
-          id: string;
-          user_id: string;
-          role: PlatformRole;
-          granted_by: string | null;
-          granted_at: string;
-        };
-        Insert: Record<string, never>; // writes only via admin RLS path, never raw client insert in app code
+        Row: UserRoleRow;
+        // App code never inserts here directly -- see the
+        // grant_platform_role()/revoke_platform_role() RPCs below, called
+        // from app/(app)/admin/users/actions.ts.
+        Insert: Record<string, never>;
         Update: Record<string, never>;
         Relationships: [];
       };
@@ -1166,6 +1179,18 @@ export interface Database {
       count_my_scan_enrichments_today: {
         Args: Record<string, never>;
         Returns: number;
+      };
+      grant_platform_role: {
+        Args: { p_user_id: string; p_role: PlatformRole };
+        Returns: UserRoleRow;
+      };
+      revoke_platform_role: {
+        Args: { p_user_id: string; p_role: PlatformRole };
+        Returns: void;
+      };
+      admin_search_users: {
+        Args: { p_query?: string };
+        Returns: AdminUserSearchResult[];
       };
       set_active_subscription: {
         Args: {

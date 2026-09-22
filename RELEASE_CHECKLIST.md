@@ -43,14 +43,24 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       used by protected routes, not just middleware redirects
 - [x] Admin nav link only rendered for actual admins; `/admin` itself
       re-verifies via `requireAdmin()`, independent of the link
-- [ ] Admin UI for granting/revoking *other users'* roles (an admin can
-      author content; there is no UI yet to promote another user to
-      instructor/moderator/admin — only directly in the database)
+- [x] Admin UI for granting/revoking *other users'* roles — `/admin/users`
+      (search by email/username/display_name via `admin_search_users()`,
+      click a role chip to grant/revoke instructor/moderator/admin).
+      `grant_platform_role()`/`revoke_platform_role()` are now the only
+      way this app's own UI changes a role — each is audit-logged
+      (`user_role.granted`/`user_role.revoked`), and an admin is blocked
+      from revoking their own admin role (lockout prevention) while still
+      able to revoke a *different* admin's. `admin_search_users()` is the
+      one narrowly-scoped admin-only read across the `auth.users`
+      boundary (email/username/display_name/current roles only — no
+      password hash, no raw metadata) since `profiles` never stores email
+      by design. 9 SQL regression assertions
+      (`supabase/tests/016_admin_role_management.sql`)
 
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 119 SQL regression assertions passing against a real Postgres instance
+- [x] 128 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -582,10 +592,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 119 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 128 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
       capstone review lifecycle + the seeded standalone exam + the real
-      pro plan's entitlements)
+      pro plan's entitlements + admin role management)
 - [x] 222 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety, security scanner rule engine + enrichment prompt +

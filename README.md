@@ -77,7 +77,10 @@ and
 - **RBAC**: platform roles (user/instructor/moderator/admin) and
   organization-scoped roles (member/instructor/team_owner/org_admin),
   enforced by RLS. A user can never self-escalate — this is covered by an
-  explicit regression test, not just a design intent.
+  explicit regression test, not just a design intent. `/admin/users` lets
+  an admin search for and promote/demote another user's platform role
+  (`grant_platform_role()`/`revoke_platform_role()`, audit-logged), with a
+  lockout guard blocking an admin from revoking their own admin role.
 - **Skill Graph**: real skill catalog (38 skills across 8 categories), a
   documented state machine (`NOT_STARTED` → ... → `MASTERED` /
   `NEEDS_REVIEW`), computed server-side from evidence. `/skills` renders it
