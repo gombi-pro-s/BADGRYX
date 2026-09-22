@@ -55,6 +55,24 @@ BEGIN
   INSERT INTO public.lab_instances (lab_id, user_id, guided, status)
   VALUES (v_lab_id, '11111111-1111-1111-1111-111111111111', true, 'running')
   RETURNING id INTO v_instance_id;
+
+  INSERT INTO public.labs (slug, title, category, difficulty, published)
+  VALUES ('test-no-terminal-lab', 'Test Lab Without a Terminal', 'linux', 'easy', true);
+END $$;
+
+-- ============================================================================
+-- 0. labs.has_terminal is kept accurate by trigger -- true only for the lab
+--    with an authored environment, and readable by anyone (it reveals no
+--    secret content, unlike lab_environments itself).
+-- ============================================================================
+DO $$
+DECLARE v_has_terminal boolean; v_has_terminal_other boolean;
+BEGIN
+  SELECT has_terminal INTO v_has_terminal FROM public.labs WHERE slug = 'test-terminal-lab';
+  SELECT has_terminal INTO v_has_terminal_other FROM public.labs WHERE slug = 'test-no-terminal-lab';
+  IF v_has_terminal IS NOT true THEN RAISE EXCEPTION 'FAIL: has_terminal should be true for a lab with an environment'; END IF;
+  IF v_has_terminal_other IS NOT false THEN RAISE EXCEPTION 'FAIL: has_terminal should be false for a lab without one'; END IF;
+  RAISE NOTICE 'PASS: labs.has_terminal is kept accurate by trigger';
 END $$;
 
 -- ============================================================================

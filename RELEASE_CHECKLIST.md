@@ -50,7 +50,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 81 SQL regression assertions passing against a real Postgres instance
+- [x] 82 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -138,7 +138,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `lab_terminal_commands` (an append-only, owner-scoped transcript of
       every command run). `labs.environment_spec` (an unused placeholder
       column) was dropped and replaced by this properly-secured table.
-      7 SQL regression assertions (`supabase/tests/009_lab_terminal_rls.sql`)
+      8 SQL regression assertions (`supabase/tests/009_lab_terminal_rls.sql`)
 - [x] Terminal command interpreter (`lib/terminal/interpreter.ts`) — pure,
       no I/O, real Unix-like subset: `pwd cd ls cat echo head tail wc file
       find grep whoami id hostname uname sudo clear help`. Deliberately not
@@ -147,7 +147,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `sudo` enforces a per-user allow-list from the spec and elevates only
       for that one call, never persisting. 57 unit tests (path resolution/
       implicit directories + every command's real and error-path behavior)
-- [ ] Server-side terminal execution engine + API route — not built yet
+- [x] Server-side terminal execution engine (`lib/terminal/execute.ts`) —
+      verifies lab_instance ownership + running status through the
+      caller's own RLS-scoped session first, only then escalates (via
+      `createAdminClient()`, narrowly, for this one read) to fetch the
+      staff-only environment spec; persists updated state and an
+      append-only transcript row back through the caller's own session.
+      `POST /api/labs/[labInstanceId]/terminal` — requireUser, zod,
+      2000-char command cap
+- [x] `labs.has_terminal` — a denormalized, non-secret flag (kept accurate
+      by trigger) so the learner UI can offer a terminal launcher without
+      ever querying `lab_environments` directly
 - [ ] Admin authoring UI for lab environments + a real seeded terminal lab
       — not built yet
 - [ ] Terminal UI component wired into `/labs/[labId]` — not built yet
@@ -330,7 +340,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 81 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 82 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
 - [x] 171 unit tests (validation logic, env guards, UI components, AI
       Mentor prompt safety, security scanner rule engine + enrichment

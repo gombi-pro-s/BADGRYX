@@ -181,6 +181,7 @@ export type LabRow = {
   category: LabCategory;
   difficulty: DifficultyLevel;
   objectives: unknown;
+  has_terminal: boolean;
   estimated_minutes: number;
   points: number;
   supports_guided: boolean;
