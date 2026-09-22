@@ -126,36 +126,43 @@ project with local development).
 
 ## 3. Anthropic API key (powers the AI Security Mentor)
 
-**Required for**: the AI Mentor (`/mentor`, `POST /api/mentor/chat`) to
-actually respond. Without this, every Mentor request fails with a 502
-("The Mentor is temporarily unavailable") — the rest of the app is
-unaffected. Not required for the (not-yet-built) AI-assisted security
-scanner, which will reuse this same key once it exists.
+**Required for**: the AI Mentor (`/mentor`, `POST /api/mentor/chat`) and the
+security scanner's AI-enrichment step
+(`POST /api/scanner/findings/[id]/enrich`) to actually respond. Without
+this, every Mentor request fails with a 502 ("The Mentor is temporarily
+unavailable") and every enrichment request fails with a 502 ("Enrichment is
+temporarily unavailable") — the deterministic scan itself
+(`POST /api/scanner/scan`) is unaffected either way, since it never calls
+Anthropic.
 
 1. **What**: Create an Anthropic API key.
 2. **Where**: https://console.anthropic.com → API Keys.
 3. **Exact value**: Copy the key into `ANTHROPIC_API_KEY` (server-only env
    var — never `NEXT_PUBLIC_*`; guarded by `lib/env.ts`'s `server-only`
    import the same way the Supabase service_role key is).
-4. **Why**: Powers `lib/mentor/client.ts`, which calls the Anthropic
+4. **Why**: Powers `lib/mentor/client.ts` (Mentor chat) and
+   `lib/scanner/enrich.ts` (finding enrichment), both calling the Anthropic
    Messages API (model: `claude-sonnet-5`) with a system prompt grounded
-   in the user's real Skill Graph data (see
-   `docs/adr/0007-ai-mentor-grounding.md`).
-5. **Verify**: Log in, open `/mentor`, and send a message.
-6. **Expected result**: A real response from Claude, referencing your
-   actual skill states if you have any progress recorded. The daily
-   request counter in the top-right of the Mentor chat should increment.
-7. **Cost note**: Each Mentor plan's `ai_mentor_daily_requests` entitlement
-   (10/day on the free plan — see `plan_entitlements` in
-   `supabase/migrations/20260921000011_entitlements.sql`) is the only
-   built-in cost control today. Watch usage in the Anthropic console while
-   this is new, and lower the free-plan limit via that table if needed. The
-   security scanner's deterministic rule engine (`POST /api/scanner/scan`)
-   does not call this key at all today — no AI enrichment phase exists yet
-   — but it is already rate-limited independently via `scanner_daily_scans`
-   (5/day on the free plan — see
-   `supabase/migrations/20260922000003_scanner_entitlements.sql`) so the
-   same lever is ready once an AI-assisted enrichment layer is added.
+   only in real data -- the user's Skill Graph for the Mentor
+   (`docs/adr/0007-ai-mentor-grounding.md`), a specific finding's own
+   evidence for the scanner (`docs/adr/0008-scanner-finding-lifecycle.md`).
+5. **Verify**: Log in, open `/mentor` and send a message; separately, run a
+   scan at `/scanner` (once built) and enrich a finding.
+6. **Expected result**: A real response from Claude in both cases. The
+   Mentor's daily request counter should increment; an enriched finding
+   gets `ai_enriched = true` and updated explanation/impact/remediation
+   text.
+7. **Cost note**: Each feature has its own independent daily limit through
+   the real entitlement engine, not a shared or unlimited budget:
+   `ai_mentor_daily_requests` (10/day on free —
+   `supabase/migrations/20260921000011_entitlements.sql`) for the Mentor,
+   `scanner_daily_scans` (5/day on free —
+   `supabase/migrations/20260922000003_scanner_entitlements.sql`) for
+   running a scan, `scanner_daily_enrichments` (20/day on free —
+   `supabase/migrations/20260922000004_scanner_enrichment.sql`) for AI
+   enrichment calls on findings. Watch usage in the Anthropic console while
+   this is new, and lower any of the three via `plan_entitlements` if
+   needed.
 
 ---
 

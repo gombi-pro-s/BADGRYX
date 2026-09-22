@@ -50,7 +50,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 68 SQL regression assertions passing against a real Postgres instance
+- [x] 74 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -216,8 +216,29 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       same pattern as the Mentor's quota), audit-logged
 - [x] 4 unit tests for the file-count/size validation guard
       (`lib/scanner/__tests__/validate.test.ts`)
-- [ ] AI-assisted enrichment layer (explanation/triage only, never inventing
-      findings) — not built
+- [x] AI-assisted enrichment layer: `POST /api/scanner/findings/[id]/enrich`
+      calls Anthropic (model `claude-sonnet-5`), grounded only in the real
+      finding's evidence (fetched server-side, RLS-enforced), and writes
+      through `enrich_scan_finding()` — a function with no parameter for
+      severity/category/verification_status/status, so it structurally
+      cannot invent or reclassify a finding, only improve its explanation/
+      impact/remediation/secure_example text (`ai_enriched` flag set). The
+      scanned source's evidence (the one attacker-influenceable input in
+      this flow) is explicitly labeled untrusted in the prompt and never
+      concatenated with the fixed system instructions — same three-way
+      separation as ADR 0007, see ADR 0008
+- [x] `scanner_daily_enrichments` entitlement (20/day on free) enforced by
+      `POST /api/scanner/findings/[id]/enrich` via
+      `count_my_scan_enrichments_today()` — a SECURITY DEFINER helper
+      scoped to the caller's own audit_log entries, since audit_log itself
+      is admin-only readable by RLS
+- [x] 6 SQL regression assertions
+      (`supabase/tests/008_scanner_enrichment_rls.sql`): enrichment never
+      changes fact-of-record fields, cross-user enrichment rejected, empty
+      text rejected, audit-logged, enrichment count reflects only the
+      caller's own activity
+- [x] 8 unit tests for the enrichment prompt (evidence isolation, injection
+      resistance, structural non-fabrication) — `lib/scanner/__tests__/enrichment-prompt.test.ts`
 - [ ] `/scanner` UI (upload/paste, findings display, posture dashboard,
       attack → fix → retest workflow) — not built
 
@@ -265,9 +286,9 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 68 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 74 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
-- [x] 89 unit tests (validation logic, env guards, UI component, AI Mentor
+- [x] 97 unit tests (validation logic, env guards, UI component, AI Mentor
       prompt safety, security scanner rule engine)
 - [x] 13 e2e smoke tests (public pages, auth wall across all protected
       sections, login error handling)

@@ -821,6 +821,20 @@ export interface Database {
         Args: { p_finding_id: string; p_new_status: ScanFindingStatus; p_note?: string | null };
         Returns: ScanFindingRow;
       };
+      enrich_scan_finding: {
+        Args: {
+          p_finding_id: string;
+          p_explanation: string;
+          p_impact: string;
+          p_remediation: string;
+          p_secure_example?: string | null;
+        };
+        Returns: ScanFindingRow;
+      };
+      count_my_scan_enrichments_today: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
