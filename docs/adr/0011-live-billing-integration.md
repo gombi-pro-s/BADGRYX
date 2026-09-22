@@ -72,12 +72,24 @@ plan existed. There was nothing to actually upgrade to.
   call, `lib/billing/plans.ts`'s `computePeriodEnd()` derives it from the
   plan's billing interval at the moment of activation. Documented as a
   simplification, accurate within the billing cycle it represents.
-- **Cancellation is fully wired for Stripe only in this build.**
-  `customer.subscription.deleted` downgrades the subject back to `free`
-  automatically. Paystack's `subscription.disable` is also handled.
-  Flutterwave's cancellation webhook shape varies more by integration
-  setup and isn't implemented yet -- documented as a known limitation in
-  `RELEASE_CHECKLIST.md`, not silently missing.
+- **Cancellation is wired for all three providers.**
+  `customer.subscription.deleted` (Stripe), `subscription.disable`
+  (Paystack), and `subscription.cancelled` (Flutterwave) each downgrade
+  the subject back to `free` automatically. Stripe matches by
+  `provider_subscription_id` (a fresh, stable id per subscription
+  object); Paystack and Flutterwave match by `(provider,
+  provider_customer_id)` instead, scoped to the subject's currently
+  active-ish row (`status IN ('trialing','active','past_due')`) -- their
+  customer id persists across a subject's whole history with that
+  provider, so a bare match with no status filter would error on
+  `.maybeSingle()` after a past cancel-then-resubscribe left more than
+  one historical row sharing it (a real bug caught and fixed in both
+  handlers, not just the new one, while implementing Flutterwave's).
+  Flutterwave's exact webhook event name/payload shape here is
+  implemented against their documented format, not verified against a
+  live account's actual deliveries -- there is none in this build
+  environment; confirm both when you configure it for real
+  (`MANUAL_SETUP.md` §4c).
 
 ## Why
 

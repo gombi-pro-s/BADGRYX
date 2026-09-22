@@ -109,10 +109,17 @@ async function handleSubscriptionDisabled(supabase: ReturnType<typeof createAdmi
   const providerCustomerId = customer?.customer_code;
   if (!providerCustomerId) return;
 
+  // Scoped to the currently active-ish row, not just a bare match on
+  // provider_customer_id: that id persists across a customer's whole
+  // history with Paystack, so a past cancel-then-resubscribe can leave
+  // more than one historical row sharing it. Without this filter,
+  // .maybeSingle() would error on >1 match.
   const { data: existing } = await supabase
     .from("subscriptions")
     .select("subject_type, subject_id")
+    .eq("provider", "paystack")
     .eq("provider_customer_id", providerCustomerId)
+    .in("status", ["trialing", "active", "past_due"])
     .maybeSingle();
   if (!existing) return;
 

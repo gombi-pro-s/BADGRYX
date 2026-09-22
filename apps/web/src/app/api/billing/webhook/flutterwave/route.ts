@@ -13,13 +13,18 @@ interface FlutterwaveEvent {
  * Flutterwave webhook. Same idempotency/processing discipline as the
  * Stripe/Paystack handlers -- see docs/adr/0011-live-billing-integration.md.
  *
- * Known limitation, documented rather than silently missing: this build
- * only handles activation (a successful charge). Flutterwave's recurring-
- * subscription cancellation events vary more by integration shape than
- * Stripe's/Paystack's, so reliable auto-downgrade-on-cancel is implemented
- * for Stripe only in v1 -- a Flutterwave subscriber who cancels on
- * Flutterwave's side needs an admin manual-comp change (or a follow-up
- * migration) until that's added.
+ * Handles activation (a successful charge) and cancellation
+ * (`subscription.cancelled`, downgrading back to `free`), matching the
+ * Stripe/Paystack handlers' coverage. Cancellation is matched by
+ * `provider_customer_id` rather than a subscription id: Flutterwave's
+ * recurring-payment model doesn't expose a stable per-charge subscription
+ * identifier the way Stripe's `customer.subscription.deleted` does, so the
+ * (provider, provider_customer_id) pair set at activation time is the most
+ * reliable real identifier available. The event name and payload shape
+ * here are implemented against Flutterwave's documented webhook format;
+ * verify both against your own account's actual deliveries when you
+ * configure this for real (MANUAL_SETUP.md §4c) -- there is no live
+ * Flutterwave account in this build environment to confirm against.
  */
 export async function POST(request: Request) {
   if (!isFlutterwaveConfigured()) {
@@ -68,6 +73,8 @@ export async function POST(request: Request) {
   try {
     if (event.data.status === "successful") {
       await handleChargeSuccessful(supabase, event.data);
+    } else if (event.event === "subscription.cancelled") {
+      await handleSubscriptionCancelled(supabase, event.data);
     }
     await supabase
       .from("billing_webhook_events")
@@ -104,5 +111,36 @@ async function handleChargeSuccessful(supabase: ReturnType<typeof createAdminCli
     p_provider_customer_id: customer?.id != null ? String(customer.id) : null,
     p_provider_subscription_id: data.id != null ? String(data.id) : null,
     p_current_period_end: computePeriodEnd(plan.interval).toISOString(),
+  });
+}
+
+async function handleSubscriptionCancelled(supabase: ReturnType<typeof createAdminClient>, data: Record<string, unknown>) {
+  const customer = data.customer as { id?: string | number } | undefined;
+  const providerCustomerId = customer?.id != null ? String(customer.id) : null;
+  if (!providerCustomerId) return;
+
+  // Scoped to the currently active-ish row, not just a bare match on
+  // provider_customer_id: that id persists across a customer's whole
+  // history with Flutterwave, so a past cancel-then-resubscribe can leave
+  // more than one historical row sharing it. Without this filter,
+  // .maybeSingle() would error on >1 match.
+  const { data: existing } = await supabase
+    .from("subscriptions")
+    .select("subject_type, subject_id")
+    .eq("provider", "flutterwave")
+    .eq("provider_customer_id", providerCustomerId)
+    .in("status", ["trialing", "active", "past_due"])
+    .maybeSingle();
+  if (!existing) return;
+
+  const { data: freePlan } = await supabase.from("plans").select("id").eq("slug", "free").single();
+  if (!freePlan) return;
+
+  await supabase.rpc("set_active_subscription", {
+    p_subject_type: existing.subject_type,
+    p_subject_id: existing.subject_id,
+    p_plan_id: freePlan.id,
+    p_status: "active",
+    p_provider: null,
   });
 }

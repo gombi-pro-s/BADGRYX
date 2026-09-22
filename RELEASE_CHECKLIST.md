@@ -158,10 +158,19 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       correctly once active. A real click-through and webhook delivery
       needs a real provider account and keys — do that first (§4) if you
       want this verified live.
-- [ ] Recurring-subscription cancellation auto-downgrade is only
-      implemented for Stripe and Paystack in this build; a Flutterwave
-      cancellation needs a manual admin comp until a follow-up adds it
-      (documented limitation, see ADR 0011)
+- [x] Recurring-subscription cancellation auto-downgrade is implemented
+      for all three providers (Stripe's `customer.subscription.deleted`,
+      Paystack's `subscription.disable`, Flutterwave's
+      `subscription.cancelled`). While wiring Flutterwave's, found and
+      fixed a real latent bug in Paystack's handler too: matching a
+      cancellation to a subject by a bare `provider_customer_id` breaks
+      (`.maybeSingle()` errors on >1 row) once a customer has
+      cancelled-then-resubscribed, since that id persists across their
+      whole history with the provider — both handlers now scope the
+      match to the subject's currently active-ish row. Flutterwave's
+      exact webhook event name/payload isn't verified against a live
+      account (none exists in this build environment) — confirm against
+      real deliveries when configuring it for real, see ADR 0011
 
 ## Content authoring (Admin CMS)
 
