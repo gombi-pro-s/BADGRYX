@@ -97,6 +97,45 @@ export async function revokeInvitationAction(organizationId: string, invitationI
   revalidatePath(`/orgs/${organizationId}`);
 }
 
+const MEMBER_ROLES: OrgRole[] = ["member", "instructor", "team_owner", "org_admin"];
+
+export interface MemberActionState {
+  error: string | null;
+}
+
+export async function updateMemberRoleAction(
+  organizationId: string,
+  memberId: string,
+  newRole: OrgRole,
+): Promise<MemberActionState> {
+  await requireOrgAdmin(organizationId);
+  if (!MEMBER_ROLES.includes(newRole)) return { error: "Invalid role." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_organization_member_role", {
+    p_organization_id: organizationId,
+    p_organization_member_id: memberId,
+    p_new_role: newRole,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/orgs/${organizationId}`);
+  return { error: null };
+}
+
+export async function removeMemberAction(organizationId: string, memberId: string): Promise<MemberActionState> {
+  await requireUser();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("remove_organization_member", {
+    p_organization_id: organizationId,
+    p_organization_member_id: memberId,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/orgs/${organizationId}`);
+  return { error: null };
+}
+
 export interface AcceptInviteState {
   error: string | null;
 }

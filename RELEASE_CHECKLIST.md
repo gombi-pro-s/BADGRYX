@@ -60,7 +60,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 134 SQL regression assertions passing against a real Postgres instance
+- [x] 144 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -565,11 +565,20 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       tests including the 2 new ones for `/orgs` and `/invite/[token]`'s
       auth-wall redirects. A real click-through needs a provisioned
       Supabase project (`MANUAL_SETUP.md` §2).
-- [ ] Removing/demoting a member, or changing their role, has no dedicated
-      UI yet (the RLS policies and `organization_members` UPDATE/DELETE
-      paths already support it — see
-      `supabase/migrations/20260921000005_identity_rls_policies.sql` — this
-      is a UI gap only)
+- [x] Org member management: `/orgs/[orgId]` now has a per-member role
+      dropdown (org admin/team owner only) and a Remove/Leave button (org
+      admin for anyone, or any member for themselves) built on two new
+      SECURITY DEFINER functions,
+      `update_organization_member_role()`/`remove_organization_member()`
+      (`supabase/migrations/20260922000019_org_member_management.sql`),
+      not the raw RLS UPDATE/DELETE path. Building the real UI surfaced a
+      gap the RLS policies alone don't cover: nothing stopped an org_admin
+      from demoting or removing the organization's only `team_owner`,
+      leaving it with no one able to manage it. Both functions now block
+      that (the guard is a live count of `team_owner` rows, not a
+      self-check — it also stops the last owner removing/demoting
+      *themselves*), and both are audit-logged. See
+      `docs/adr/0013-org-member-management.md`.
 
 ## Privacy / Data protection
 
@@ -651,11 +660,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 134 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 144 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
       capstone review lifecycle + the seeded standalone exam + the real
       pro plan's entitlements + admin role management + org-scoped audit
-      log coverage + account deletion)
+      log coverage + account deletion + org member management)
 - [x] 222 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety, security scanner rule engine + enrichment prompt +

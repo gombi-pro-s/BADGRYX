@@ -5,6 +5,7 @@ import { requireOrgMembership } from "@/lib/auth/org";
 import { createClient } from "@/lib/supabase/server";
 import { InviteForm } from "./invite-form";
 import { RevokeInviteButton } from "./revoke-invite-button";
+import { MemberRoleSelect, RemoveMemberButton } from "./member-actions";
 import { revokeInvitationAction } from "../actions";
 import type { OrgRole } from "@/types/database";
 
@@ -15,7 +16,7 @@ const INSTRUCTOR_ROLES: OrgRole[] = ["instructor", "team_owner", "org_admin"];
 
 export default async function OrganizationDetailPage({ params }: { params: Promise<{ orgId: string }> }) {
   const { orgId } = await params;
-  const { role } = await requireOrgMembership(orgId);
+  const { user, role } = await requireOrgMembership(orgId);
   const supabase = await createClient();
 
   const { data: organization } = await supabase.from("organizations").select("*").eq("id", orgId).maybeSingle();
@@ -71,12 +72,25 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
       <ul className="mb-8 divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
         {(members ?? []).map((m) => {
           const profile = profileById.get(m.user_id);
+          const isSelf = m.user_id === user.id;
           return (
             <li key={m.id} className="flex items-center justify-between gap-4 px-4 py-3">
-              <span className="text-sm text-foreground">{profile?.display_name ?? profile?.username ?? m.user_id}</span>
-              <span className="shrink-0 rounded-full bg-background-subtle px-2.5 py-0.5 text-xs font-medium text-foreground-muted">
-                {m.role.replace("_", " ")}
+              <span className="text-sm text-foreground">
+                {profile?.display_name ?? profile?.username ?? m.user_id}
+                {isSelf && <span className="ml-1.5 text-xs text-foreground-subtle">(you)</span>}
               </span>
+              <div className="flex shrink-0 items-center gap-3">
+                {isAdmin ? (
+                  <MemberRoleSelect organizationId={orgId} memberId={m.id} currentRole={m.role} />
+                ) : (
+                  <span className="rounded-full bg-background-subtle px-2.5 py-0.5 text-xs font-medium text-foreground-muted">
+                    {m.role.replace("_", " ")}
+                  </span>
+                )}
+                {(isAdmin || isSelf) && (
+                  <RemoveMemberButton organizationId={orgId} memberId={m.id} isSelf={isSelf} />
+                )}
+              </div>
             </li>
           );
         })}

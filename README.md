@@ -138,8 +138,15 @@ and
   (`/orgs/[orgId]/dashboard`) of skill states, lab completions, and
   quiz/CTF/investigation results — enforced by RLS extending the same
   org-instructor visibility pattern across all 8 gradeable-outcome tables,
-  not a service-role bypass. See
-  [`docs/adr/0010-org-invitations-manual-link.md`](./docs/adr/0010-org-invitations-manual-link.md).
+  not a service-role bypass. Member management (change a member's role,
+  remove someone, or leave yourself) goes through
+  `update_organization_member_role()`/`remove_organization_member()`,
+  which enforce a live invariant the raw RLS policies can't express: the
+  organization's last `team_owner` can never be demoted or removed by
+  anyone, including themselves. See
+  [`docs/adr/0010-org-invitations-manual-link.md`](./docs/adr/0010-org-invitations-manual-link.md)
+  and
+  [`docs/adr/0013-org-member-management.md`](./docs/adr/0013-org-member-management.md).
 - **AI Security Mentor** (`/mentor`): real Anthropic API calls grounded
   only in the user's actual Skill Graph data — never fabricated, and
   structurally unable to write skill evidence (see ADR 0007). Rate-limited

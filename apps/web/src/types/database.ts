@@ -1218,6 +1218,14 @@ export interface Database {
         Args: { p_token: string };
         Returns: OrganizationMemberRow;
       };
+      update_organization_member_role: {
+        Args: { p_organization_id: string; p_organization_member_id: string; p_new_role: OrgRole };
+        Returns: OrganizationMemberRow;
+      };
+      remove_organization_member: {
+        Args: { p_organization_id: string; p_organization_member_id: string };
+        Returns: void;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
