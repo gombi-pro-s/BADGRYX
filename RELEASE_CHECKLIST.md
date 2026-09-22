@@ -139,8 +139,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       every command run). `labs.environment_spec` (an unused placeholder
       column) was dropped and replaced by this properly-secured table.
       7 SQL regression assertions (`supabase/tests/009_lab_terminal_rls.sql`)
-- [ ] Terminal command interpreter (pure, real Unix-like subset against the
-      virtual filesystem) — not built yet
+- [x] Terminal command interpreter (`lib/terminal/interpreter.ts`) — pure,
+      no I/O, real Unix-like subset: `pwd cd ls cat echo head tail wc file
+      find grep whoami id hostname uname sudo clear help`. Deliberately not
+      a shell (no pipes/redirects/chaining) — documented as an honest scope
+      boundary, same as the scanner's rule engine not being a real parser.
+      `sudo` enforces a per-user allow-list from the spec and elevates only
+      for that one call, never persisting. 57 unit tests (path resolution/
+      implicit directories + every command's real and error-path behavior)
 - [ ] Server-side terminal execution engine + API route — not built yet
 - [ ] Admin authoring UI for lab environments + a real seeded terminal lab
       — not built yet
@@ -326,9 +332,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 - [x] 81 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
-- [x] 114 unit tests (validation logic, env guards, UI components, AI
+- [x] 171 unit tests (validation logic, env guards, UI components, AI
       Mentor prompt safety, security scanner rule engine + enrichment
-      prompt + status transitions)
+      prompt + status transitions, lab terminal path resolution +
+      command interpreter)
 - [x] 14 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`, login error handling)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified
