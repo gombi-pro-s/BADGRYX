@@ -50,7 +50,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 74 SQL regression assertions passing against a real Postgres instance
+- [x] 81 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -131,10 +131,24 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Labs / Terminal / Cyber Range
 
 - [x] Lab bookkeeping (instances, hints, flags, progress) — real, tested
-- [ ] Lab engine runtime: no provisioning/execution engine for an actual
-      sandboxed target exists yet. `/labs/[labId]` explicitly labels this
-      rather than implying a live environment.
-- [ ] Terminal simulator (not started)
+- [x] Terminal simulator — schema: `lab_environments` (the authored virtual
+      filesystem/hostname, RLS-locked exactly like `lab_flags` — never
+      selectable by a non-staff session, see
+      `docs/adr/0009-lab-terminal-server-side.md`) and
+      `lab_terminal_commands` (an append-only, owner-scoped transcript of
+      every command run). `labs.environment_spec` (an unused placeholder
+      column) was dropped and replaced by this properly-secured table.
+      7 SQL regression assertions (`supabase/tests/009_lab_terminal_rls.sql`)
+- [ ] Terminal command interpreter (pure, real Unix-like subset against the
+      virtual filesystem) — not built yet
+- [ ] Server-side terminal execution engine + API route — not built yet
+- [ ] Admin authoring UI for lab environments + a real seeded terminal lab
+      — not built yet
+- [ ] Terminal UI component wired into `/labs/[labId]` — not built yet
+- [ ] Lab engine runtime for an actual live/networked target (a real VM or
+      container per attempt) is intentionally out of scope — the terminal
+      simulator is a deterministic virtual environment, not a provisioned
+      live host; this remains clearly labeled wherever it matters
 - [ ] Cyber Range interconnected environments (not started)
 
 ## OSINT / Forensics / Blue-Purple Team
@@ -310,7 +324,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 74 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 81 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
 - [x] 114 unit tests (validation logic, env guards, UI components, AI
       Mentor prompt safety, security scanner rule engine + enrichment

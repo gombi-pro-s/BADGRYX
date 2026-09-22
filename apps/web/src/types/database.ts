@@ -181,7 +181,6 @@ export type LabRow = {
   category: LabCategory;
   difficulty: DifficultyLevel;
   objectives: unknown;
-  environment_spec: unknown;
   estimated_minutes: number;
   points: number;
   supports_guided: boolean;
@@ -206,6 +205,26 @@ export type LabFlagRow = {
   label: string;
   flag_hash: string;
   variant_seed: number;
+};
+
+export type LabEnvironmentRow = {
+  id: string;
+  lab_id: string;
+  variant_seed: number;
+  spec: unknown;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LabTerminalCommandRow = {
+  id: number;
+  lab_instance_id: string;
+  user_id: string;
+  command: string;
+  output: string;
+  cwd_before: string;
+  cwd_after: string;
+  created_at: string;
 };
 
 export type LabInstanceRow = {
@@ -618,7 +637,30 @@ export interface Database {
       lab_instances: {
         Row: LabInstanceRow;
         Insert: { lab_id: string; user_id: string; guided: boolean; status?: LabInstanceStatus };
-        Update: Partial<{ status: LabInstanceStatus }>;
+        Update: Partial<{ status: LabInstanceStatus; environment_state: Record<string, unknown> }>;
+        Relationships: [];
+      };
+      lab_environments: {
+        Row: LabEnvironmentRow;
+        // Never inserted/updated from a user-session client -- staff-only by
+        // RLS; authoring goes through the admin UI, which uses this same
+        // owner-authenticated-as-staff session (no service-role bypass
+        // needed there, unlike the terminal's own read path -- see ADR 0009).
+        Insert: { lab_id: string; variant_seed?: number; spec: Record<string, unknown> };
+        Update: Partial<{ spec: Record<string, unknown> }>;
+        Relationships: [];
+      };
+      lab_terminal_commands: {
+        Row: LabTerminalCommandRow;
+        Insert: {
+          lab_instance_id: string;
+          user_id: string;
+          command: string;
+          output: string;
+          cwd_before: string;
+          cwd_after: string;
+        };
+        Update: Record<string, never>;
         Relationships: [];
       };
       lab_hint_unlocks: {
