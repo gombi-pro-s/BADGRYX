@@ -101,7 +101,12 @@ for how it stays grounded in real data and cannot fabricate progress.
 
 Capstone submissions and instructor dashboards have a complete schema and
 RLS policies (an instructor can already see their org members' real
-progress at the database level) but no UI yet. See
+progress at the database level) but no UI yet. The security scanner's
+schema (`scans`/`scan_files`/`scan_findings`, a tested attack → fix →
+retest status lifecycle — see
+[`docs/adr/0008-scanner-finding-lifecycle.md`](./docs/adr/0008-scanner-finding-lifecycle.md))
+is also in place with no rule engine, orchestration, or UI wired to it yet.
+See
 [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (security scanner, lab sandbox/terminal
 engine, OSINT/forensics workspace, Blue/Purple Team scenarios, Cyber

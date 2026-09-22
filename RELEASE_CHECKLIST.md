@@ -50,7 +50,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 57 SQL regression assertions passing against a real Postgres instance
+- [x] 68 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -183,7 +183,28 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Security scanning engine
 
-- [ ] Not started.
+- [x] Schema: `scans`, `scan_files`, `scan_findings`, `scan_finding_status_events`
+      — owner-scoped, staff-readable, size-bounded file content
+      (`supabase/migrations/20260922000002_security_scanner.sql`)
+- [x] `transition_scan_finding_status()` — the only way a finding's status
+      changes; validates ownership and the attack → fix → retest state
+      graph, writes an append-only history row, audit-logged. See
+      `docs/adr/0008-scanner-finding-lifecycle.md`.
+- [x] `scans.total_files` / `total_findings` / `findings_by_severity` kept
+      accurate by triggers, never client-asserted
+- [x] 11 SQL regression assertions (`supabase/tests/007_scanner_rls.sql`):
+      ownership isolation, cross-user insert/transition rejection, illegal
+      state transitions rejected, full legal attack → fix → retest path,
+      idempotent re-assertion, audit log coverage
+- [ ] Deterministic static-analysis rule engine (secrets, SQLi, XSS, command
+      injection, path traversal, insecure eval, weak crypto, insecure CORS,
+      insecure cookies, cleartext HTTP, prototype pollution, unsafe
+      deserialization) — schema supports it; no rules implemented yet
+- [ ] Scan orchestration (`POST /api/scanner/scan`) — not built
+- [ ] AI-assisted enrichment layer (explanation/triage only, never inventing
+      findings) — not built
+- [ ] `/scanner` UI (upload/paste, findings display, posture dashboard,
+      attack → fix → retest workflow) — not built
 
 ## Reports
 
@@ -229,7 +250,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 57 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 68 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
 - [x] 41 unit tests (validation logic, env guards, UI component, AI Mentor prompt safety)
 - [x] 13 e2e smoke tests (public pages, auth wall across all protected
