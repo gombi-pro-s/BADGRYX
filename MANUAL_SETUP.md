@@ -149,7 +149,13 @@ scanner, which will reuse this same key once it exists.
    (10/day on the free plan — see `plan_entitlements` in
    `supabase/migrations/20260921000011_entitlements.sql`) is the only
    built-in cost control today. Watch usage in the Anthropic console while
-   this is new, and lower the free-plan limit via that table if needed.
+   this is new, and lower the free-plan limit via that table if needed. The
+   security scanner's deterministic rule engine (`POST /api/scanner/scan`)
+   does not call this key at all today — no AI enrichment phase exists yet
+   — but it is already rate-limited independently via `scanner_daily_scans`
+   (5/day on the free plan — see
+   `supabase/migrations/20260922000003_scanner_entitlements.sql`) so the
+   same lever is ready once an AI-assisted enrichment layer is added.
 
 ---
 

@@ -206,7 +206,16 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       carries a `verification_status` and feeds the attack → fix → retest
       workflow rather than being asserted as ground truth. 44 unit tests
       (true positive + false positive per rule)
-- [ ] Scan orchestration (`POST /api/scanner/scan`) — not built
+- [x] Scan orchestration (`lib/scanner/orchestrate.ts`) — runs every rule
+      against each submitted file and persists scan/files/findings through
+      the calling user's own session (no service-role bypass, so RLS still
+      applies to every write)
+- [x] `POST /api/scanner/scan` — requireUser, zod-validated
+      (title/targetType/files, ≤20 files, ≤300KB each), rate-limited via
+      the real entitlement engine (`scanner_daily_scans`, 5/day on free —
+      same pattern as the Mentor's quota), audit-logged
+- [x] 4 unit tests for the file-count/size validation guard
+      (`lib/scanner/__tests__/validate.test.ts`)
 - [ ] AI-assisted enrichment layer (explanation/triage only, never inventing
       findings) — not built
 - [ ] `/scanner` UI (upload/paste, findings display, posture dashboard,
@@ -258,7 +267,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 - [x] 68 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
-- [x] 85 unit tests (validation logic, env guards, UI component, AI Mentor
+- [x] 89 unit tests (validation logic, env guards, UI component, AI Mentor
       prompt safety, security scanner rule engine)
 - [x] 13 e2e smoke tests (public pages, auth wall across all protected
       sections, login error handling)
