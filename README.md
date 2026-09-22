@@ -140,6 +140,14 @@ for how it stays grounded in real data and cannot fabricate progress.
   AI-enrichment step that can only improve a finding's explanation text,
   never invent or reclassify one (see ADR 0008). Each finding has a real,
   tested attack → fix → retest status lifecycle enforced server-side.
+- **Exams** (`/exams`): a dedicated timed take flow for standalone
+  `quizzes.is_exam` content (not the lesson-embedded quiz component) — a
+  real countdown timer that auto-submits on expiry, single-choice AND
+  multi-choice questions both grade correctly (the lesson quiz only ever
+  supported single-choice), and an honest exam-rules banner instead of a
+  fake hint feature. The timer is client-side only and documented as such
+  — there's no server-side exam-session record, so this is not tamper-proof
+  timing.
 - **Entitlements**: every user gets a real `free` plan on signup with real
   limits; only an admin or `service_role` can change a subscription.
 - **Audit log**: append-only, RLS-protected, written only via

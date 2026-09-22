@@ -284,10 +284,33 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 - [x] Schema + grading + anti-cheat constraint for CTF challenges
 - [x] Admin CMS + learner UI for CTF challenges (see above)
-- [x] Exam mode modeled via `quizzes.is_exam` (ADR 0004) — schema/grading
-      only, no dedicated exam-mode UI (timer, restricted hints) yet
+- [x] Exam mode UI: `/exams` (published `is_exam` quizzes, per-user
+      passed/attempts-used status) and `/exams/[quizId]` (a dedicated
+      timed take flow, not the lesson-embedded quiz component). A real
+      countdown timer from `time_limit_minutes` auto-submits whatever is
+      answered when it hits zero; an honest `hint_policy` banner states
+      the exam's rules up front (there is no actual hint content behind
+      it to gate — the copy says exactly that, never implying a feature
+      that doesn't exist); prior attempts and `max_attempts` are shown and
+      enforced client-side ahead of the RPC's own authoritative check;
+      `single_choice`/`true_false` render as radio buttons and
+      `multi_choice` as checkboxes with real exact-set grading (no partial
+      credit) — the lesson-embedded `QuizAttempt` only ever supported
+      single-choice, a real gap this closes for exam-authored content.
+      **Known, documented limitation**: the timer is client-side only,
+      starting when the page loads — there is no server-side exam-session
+      record (unlike `lab_instances`/`investigation_instances`), so a page
+      refresh restarts the clock and a determined user could pause the JS
+      timer via devtools. Not enforced timing, stated as such rather than
+      implied. Seeded one real standalone (no `lesson_id`) exam quiz --
+      "SQL Injection: Practical Assessment" (4 questions, mixed
+      single/multi-choice, `hint_policy='none'`) -- proven genuinely
+      solvable through `submit_quiz_attempt()` (not just schema-valid),
+      including that `is_exam=true` records `'assessment'` evidence (not
+      `'quiz'`) and an incomplete multi-select answer genuinely fails with
+      no partial credit, by `supabase/tests/015_seeded_exam_e2e.sql`
 - [x] Capstone schema with staff-reviewed report submissions
-- [ ] Arena/mission UI, timers, leaderboard (not started)
+- [ ] Arena/mission UI (CTF timers/leaderboard specifically) — not started
 - [x] Capstone submission/review UI: `review_capstone_submission()` is now
       the only way a submission's status changes (the blanket staff UPDATE
       RLS policy was dropped, mirroring the scanner finding lifecycle in
@@ -514,18 +537,18 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 116 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 118 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
-      capstone review lifecycle)
+      capstone review lifecycle + the seeded standalone exam)
 - [x] 198 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety, security scanner rule engine + enrichment prompt +
       status transitions, lab terminal path resolution + command
       interpreter + real-permission enforcement + the seeded lab's
       solvability)
-- [x] 18 e2e smoke tests (public pages, auth wall across all protected
-      sections including `/scanner`/`/orgs`/`/capstones`, an invite link's
-      `?next=` round-trip, login error handling)
+- [x] 19 e2e smoke tests (public pages, auth wall across all protected
+      sections including `/scanner`/`/orgs`/`/capstones`/`/exams`, an
+      invite link's `?next=` round-trip, login error handling)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified
       via typecheck/lint/build; no dedicated e2e tests exercising the forms
       themselves yet — would need a real Supabase project or a more
