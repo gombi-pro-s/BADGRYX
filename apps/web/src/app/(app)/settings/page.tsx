@@ -41,6 +41,14 @@ export default async function SettingsPage() {
         <h2 className="text-sm font-semibold text-foreground">Billing</h2>
         <p className="mt-1 text-xs text-foreground-subtle">View your plan and entitlements, or upgrade.</p>
       </Link>
+
+      <Link
+        href="/settings/privacy"
+        className="mt-6 block rounded-lg border border-border bg-surface p-6 hover:border-border-strong"
+      >
+        <h2 className="text-sm font-semibold text-foreground">Privacy &amp; data</h2>
+        <p className="mt-1 text-xs text-foreground-subtle">Export your data, or permanently delete your account.</p>
+      </Link>
     </div>
   );
 }

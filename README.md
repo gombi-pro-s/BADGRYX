@@ -169,6 +169,16 @@ and
   genuinely organization-scoped, so an org's own admin sees their org's
   trail through the same RLS branch a platform admin uses, not a special
   case.
+- **Account deletion & data export** (`/settings/privacy`): a real
+  "delete my account" flow (type your email to confirm, then the GoTrue
+  Admin API actually deletes the account) and a real data export
+  (`GET /api/account/export`, every query explicitly scoped to the
+  caller's own id). Building this surfaced and fixed a real bug: 8
+  "who did this" columns (role grants, org creation, audit log entries,
+  capstone reviews, ...) referenced `auth.users` with no `ON DELETE`
+  action at all, so deleting almost any active account would have failed
+  outright with a foreign key violation. See
+  [`docs/adr/0012-account-deletion.md`](./docs/adr/0012-account-deletion.md).
 - **Capstones** (`/capstones`): real, comprehensive projects a human
   reviews by hand, not autograded. `review_capstone_submission()` is the
   only way a submission's status changes (mirrors the scanner finding

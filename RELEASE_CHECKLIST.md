@@ -60,7 +60,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 132 SQL regression assertions passing against a real Postgres instance
+- [x] 134 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -573,10 +573,37 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Privacy / Data protection
 
-- [x] Account data model supports deletion via `auth.users` cascade (every
-      user-owned table has `ON DELETE CASCADE` to `auth.users.id`)
-- [ ] User-facing "delete my account" flow (not built)
-- [ ] User-facing data export (not built)
+- [x] Account data model supports deletion: every user-OWNED table has
+      real `ON DELETE CASCADE` to `auth.users.id` (this was already
+      correct); every ATTRIBUTION column (`granted_by`/`created_by`/
+      `invited_by`/`actor_id`/`reviewer_id`) now correctly has
+      `ON DELETE SET NULL` instead of defaulting to `NO ACTION` — a real,
+      previously-latent bug fixed while building the flow below: deleting
+      a user who had ever granted a role, created an org, authored
+      content, reviewed a capstone, or been logged to `audit_log` (i.e.
+      almost any admin) would have failed outright with a foreign key
+      violation. See `docs/adr/0012-account-deletion.md`.
+- [x] User-facing "delete my account" flow — `/settings/privacy`: type
+      your exact email to confirm, then `deleteMyAccountAction()`
+      audit-logs the deletion (while the session is still valid) and
+      calls the GoTrue Admin API's `deleteUser()` (the only place in the
+      app that constructs the `service_role` client for a user-triggered
+      action, narrowly scoped to the caller's own already-verified id,
+      mirroring ADR 0009's escalation pattern), then signs out and
+      redirects to `/login`. Proven end-to-end by
+      `supabase/tests/018_account_deletion.sql`: a real `DELETE FROM
+      auth.users` succeeds, every historical record the deleted user
+      touched survives with its attribution nulled, and their own owned
+      rows are genuinely gone
+- [x] User-facing data export — `GET /api/account/export` downloads a
+      JSON bundle of every category of the caller's own data (profile,
+      roles, org memberships, skill graph, learning/lab/CTF/investigation/
+      capstone activity, mentor conversations, scanner scans, subscription
+      history). Every query explicitly filters to the caller's own id
+      rather than relying on RLS breadth alone — an instructor/admin
+      session can see other users' rows on several tables by RLS design,
+      and this route's job is "your own data," not "everything your
+      session can see"
 - [ ] Documented retention policy (not written)
 
 ## Logging / Auditing
@@ -624,11 +651,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 132 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 134 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
       capstone review lifecycle + the seeded standalone exam + the real
       pro plan's entitlements + admin role management + org-scoped audit
-      log coverage)
+      log coverage + account deletion)
 - [x] 222 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety, security scanner rule engine + enrichment prompt +
