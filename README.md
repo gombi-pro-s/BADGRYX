@@ -205,6 +205,15 @@ and
   billing providers — without `TURNSTILE_SECRET_KEY`/
   `NEXT_PUBLIC_TURNSTILE_SITE_KEY` set, `/signup` renders no widget and
   behaves exactly as before.
+- **Multi-factor authentication** (`/settings/security`): real TOTP
+  enrollment via Supabase Auth's own `supabase.auth.mfa.*` API — no new
+  schema needed, GoTrue owns factor state entirely. Actually enforced,
+  not just enrollable: `requireUser()` (which nearly every protected page
+  and action already calls) checks the session's authenticator assurance
+  level and redirects to `/login/verify-mfa` whenever a verified factor's
+  second step hasn't been completed, mirrored in `middleware.ts` and
+  `signInAction()`. See
+  [`docs/adr/0015-mfa.md`](./docs/adr/0015-mfa.md).
 - **Capstones** (`/capstones`): real, comprehensive projects a human
   reviews by hand, not autograded. `review_capstone_submission()` is the
   only way a submission's status changes (mirrors the scanner finding
@@ -220,7 +229,8 @@ and
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (Blue/Purple Team scenarios, Cyber Range,
-Arena/exam timers, live billing, mobile app, i18n, PWA).
+Arena/mission timers and leaderboards, bulk content import/export, mobile
+app, i18n, PWA).
 
 ## Local development
 

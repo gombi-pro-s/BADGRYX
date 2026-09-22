@@ -27,7 +27,18 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] e2e-tested: unauthenticated visitors are redirected from
       `/dashboard`, `/skills`, `/settings`, `/admin`, `/learn`, `/labs`,
       `/ctf`, `/mentor`
-- [ ] MFA
+- [x] MFA: TOTP enrollment (`/settings/security` — QR code + manual
+      secret, verify-to-activate, list/remove factors) via Supabase
+      Auth's own `supabase.auth.mfa.*` API, no new schema/migration
+      needed. Real step-up enforcement, not just enrollment: `requireUser()`
+      (the function nearly every protected page/action already calls)
+      checks `getAuthenticatorAssuranceLevel()` and redirects to the new
+      `/login/verify-mfa` challenge page whenever a session hasn't
+      completed a verified factor's second step, mirrored in
+      `middleware.ts` for UX and in `signInAction()` right after password
+      sign-in. See `docs/adr/0015-mfa.md`. No SQL regression test exists
+      for this phase — genuinely no Postgres surface to test (MFA state
+      lives in `auth.mfa_factors`, owned entirely by GoTrue)
 - [x] Application-layer rate limiting on the login endpoint: three
       `SECURITY DEFINER` functions
       (`supabase/migrations/20260922000020_login_rate_limiting.sql`) block
@@ -739,9 +750,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       solvability, live billing signature verification + request-building
       for Stripe/Paystack/Flutterwave, Turnstile verify-request/response
       logic)
-- [x] 19 e2e smoke tests (public pages, auth wall across all protected
+- [x] 20 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`, an
-      invite link's `?next=` round-trip, login error handling)
+      invite link's `?next=` round-trip, login error handling, the MFA
+      step-up page's own auth wall)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified
       via typecheck/lint/build; no dedicated e2e tests exercising the forms
       themselves yet — would need a real Supabase project or a more

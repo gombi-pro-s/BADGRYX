@@ -122,6 +122,28 @@ project with local development).
 6. **Expected result**: Matches your chosen setting.
 7. **Required for**: Staging, Production.
 
+### 2e. Enable multi-factor authentication (optional but recommended)
+
+1. **What**: Turn on TOTP (authenticator app) multi-factor authentication
+   for the project. `/settings/security`'s enrollment flow
+   (`supabase.auth.mfa.enroll({factorType: 'totp'})`) and the login
+   step-up gate (`requireUser()`/`middleware.ts`/`signInAction()` — see
+   `docs/adr/0015-mfa.md`) are both real and complete; this toggle is the
+   one thing only you can do.
+2. **Where**: Authentication → Multi-Factor Authentication → enable "TOTP
+   (Authenticator App)".
+3. **Exact value**: No env var — this is a project setting, not a secret.
+4. **Why**: Some Supabase projects have TOTP MFA off by default;
+   `enroll()` fails if it's disabled at the project level even though the
+   application code calling it is correct.
+5. **Verify**: Log in, go to `/settings/security`, click "Add
+   authenticator app" — a QR code should appear rather than an error.
+6. **Expected result**: After scanning it and entering the 6-digit code,
+   the factor appears as verified; logging out and back in now prompts
+   for that code at `/login/verify-mfa` before reaching `/dashboard`.
+7. **Required for**: optional — every other auth path works identically
+   without this configured, just without the option to enroll.
+
 ---
 
 ## 3. Anthropic API key (powers the AI Security Mentor)

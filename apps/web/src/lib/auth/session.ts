@@ -21,11 +21,29 @@ export async function getCurrentUser(): Promise<User | null> {
   return user;
 }
 
+/**
+ * The real MFA step-up enforcement point (see docs/adr/0015-mfa.md).
+ * Enrollment alone (supabase.auth.mfa.enroll()) means nothing if a
+ * password-only session is still treated as fully authenticated -- this
+ * is what actually requires the second factor before any protected
+ * Server Component/Action/Route Handler proceeds, on every call, the same
+ * way every other check in this file re-verifies rather than trusting a
+ * prior redirect. `getAuthenticatorAssuranceLevel()` with no jwt argument
+ * reads the current session and, per the Supabase SDK's own docs, "rarely
+ * uses the network" -- this is not an expensive call.
+ */
 export async function requireUser(): Promise<User> {
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
   }
+
+  const supabase = await createClient();
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
+    redirect("/login/verify-mfa");
+  }
+
   return user;
 }
 

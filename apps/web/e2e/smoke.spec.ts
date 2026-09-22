@@ -105,6 +105,11 @@ test.describe("auth wall", () => {
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/login/);
   });
+
+  test("an unauthenticated visitor visiting the MFA step-up page is sent to login", async ({ page }) => {
+    await page.goto("/login/verify-mfa");
+    await expect(page).toHaveURL(/\/login/);
+  });
 });
 
 test.describe("login form validation", () => {

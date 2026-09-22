@@ -65,6 +65,21 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // UX-only mirror of the real check in requireUser() (lib/auth/session.ts)
+  // -- a password-only session for a user with a verified MFA factor gets
+  // sent to complete the second factor before it ever renders a protected
+  // page, instead of hitting the redirect() inside the page itself. Not a
+  // substitute for requireUser()'s own check, same as the auth-wall
+  // redirect above.
+  if (isProtected && user) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
+      const redirectUrl = new URL("/login/verify-mfa", request.url);
+      redirectUrl.searchParams.set("next", path);
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
   if (ADMIN_ONLY_PREFIXES.some((p) => path.startsWith(p)) && user) {
     const { data: roles } = await supabase
       .from("user_roles")

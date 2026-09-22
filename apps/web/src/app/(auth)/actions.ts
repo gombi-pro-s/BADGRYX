@@ -91,6 +91,53 @@ export async function signInAction(
   }
 
   await supabase.rpc("clear_login_attempts", { p_email: email });
+
+  // A verified TOTP factor means the password alone isn't enough -- send
+  // the user to complete the second factor instead of straight to `next`.
+  // See docs/adr/0015-mfa.md; requireUser() enforces this same check
+  // server-side regardless of what this redirect does, so there's no way
+  // to reach a protected page by skipping this step.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel) {
+    const params = new URLSearchParams({ next: next.startsWith("/") ? next : "/dashboard" });
+    redirect(`/login/verify-mfa?${params.toString()}`);
+  }
+
+  redirect(next.startsWith("/") ? next : "/dashboard");
+}
+
+export async function verifyMfaChallengeAction(
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const code = String(formData.get("code") ?? "").trim();
+  const next = String(formData.get("next") ?? "/dashboard");
+
+  if (!/^\d{6}$/.test(code)) {
+    return { error: "Enter the 6-digit code from your authenticator app." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+  const totpFactor = factorsData?.totp.find((f) => f.status === "verified");
+  if (factorsError || !totpFactor) {
+    // Nothing to verify against -- send them on rather than trapping them
+    // on a challenge page for a factor that no longer exists.
+    redirect(next.startsWith("/") ? next : "/dashboard");
+  }
+
+  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: totpFactor.id, code });
+  if (error) {
+    return { error: "Invalid or expired code. Try again." };
+  }
+
   redirect(next.startsWith("/") ? next : "/dashboard");
 }
 

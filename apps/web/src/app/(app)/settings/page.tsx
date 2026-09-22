@@ -35,6 +35,16 @@ export default async function SettingsPage() {
       </div>
 
       <Link
+        href="/settings/security"
+        className="mt-6 block rounded-lg border border-border bg-surface p-6 hover:border-border-strong"
+      >
+        <h2 className="text-sm font-semibold text-foreground">Security</h2>
+        <p className="mt-1 text-xs text-foreground-subtle">
+          Add two-factor authentication with an authenticator app.
+        </p>
+      </Link>
+
+      <Link
         href="/settings/billing"
         className="mt-6 block rounded-lg border border-border bg-surface p-6 hover:border-border-strong"
       >
