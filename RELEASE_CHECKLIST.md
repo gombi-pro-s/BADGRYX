@@ -177,6 +177,18 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       Unix read-permission enforcement to `cat`/`head`/`tail`/`wc`/`grep`
       before this lab shipped — see `lib/terminal/path.ts`'s `canReadFile`.
       8 more unit tests covering permission enforcement specifically
+- [x] Three more real terminal labs, proving the engine on distinct
+      scenarios and command patterns (none needing privilege escalation --
+      every file involved is world-readable, matching how real OSINT/
+      enumeration/forensics work): **Secrets Enumeration** (`find`/
+      `ls -la`/`cat` locates a forgotten `.env.backup` with a leaked key,
+      while the live `.env` is a readable decoy), **Digital Forensics**
+      (`wc -l`/`grep` isolates one real `Accepted password` line among 13
+      `Failed password` noise lines in a realistic auth.log), **Service
+      Enumeration** (`grep -r`/`find` across four services' version files
+      locates the one flagged EOL/CRITICAL, then reads its notes for the
+      flag). Each proven solvable through the interpreter, not just
+      schema-valid, by a dedicated test file per lab (10 more unit tests)
 - [x] Terminal UI component (`/labs/[labId]/terminal.tsx`) — a real
       scrollback + input, up/down-arrow command recall, connects on mount
       via a silent "learn the real cwd/user/hostname" call (never asserted
@@ -366,7 +378,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 - [x] 82 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough)
-- [x] 183 unit tests (validation logic, env guards, UI components, AI
+- [x] 193 unit tests (validation logic, env guards, UI components, AI
       Mentor prompt safety, security scanner rule engine + enrichment
       prompt + status transitions, lab terminal path resolution + command
       interpreter + real-permission enforcement + the seeded lab's
