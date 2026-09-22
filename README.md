@@ -186,6 +186,12 @@ and
   action at all, so deleting almost any active account would have failed
   outright with a foreign key violation. See
   [`docs/adr/0012-account-deletion.md`](./docs/adr/0012-account-deletion.md).
+- **Login rate limiting**: 5 failed attempts for an email in 15 minutes
+  blocks a 6th, enforced by three `SECURITY DEFINER` functions called from
+  `signInAction()` (fails open, not closed, if the check itself errors).
+  This is the one place in the schema that grants `EXECUTE` to the `anon`
+  Postgres role, since a login attempt is by definition pre-session. See
+  [`docs/adr/0014-login-rate-limiting.md`](./docs/adr/0014-login-rate-limiting.md).
 - **Capstones** (`/capstones`): real, comprehensive projects a human
   reviews by hand, not autograded. `review_capstone_submission()` is the
   only way a submission's status changes (mirrors the scanner finding

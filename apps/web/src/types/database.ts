@@ -59,6 +59,11 @@ export interface AdminUserSearchResult {
   roles: PlatformRole[];
 }
 
+export interface LoginRateLimitResult {
+  allowed: boolean;
+  retry_after_seconds: number;
+}
+
 export type OrgRole = "member" | "instructor" | "team_owner" | "org_admin";
 
 export type BillingInterval = "free" | "month" | "year" | "lifetime";
@@ -1224,6 +1229,18 @@ export interface Database {
       };
       remove_organization_member: {
         Args: { p_organization_id: string; p_organization_member_id: string };
+        Returns: void;
+      };
+      check_login_rate_limit: {
+        Args: { p_email: string };
+        Returns: LoginRateLimitResult[];
+      };
+      record_failed_login_attempt: {
+        Args: { p_email: string };
+        Returns: void;
+      };
+      clear_login_attempts: {
+        Args: { p_email: string };
         Returns: void;
       };
     };

@@ -28,9 +28,18 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `/dashboard`, `/skills`, `/settings`, `/admin`, `/learn`, `/labs`,
       `/ctf`, `/mentor`
 - [ ] MFA
-- [ ] Application-layer rate limiting on auth endpoints (beyond Supabase's
-      built-in limits)
-- [ ] CAPTCHA/bot protection on signup
+- [x] Application-layer rate limiting on the login endpoint: three
+      `SECURITY DEFINER` functions
+      (`supabase/migrations/20260922000020_login_rate_limiting.sql`) block
+      an email after 5 failed attempts in 15 minutes, called from
+      `signInAction()` before/after `supabase.auth.signInWithPassword()`
+      (in addition to, not instead of, whatever Supabase project-level
+      limits are configured — see `MANUAL_SETUP.md`). Email-keyed, not
+      IP-keyed — a deliberate, documented trade-off, see
+      `docs/adr/0014-login-rate-limiting.md`. 6 SQL regression assertions
+      (`supabase/tests/020_login_rate_limiting.sql`)
+- [ ] CAPTCHA/bot protection on signup (a different attack — account
+      creation abuse, not credential guessing — still unaddressed)
 
 ## Authorization / RBAC
 
@@ -60,7 +69,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 144 SQL regression assertions passing against a real Postgres instance
+- [x] 150 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, and a full seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
@@ -660,11 +669,12 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 144 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 150 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
       capstone review lifecycle + the seeded standalone exam + the real
       pro plan's entitlements + admin role management + org-scoped audit
-      log coverage + account deletion + org member management)
+      log coverage + account deletion + org member management + login
+      rate limiting)
 - [x] 222 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety, security scanner rule engine + enrichment prompt +

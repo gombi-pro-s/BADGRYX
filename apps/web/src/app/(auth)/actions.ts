@@ -57,13 +57,26 @@ export async function signInAction(
   }
 
   const supabase = await createClient();
+
+  // Checked before ever calling GoTrue, using the `anon` role (no session
+  // exists yet) -- see docs/adr/0014-login-rate-limiting.md. Fails open on
+  // an unexpected RPC error rather than locking everyone out of login.
+  const { data: rateLimit } = await supabase.rpc("check_login_rate_limit", { p_email: email });
+  const limitRow = rateLimit?.[0];
+  if (limitRow && !limitRow.allowed) {
+    const minutes = Math.ceil(limitRow.retry_after_seconds / 60);
+    return { error: `Too many failed attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.` };
+  }
+
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    await supabase.rpc("record_failed_login_attempt", { p_email: email });
     // Deliberately generic: never reveal whether the email exists.
     return { error: "Invalid email or password." };
   }
 
+  await supabase.rpc("clear_login_attempts", { p_email: email });
   redirect(next.startsWith("/") ? next : "/dashboard");
 }
 
