@@ -969,14 +969,20 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       limitation as the web app, not a new gap), Capstones (skill/lab
       tag chips, submission history with reviewer notes, a plain
       `capstone_submissions` report insert -- no RPC exists for this,
-      matching the web app), and AI Mentor (general-chat modes only --
+      matching the web app), AI Mentor (general-chat modes only --
       Explain/Hint/Teach/Analyze a failure, no lab/lesson/finding deep
       links yet -- streaming the real NDJSON `/api/mentor/chat` response
       token-by-token via a ported `parseNdjsonLines()`, authenticated with
       a Bearer token instead of a cookie; degrades to a plain "not
       configured" message if the optional `API_BASE_URL` build value is
-      unset, same pattern as web's Turnstile/billing. See ADR 0034.)
-- [x] `flutter analyze` clean, 69 `flutter test`s passing, `flutter build
+      unset, same pattern as web's Turnstile/billing. See ADR 0034.), and
+      the Security Scanner (past scans + a combined posture summary, a
+      "New scan" screen that pastes code and submits it via the same
+      Bearer-token path to `/api/scanner/scan`, and a read-only scan-
+      detail screen with severity-coded findings -- pasted-snippet scans
+      only, no AI enrichment or manual status-transition actions on
+      mobile yet, named gaps rather than silently missing. See ADR 0036.)
+- [x] `flutter analyze` clean, 77 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -994,11 +1000,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `/api/scanner/scan` (the scan-submission route the mobile Scanner
       screen calls) -- the finding-enrichment route stays on
       `requireUser()` since no mobile screen calls it yet. See ADR 0035.
-- [ ] Everything else on mobile: the terminal/Cyber Range simulator, the
-      security scanner, billing, and every admin/instructor flow -- none
-      has a mobile screen yet. This phase is a real vertical slice (auth +
-      seven data screens + streaming AI chat), not the whole web app's
-      feature set, and is named as such rather than implied complete.
+- [ ] Everything else on mobile: the terminal/Cyber Range simulator,
+      billing, and every admin/instructor flow -- none has a mobile
+      screen yet; nor does multi-file scan upload, AI-enriched findings,
+      or manual finding-status transitions on the Scanner screen that
+      does exist. This phase is a real vertical slice (auth + eight data
+      screens + streaming AI chat + a scan-and-review flow), not the
+      whole web app's feature set, and is named as such rather than
+      implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

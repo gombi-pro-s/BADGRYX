@@ -142,7 +142,7 @@ class _MentorScreenState extends State<MentorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!AppEnv.isMentorConfigured) {
+    if (!AppEnv.isApiConfigured) {
       return Scaffold(
         appBar: AppBar(title: const Text('AI Mentor')),
         body: const Center(

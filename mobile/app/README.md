@@ -49,10 +49,20 @@ for what's built so far and what's honestly still ahead.
       see Configuration below -- and degrades to a plain "not configured
       on this build" message if it's absent, rather than blocking the rest
       of the app.
-- This is still a first vertical slice, not the whole web app. The
-  scanner, billing, every admin flow, and the terminal/Cyber Range
-  simulator do not have a mobile screen yet. Future pillars like these
-  belong behind "More" too, not as new flat tabs.
+    - **Security Scanner**: `/scanner`'s equivalent -- past scans plus a
+      combined posture summary, a "New scan" screen that pastes code and
+      submits it through the same `Authorization: Bearer` path as the
+      Mentor to `/api/scanner/scan` (see ADR 0033/0035), and a read-only
+      scan-detail screen showing each finding (severity-coded,
+      most-severe-first) with its evidence/explanation/impact/remediation.
+      Pasted-snippet scans only (no file upload yet); no "Enrich with AI"
+      or manual status-transition actions yet either -- both need this
+      screen's read-only foundation first, and are named as gaps rather
+      than silently missing. See ADR 0036.
+- This is still a first vertical slice, not the whole web app. Billing,
+  every admin flow, and the terminal/Cyber Range simulator do not have a
+  mobile screen yet. Future pillars like these belong behind "More" too,
+  not as new flat tabs.
 
 ## Configuration
 
@@ -73,13 +83,15 @@ or silently using placeholder data -- this app has no functionality at
 all without a real backend.
 
 `API_BASE_URL` (the origin `apps/web` is deployed at) is different:
-**it's optional**. It's only needed for the AI Mentor screen, which calls
-that deployment's `/api/mentor/chat` Route Handler directly (see
-ADR 0033/0034) rather than talking to Supabase. Every other screen works
-exactly the same with or without it. Omit it and the Mentor screen shows
-"AI Mentor isn't configured on this build" instead of the chat UI --
-this is the same "optional integration degrades gracefully, core
-functionality never blocked" pattern already used for Turnstile/billing
+**it's optional**. It's only needed for the two screens that call that
+deployment's Route Handlers directly rather than talking to Supabase --
+AI Mentor (`/api/mentor/chat`, see ADR 0033/0034) and the Security
+Scanner's scan-submission screen (`/api/scanner/scan`, see ADR 0035/0036).
+Every other screen works exactly the same with or without it. Omit it and
+those two screens show a plain "not configured on this build" message
+instead of their real UI -- this is the same "optional integration
+degrades gracefully, core functionality never blocked" pattern already
+used for Turnstile/billing
 providers on the web app, not a crash or fake data.
 
 ## Verifying this app in a sandbox with no Android/iOS toolchain

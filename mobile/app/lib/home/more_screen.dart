@@ -3,6 +3,7 @@ import '../capstones/capstones_list_screen.dart';
 import '../exams/exams_list_screen.dart';
 import '../investigations/investigations_list_screen.dart';
 import '../mentor/mentor_screen.dart';
+import '../scanner/scanner_list_screen.dart';
 
 class _MoreItem {
   const _MoreItem(this.icon, this.label, this.builder);
@@ -25,6 +26,7 @@ class MoreScreen extends StatelessWidget {
     _MoreItem(Icons.timer_outlined, 'Exams', (_) => const ExamsListScreen()),
     _MoreItem(Icons.school_outlined, 'Capstones', (_) => const CapstonesListScreen()),
     _MoreItem(Icons.smart_toy_outlined, 'AI Mentor', (_) => const MentorScreen()),
+    _MoreItem(Icons.security_outlined, 'Security Scanner', (_) => const ScannerListScreen()),
   ];
 
   @override

@@ -304,19 +304,25 @@ and
   falls through to the existing cookie session for `apps/web`'s own
   callers (see ADR 0033) — degrades to a plain "not configured" message
   if the app is built without the optional `API_BASE_URL` value, the same
-  pattern already used for Turnstile/billing on web.
-  `flutter analyze` clean, 69 tests passing, `flutter build web`
+  pattern already used for Turnstile/billing on web. A ninth screen, the
+  Security Scanner, shares that same Bearer-auth path for its "New scan"
+  paste-code submission (`/api/scanner/scan`, see ADR 0035) and shows past
+  scans plus a combined posture summary and read-only, severity-coded
+  findings — pasted-snippet scans only, no AI enrichment or manual
+  finding-status transitions on mobile yet (see ADR 0036).
+  `flutter analyze` clean, 77 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0034.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0036.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations
 for user-authored content, the mobile app's terminal/Cyber Range simulator,
-security scanner, billing, and admin/instructor screens, a real Android/iOS
-build, and a real live/networked lab runtime beyond the virtual terminal/
-Cyber Range simulator).
+billing, and admin/instructor screens, multi-file scan upload/AI
+enrichment/manual finding-status transitions on the mobile Scanner screen,
+a real Android/iOS build, and a real live/networked lab runtime beyond the
+virtual terminal/Cyber Range simulator).
 
 ## Local development
 
