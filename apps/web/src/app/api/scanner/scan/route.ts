@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiUser } from "@/lib/auth/api";
 import { runScan, ScanValidationError } from "@/lib/scanner/orchestrate";
 import { checkScannerQuota } from "@/lib/scanner/rate-limit";
 import type { ScanTargetType } from "@/types/database";
@@ -20,7 +19,9 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const user = await requireUser();
+  const auth = await requireApiUser(request);
+  if ("unauthorized" in auth) return auth.unauthorized;
+  const { user, supabase } = auth;
 
   const body = await request.json().catch(() => null);
   const parsed = requestSchema.safeParse(body);
@@ -28,8 +29,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
   }
   const { title, targetType, files } = parsed.data;
-
-  const supabase = await createClient();
 
   const quota = await checkScannerQuota(supabase, user.id);
   if (!quota.allowed) {

@@ -868,7 +868,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       validation, and — new this phase — `extractBearerToken()`'s
       `Authorization: Bearer <token>` parsing for the mobile API auth
       path). The +7 since the last count is entirely `lib/auth/bearer.ts`.
-- [x] 29 e2e smoke tests (public pages, auth wall across all protected
+- [x] 30 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
       `/reports`, an invite link's `?next=` round-trip, login error
       handling, the MFA step-up page's own auth wall, the path-import
@@ -877,12 +877,13 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       whose icon URLs actually return a 200 PNG, `/offline` rendering
       without requiring auth, a real click-through switching the landing
       page to Spanish, confirming it actually re-renders, reloading to
-      confirm the choice persists via cookie, and switching back, and —
-      new this phase — `/api/mentor/chat` returning a real `401` JSON body
-      rather than a login redirect for both a request with no auth at all
-      and one with a bogus `Bearer` token, proving the new mobile-facing
-      auth path doesn't change the route's behavior for a browser caller
-      and fails closed for an invalid mobile one)
+      confirm the choice persists via cookie, and switching back,
+      `/api/mentor/chat` returning a real `401` JSON body rather than a
+      login redirect for both a request with no auth at all and one with
+      a bogus `Bearer` token, proving the mobile-facing auth path doesn't
+      change the route's behavior for a browser caller and fails closed
+      for an invalid mobile one, and — new this phase — the same 401-not-
+      redirect proof for `/api/scanner/scan`, see ADR 0035)
 - [x] Component-level test coverage for a representative slice of admin CMS
       forms (10 tests: `admin/announcements` create+edit, the org-scoped
       `orgs/[orgId]/announcements` create form, and the original
@@ -989,7 +990,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       falls straight through to the existing cookie-session path when no
       such header is present, so `apps/web`'s own behavior is unchanged.
       Wired into `/api/mentor/chat` in place of `requireUser()` +
-      `createClient()`. See ADR 0033.
+      `createClient()`. See ADR 0033. Also wired into
+      `/api/scanner/scan` (the scan-submission route the mobile Scanner
+      screen calls) -- the finding-enrichment route stays on
+      `requireUser()` since no mobile screen calls it yet. See ADR 0035.
 - [ ] Everything else on mobile: the terminal/Cyber Range simulator, the
       security scanner, billing, and every admin/instructor flow -- none
       has a mobile screen yet. This phase is a real vertical slice (auth +
