@@ -167,6 +167,19 @@ export type OrganizationInvitationRow = {
   created_at: string;
 };
 
+export type AnnouncementRow = {
+  id: string;
+  organization_id: string | null;
+  title: string;
+  body_markdown: string;
+  published: boolean;
+  published_at: string | null;
+  expires_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type LearningPathRow = {
   id: string;
   slug: string;
@@ -739,6 +752,12 @@ export interface Database {
         // generated and hashed server-side. See create_organization_invitation().
         Insert: Record<string, never>;
         Update: Partial<{ revoked_at: string }>;
+        Relationships: [];
+      };
+      announcements: {
+        Row: AnnouncementRow;
+        Insert: Partial<AnnouncementRow> & { title: string; body_markdown: string };
+        Update: Partial<AnnouncementRow>;
         Relationships: [];
       };
 

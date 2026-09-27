@@ -115,6 +115,11 @@ test.describe("auth wall", () => {
     await page.goto("/admin/paths/import");
     await expect(page).toHaveURL(/\/login/);
   });
+
+  test("an unauthenticated visitor is redirected away from admin announcements", async ({ page }) => {
+    await page.goto("/admin/announcements");
+    await expect(page).toHaveURL(/\/login/);
+  });
 });
 
 test.describe("login form validation", () => {

@@ -101,6 +101,10 @@ and
   policies as everything else, not a service-role bypass. A learning path
   (with its modules/lessons/skill tags/quiz/questions/choices) can be
   exported as a JSON bundle and re-imported as a new path — see ADR 0016.
+- **Announcements**: platform-wide (`/admin/announcements`) or org-scoped
+  (`/orgs/[orgId]/announcements`, instructors and above) notices shown on
+  every affected user's `/dashboard` while published and not expired — see
+  ADR 0017.
 - **Learner UI**: `/learn`, `/labs`, `/ctf` — real markdown lessons with
   embedded live quizzes, guided/unguided lab attempts with hint unlocking,
   and CTF flag submission, all backed by live queries/RPCs.

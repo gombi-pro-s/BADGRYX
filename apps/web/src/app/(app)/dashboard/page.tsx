@@ -10,7 +10,8 @@ export default async function DashboardPage() {
   const user = await requireUser();
   const supabase = await createClient();
 
-  const [{ data: profile }, { data: states }, { data: subscription }] = await Promise.all([
+  const nowIso = new Date().toISOString();
+  const [{ data: profile }, { data: states }, { data: subscription }, { data: announcements }] = await Promise.all([
     supabase.from("profiles").select("display_name, username").eq("id", user.id).single(),
     supabase.from("user_skill_states").select("state"),
     supabase
@@ -20,6 +21,17 @@ export default async function DashboardPage() {
       .eq("subject_id", user.id)
       .in("status", ["trialing", "active", "past_due"])
       .maybeSingle(),
+    // RLS (announcements_select) already restricts org-scoped rows to orgs
+    // this user belongs to -- the published/expiry filters here just make
+    // sure a staff/instructor viewer's own draft-preview visibility doesn't
+    // leak an unpublished notice into their own dashboard banner.
+    supabase
+      .from("announcements")
+      .select("id, title, body_markdown, published_at")
+      .eq("published", true)
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .order("published_at", { ascending: false })
+      .limit(5),
   ]);
 
   const counts = new Map<SkillState, number>();
@@ -40,6 +52,17 @@ export default async function DashboardPage() {
       <p className="mt-1 text-sm text-foreground-muted">
         You&apos;re on the <span className="font-medium text-foreground">{planName}</span> plan.
       </p>
+
+      {announcements && announcements.length > 0 && (
+        <div className="mt-6 space-y-3">
+          {announcements.map((a) => (
+            <div key={a.id} className="rounded-lg border border-accent/30 bg-accent-muted p-4">
+              <p className="text-sm font-medium text-accent">{a.title}</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground-muted">{a.body_markdown}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <Link

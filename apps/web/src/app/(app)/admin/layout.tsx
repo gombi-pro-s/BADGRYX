@@ -5,6 +5,7 @@ const ADMIN_SECTIONS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/paths", label: "Learning Paths" },
+  { href: "/admin/announcements", label: "Announcements" },
   { href: "/admin/labs", label: "Labs" },
   { href: "/admin/quizzes", label: "Quizzes" },
   { href: "/admin/ctf", label: "CTF Challenges" },

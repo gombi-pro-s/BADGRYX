@@ -60,12 +60,20 @@ export default async function OrganizationDetailPage({ params }: { params: Promi
       <p className="mb-8 text-sm text-foreground-subtle">{organization.slug}</p>
 
       {isInstructor && (
-        <Link
-          href={`/orgs/${orgId}/dashboard`}
-          className="mb-8 block rounded-lg border border-accent/30 bg-accent-muted px-4 py-3 text-sm font-medium text-accent hover:opacity-90"
-        >
-          Open instructor dashboard &rarr;
-        </Link>
+        <div className="mb-8 space-y-3">
+          <Link
+            href={`/orgs/${orgId}/dashboard`}
+            className="block rounded-lg border border-accent/30 bg-accent-muted px-4 py-3 text-sm font-medium text-accent hover:opacity-90"
+          >
+            Open instructor dashboard &rarr;
+          </Link>
+          <Link
+            href={`/orgs/${orgId}/announcements`}
+            className="block rounded-lg border border-border bg-surface px-4 py-3 text-sm font-medium text-foreground hover:border-border-strong"
+          >
+            Manage announcements &rarr;
+          </Link>
+        </div>
       )}
 
       <h2 className="mb-3 text-sm font-semibold text-foreground">Members ({members?.length ?? 0})</h2>

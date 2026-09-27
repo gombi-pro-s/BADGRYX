@@ -12,7 +12,8 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] Design tokens (light + dark) established
 - [x] Pushed to GitHub (`main`, commit history from `3a3eaba`)
 - [ ] Flutter mobile app scaffolded (not started)
-- [ ] i18n framework in place (not started)
+- [ ] i18n framework in place (not started — content translations are
+      blocked on this specifically, see ADR 0017)
 - [ ] PWA / offline support (not started)
 
 ## Authentication
@@ -89,9 +90,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 154 SQL regression assertions passing against a real Postgres instance
+- [x] 165 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
-      grading pipeline, entitlements, and a full seeded-content walkthrough
+      grading pipeline, entitlements, announcements, and a full
+      seeded-content walkthrough
 - [x] Audit log is append-only and unforgeable (verified by test)
 - [x] 10 real bugs found and fixed during development — see
       `SECURITY_AUDIT.md` (AUDIT-001 through AUDIT-010). 9 of the 10 have a
@@ -218,8 +220,19 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] One complete real content path seeded end-to-end (SQL injection: path
       → module → lesson → quiz → guided lab → CTF challenge), not a stub —
       see `supabase/migrations/20260921000014_seed_sample_content.sql`
-- [ ] Announcements, translations (not built — section 29's full content
-      type list is broader than what's built)
+- [x] Announcements — platform-wide (staff-authored, `/admin/announcements`)
+      or org-scoped (instructor/team_owner/org_admin-authored,
+      `/orgs/[orgId]/announcements`), shown on `/dashboard` while published
+      and not expired. Plain RLS write gate (`is_org_instructor()` helper
+      mirrors `is_org_admin()`), no SECURITY DEFINER function needed —
+      nothing here is graded. Unlike other content types, a real delete is
+      offered (nothing else references an announcement's id, so nothing
+      can be orphaned by removing one) — see ADR 0017.
+- [ ] Translations — deliberately not built alongside announcements: there
+      is no i18n framework yet to ever render a translated string (see
+      "i18n framework in place" below), so a translations table today
+      would be schema nothing reads. Tracked there, not dropped — see ADR
+      0017.
 - [x] Bulk import/export of content — scoped to learning paths (the one
       content type with a real FK hierarchy; labs/CTF are only informally
       tied to a path via shared skill tags, and their flags are stored only
@@ -750,12 +763,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 154 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 165 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
       capstone review lifecycle + the seeded standalone exam + the real
       pro plan's entitlements + admin role management + org-scoped audit
       log coverage + account deletion + org member management + login
-      rate limiting + subscription cleanup on user/org deletion)
+      rate limiting + subscription cleanup on user/org deletion +
+      announcements read/write visibility across staff/instructor/member/
+      outsider + their ownership/attribution FK behavior)
 - [x] 246 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety including the EXPLAIN_FINDING grounding, streaming
@@ -765,10 +780,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       solvability, live billing signature verification + request-building
       for Stripe/Paystack/Flutterwave, Turnstile verify-request/response
       logic, the learning-path import/export bundle schema)
-- [x] 21 e2e smoke tests (public pages, auth wall across all protected
+- [x] 22 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`, an
       invite link's `?next=` round-trip, login error handling, the MFA
-      step-up page's own auth wall, the path-import page's own auth wall)
+      step-up page's own auth wall, the path-import page's own auth wall,
+      the admin announcements page's own auth wall)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified
       via typecheck/lint/build; no dedicated e2e tests exercising the forms
       themselves yet — would need a real Supabase project or a more
