@@ -49,15 +49,17 @@ class _InvestigationsListScreenState extends State<InvestigationsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        final next = _load();
-        setState(() => _future = next);
-        await next;
-      },
-      child: FutureBuilder<(List<Investigation>, Map<String, BestSubmission>)>(
-        future: _future,
-        builder: (context, snapshot) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Investigations')),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final next = _load();
+          setState(() => _future = next);
+          await next;
+        },
+        child: FutureBuilder<(List<Investigation>, Map<String, BestSubmission>)>(
+          future: _future,
+          builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -106,7 +108,8 @@ class _InvestigationsListScreenState extends State<InvestigationsListScreen> {
               );
             },
           );
-        },
+          },
+        ),
       ),
     );
   }

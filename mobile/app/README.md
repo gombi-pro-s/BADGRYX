@@ -10,7 +10,8 @@ for what's built so far and what's honestly still ahead.
 - Real Supabase Auth: sign up (email/password, same password policy as
   `apps/web`), log in, log out, session persisted across app restarts by
   `supabase_flutter`.
-- Six real authenticated tabs (bottom navigation):
+- Five bottom-nav tabs, plus three more screens reachable behind "More"
+  (see ADR 0032 for why this replaced a flat, growing tab bar):
   - **Home**: `/dashboard`'s equivalent -- your real display name, your
     real active plan (or "Free"), and up to 5 real active announcements.
   - **Labs**: `/labs`'s equivalent -- published labs, start guided/
@@ -18,10 +19,6 @@ for what's built so far and what's honestly still ahead.
     `submit_lab_flag()` RPC the web app calls. Terminal-backed labs show
     an honest banner -- the interactive terminal/Cyber Range simulator is
     web-only for now, not silently hidden or faked.
-  - **Investigate**: `/investigate`'s equivalent -- real case evidence
-    artifacts, a mixed multiple-choice/exact-text answer form graded
-    server-side via `submit_investigation_answers()`, and a private,
-    debounced-autosave notes scratchpad (not even staff can read it).
   - **Skills**: `/skills`'s equivalent -- your own skill list with its
     real, per-user state, read live from `skills` and `user_skill_states`
     under the exact same RLS this repo's SQL tests already prove.
@@ -29,16 +26,22 @@ for what's built so far and what's honestly still ahead.
     (`ctf_challenges_public`, flag hash never exposed) and a real flag
     submit calling the same `submit_ctf_flag()` RPC the web app calls --
     correct/incorrect is never decided client-side.
-  - **Exams**: `/exams`'s equivalent -- a real countdown timer, single/
-    multi-choice answers, grading exclusively through
-    `submit_quiz_attempt()`. Same honestly-documented limitation as the
-    web app: the timer is client-side only (a refresh restarts it).
-- This is still a first vertical slice, not the whole web app.
-  Capstones, Mentor, the scanner, billing, every admin flow, and the
-  terminal/Cyber Range simulator do not have a mobile screen yet.
-- Six tabs is the practical ceiling for a bottom nav bar on a phone --
-  a real, named consideration for whichever phase adds the next one, not
-  an oversight (see ADR 0031).
+  - **More**:
+    - **Investigate**: `/investigate`'s equivalent -- real case evidence
+      artifacts, a mixed multiple-choice/exact-text answer form graded
+      server-side via `submit_investigation_answers()`, and a private,
+      debounced-autosave notes scratchpad (not even staff can read it).
+    - **Exams**: `/exams`'s equivalent -- a real countdown timer, single/
+      multi-choice answers, grading exclusively through
+      `submit_quiz_attempt()`. Same honestly-documented limitation as the
+      web app: the timer is client-side only (a refresh restarts it).
+    - **Capstones**: `/capstones`'s equivalent -- skill/lab tag chips,
+      submission history with reviewer notes, and a plain report
+      submission (a direct `capstone_submissions` insert, no RPC).
+- This is still a first vertical slice, not the whole web app. Mentor,
+  the scanner, billing, every admin flow, and the terminal/Cyber Range
+  simulator do not have a mobile screen yet. Future pillars like these
+  belong behind "More" too, not as new flat tabs.
 
 ## Configuration
 

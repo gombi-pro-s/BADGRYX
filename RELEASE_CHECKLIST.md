@@ -942,32 +942,36 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `--dart-define`-configured app fails with a real, clear
       "not configured" screen rather than crashing or using mock data --
       see `mobile/app/README.md`. See ADR 0026.
-- [x] Six real, RLS-scoped tabs: a Home/dashboard tab (display name,
-      real active plan or "Free", up to 5 active announcements); Labs
-      (published labs, start guided/unguided, unlock hints, a real flag
-      submit through `submit_lab_flag()` -- terminal-backed labs show an
-      honest "not on mobile yet" banner rather than a fake/hidden
-      terminal); Investigate (real evidence artifacts, a mixed
-      multiple-choice/exact-text answer form graded server-side via
-      `submit_investigation_answers()`, and a private debounced-autosave
-      notes scratchpad); a skills list (`skills` + `user_skill_states`,
-      the same tables/RLS `/skills` and its SQL tests already prove) with
-      the identical 7-state label vocabulary as
-      `components/skill-state-badge.tsx`; CTF challenges
+- [x] Five bottom-nav tabs plus three more screens behind a "More" menu
+      (restructured off a flat, growing tab bar -- see ADR 0032): a
+      Home/dashboard tab (display name, real active plan or "Free", up
+      to 5 active announcements); Labs (published labs, start
+      guided/unguided, unlock hints, a real flag submit through
+      `submit_lab_flag()` -- terminal-backed labs show an honest "not on
+      mobile yet" banner rather than a fake/hidden terminal); a skills
+      list (`skills` + `user_skill_states`, the same tables/RLS `/skills`
+      and its SQL tests already prove) with the identical 7-state label
+      vocabulary as `components/skill-state-badge.tsx`; CTF challenges
       (`ctf_challenges_public` + a real flag submit through the same
       `submit_ctf_flag()` RPC `apps/web` calls -- correctness is never
-      decided client-side on mobile either); and Exams (a real countdown
-      timer, single/multi-choice answers, grading exclusively through
-      `submit_quiz_attempt()` -- same client-side-timer limitation as the
-      web app, not a new gap)
-- [x] `flutter analyze` clean, 54 `flutter test`s passing, `flutter build
+      decided client-side on mobile either); and, behind More: Investigate
+      (real evidence artifacts, a mixed multiple-choice/exact-text answer
+      form graded server-side via `submit_investigation_answers()`, and a
+      private debounced-autosave notes scratchpad), Exams (a real
+      countdown timer, single/multi-choice answers, grading exclusively
+      through `submit_quiz_attempt()` -- same client-side-timer
+      limitation as the web app, not a new gap), and Capstones (skill/lab
+      tag chips, submission history with reviewer notes, a plain
+      `capstone_submissions` report insert -- no RPC exists for this,
+      matching the web app)
+- [x] `flutter analyze` clean, 61 `flutter test`s passing, `flutter build
       web` succeeding (verified in a sandbox with no Android SDK/Xcode/
       GTK -- see ADR 0026); wired into CI (`.github/workflows/ci.yml`'s
       `mobile` job)
-- [ ] Everything else on mobile: the terminal/Cyber Range simulator,
-      capstones, the AI Mentor, the security scanner, billing, and every
-      admin/instructor flow -- none has a mobile screen yet. This phase
-      is a real first vertical slice (auth + six data tabs), not the
+- [ ] Everything else on mobile: the terminal/Cyber Range simulator, the
+      AI Mentor, the security scanner, billing, and every admin/
+      instructor flow -- none has a mobile screen yet. This phase is a
+      real first vertical slice (auth + seven data screens), not the
       whole web app's feature set, and is named as such rather than
       implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through

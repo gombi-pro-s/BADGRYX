@@ -50,15 +50,17 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        final next = _load();
-        setState(() => _future = next);
-        await next;
-      },
-      child: FutureBuilder<(List<Exam>, Set<String>, Map<String, int>)>(
-        future: _future,
-        builder: (context, snapshot) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Exams')),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final next = _load();
+          setState(() => _future = next);
+          await next;
+        },
+        child: FutureBuilder<(List<Exam>, Set<String>, Map<String, int>)>(
+          future: _future,
+          builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -97,7 +99,8 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
               );
             },
           );
-        },
+          },
+        ),
       ),
     );
   }

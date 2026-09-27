@@ -2,20 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../ctf/ctf_list_screen.dart';
 import '../dashboard/dashboard_screen.dart';
-import '../exams/exams_list_screen.dart';
-import '../investigations/investigations_list_screen.dart';
 import '../labs/labs_list_screen.dart';
+import 'more_screen.dart';
 import 'skills_screen.dart';
 
-const List<String> _tabTitles = [
-  'Dashboard',
-  'Labs',
-  'Investigations',
-  'Skill Graph',
-  'CTF Challenges',
-  'Exams',
-];
+const List<String> _tabTitles = ['Dashboard', 'Labs', 'Skill Graph', 'CTF Challenges', 'More'];
 
+/// Five bottom-nav destinations: the tabs used most often stay directly
+/// reachable, and everything else (Investigate, Exams, Capstones, and
+/// wherever Capstones/Mentor/Scanner/Billing land later) lives behind
+/// "More" -- see ADR 0032 for why this replaced the growing flat tab bar.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -45,26 +41,20 @@ class _HomeShellState extends State<HomeShell> {
         children: const [
           DashboardScreen(),
           LabsListScreen(),
-          InvestigationsListScreen(),
           SkillsScreen(),
           CtfListScreen(),
-          ExamsListScreen(),
+          MoreScreen(),
         ],
       ),
-      // 6 destinations is the practical ceiling for a bottom NavigationBar
-      // before it gets cramped on narrow phones -- a real UX concern to
-      // revisit (e.g. a Drawer or NavigationRail) once more tabs are added,
-      // not silently ignored, see ADR 0031.
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (index) => setState(() => _index = index),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.terminal_outlined), label: 'Labs'),
-          NavigationDestination(icon: Icon(Icons.search_outlined), label: 'Investigate'),
           NavigationDestination(icon: Icon(Icons.insights_outlined), label: 'Skills'),
           NavigationDestination(icon: Icon(Icons.flag_outlined), label: 'CTF'),
-          NavigationDestination(icon: Icon(Icons.timer_outlined), label: 'Exams'),
+          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'More'),
         ],
       ),
     );
