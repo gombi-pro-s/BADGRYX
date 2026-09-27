@@ -285,13 +285,21 @@ and
   switch, persisted via cookie. This specifically unblocks (without
   itself building) the content-translations table ADR 0017 deferred. See
   ADR 0025.
+- **Mobile (Flutter, `mobile/app`)**: a real first vertical slice, not
+  the whole web app — Supabase Auth (sign up/log in/log out/persisted
+  session, same password policy as the web app) and one real,
+  RLS-scoped data screen (a skills list) against the same Supabase
+  project, via `supabase_flutter`. `flutter analyze` clean, 18 tests
+  passing, `flutter build web` succeeding, wired into CI. See
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADR 0026.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations
-for user-authored content, a mobile app, and a real live/networked lab
-runtime beyond the virtual terminal/Cyber Range simulator).
+for user-authored content, almost all of the mobile app's feature surface
+beyond auth + skills, a real Android/iOS build, and a real live/networked
+lab runtime beyond the virtual terminal/Cyber Range simulator).
 
 ## Local development
 

@@ -130,3 +130,21 @@ jobs:
         run: pnpm --filter @icorepen/web exec playwright install --with-deps chromium
       - run: pnpm --filter @icorepen/web build
       - run: pnpm --filter @icorepen/web test:e2e
+
+  mobile:
+    name: Mobile (Flutter analyze + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+        working-directory: mobile/app
+      - run: flutter analyze
+        working-directory: mobile/app
+      - run: flutter test
+        working-directory: mobile/app
+      - name: Build (web target -- no Android/iOS toolchain in CI yet)
+        run: flutter build web --dart-define=SUPABASE_URL=https://placeholder.supabase.co --dart-define=SUPABASE_ANON_KEY=placeholder-anon-key
+        working-directory: mobile/app
