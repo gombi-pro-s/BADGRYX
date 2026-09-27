@@ -14,7 +14,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [ ] Flutter mobile app scaffolded (not started)
 - [ ] i18n framework in place (not started — content translations are
       blocked on this specifically, see ADR 0017)
-- [ ] PWA / offline support (not started)
+- [x] PWA / offline support — installable (real `app/manifest.ts`, two
+      stable-URL icon routes at `/icons/192`/`/icons/512` generated with
+      `next/og`'s `ImageResponse`, no image-processing dependency, plus
+      `apple-icon.tsx`) and a hand-written `public/sw.js` (no Workbox/
+      next-pwa/serwist) with a deliberately narrow scope: precaches
+      `/offline`, falls back to it on a failed navigation, and
+      cache-first-with-network-fallback for `_next/static/` build assets
+      only. It never intercepts API routes, Supabase calls, or any
+      dynamic/authenticated page — this app is honest that it needs a live
+      backend for nearly everything, not claiming full offline
+      functionality it doesn't have. See ADR 0022.
 
 ## Authentication
 
@@ -816,13 +826,18 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       + request-building for Stripe/Paystack/Flutterwave, Turnstile
       verify-request/response logic, the learning-path import/export
       bundle schema, admin CMS form submission/pending/error behavior via
-      mocked server actions, the CTF event status classifier)
-- [x] 24 e2e smoke tests (public pages, auth wall across all protected
+      mocked server actions, the CTF event status classifier). No new pure
+      logic in the PWA phase (icon generation and the service worker are
+      both I/O/browser-runtime code, not pure functions), so this count is
+      unchanged.
+- [x] 26 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
       `/reports`, an invite link's `?next=` round-trip, login error
       handling, the MFA step-up page's own auth wall, the path-import
       page's own auth wall, the admin announcements/ctf-events pages'
-      own auth wall)
+      own auth wall, and — new this phase — the landing page linking a
+      real web app manifest whose icon URLs actually return a 200 PNG, and
+      `/offline` rendering without requiring auth)
 - [x] Component-level test coverage for a representative slice of admin CMS
       forms (10 tests: `admin/announcements` create+edit, the org-scoped
       `orgs/[orgId]/announcements` create form, and the original

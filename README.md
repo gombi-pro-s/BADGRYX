@@ -252,12 +252,21 @@ and
   index-backed as their tables grow; `node scripts/perf-test-http.mjs`
   runs real concurrent HTTP load against a production build's public
   pages. Manual/local tools, not wired into CI — see ADR 0019.
+- **PWA / offline support**: installable (`app/manifest.ts`, icons
+  generated with `next/og`'s `ImageResponse` — no image-processing
+  dependency) with a hand-written `public/sw.js` (no Workbox/next-pwa) that
+  is deliberately narrow — it precaches and falls back to `/offline` on a
+  failed navigation and cache-first-serves only `_next/static/` build
+  assets, and never touches an API route, a Supabase call, or any other
+  dynamic page. This app needs a live backend for almost everything, and
+  the service worker's scope says so rather than pretending otherwise. See
+  ADR 0022.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (Blue/Purple Team scenarios, Cyber Range,
-dynamic CTF scoring, content translations, mobile app, i18n, PWA).
+dynamic CTF scoring, content translations, mobile app, i18n).
 
 ## Local development
 

@@ -132,6 +132,30 @@ test.describe("auth wall", () => {
   });
 });
 
+test.describe("PWA", () => {
+  test("the landing page links a web app manifest with real icon URLs", async ({ page }) => {
+    await page.goto("/");
+    const manifestLink = page.locator('link[rel="manifest"]');
+    await expect(manifestLink).toHaveAttribute("href", /\/manifest\.webmanifest$/);
+    const manifest = await page.evaluate(async (href) => {
+      const response = await fetch(href);
+      return response.json();
+    }, await manifestLink.getAttribute("href"));
+    expect(manifest.name).toBe("iCorePen");
+    expect(manifest.icons).toHaveLength(2);
+    for (const icon of manifest.icons) {
+      const response = await page.request.get(icon.src);
+      expect(response.status()).toBe(200);
+      expect(response.headers()["content-type"]).toContain("image/png");
+    }
+  });
+
+  test("/offline renders a real fallback page without requiring auth", async ({ page }) => {
+    await page.goto("/offline");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/you're offline/i);
+  });
+});
+
 test.describe("login form validation", () => {
   test("shows an error for invalid credentials rather than a stack trace", async ({ page }) => {
     await page.goto("/login");
