@@ -942,19 +942,22 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `--dart-define`-configured app fails with a real, clear
       "not configured" screen rather than crashing or using mock data --
       see `mobile/app/README.md`. See ADR 0026.
-- [x] One real, RLS-scoped data screen: a skills list (`skills` +
+- [x] Two real, RLS-scoped tabs: a skills list (`skills` +
       `user_skill_states`, the same tables/RLS `/skills` and its SQL
       tests already prove) with the identical 7-state label vocabulary as
-      `components/skill-state-badge.tsx`
-- [x] `flutter analyze` clean, 18 `flutter test`s passing, `flutter build
+      `components/skill-state-badge.tsx`; and CTF challenges
+      (`ctf_challenges_public` + a real flag submit through the same
+      `submit_ctf_flag()` RPC `apps/web` calls -- correctness is never
+      decided client-side on mobile either)
+- [x] `flutter analyze` clean, 22 `flutter test`s passing, `flutter build
       web` succeeding (verified in a sandbox with no Android SDK/Xcode/
       GTK -- see ADR 0026); wired into CI (`.github/workflows/ci.yml`'s
       `mobile` job)
 - [ ] Everything else on mobile: labs (including the terminal/Cyber
-      Range simulator), CTF, investigations, capstones, exams, the AI
+      Range simulator), investigations, capstones, exams, the AI
       Mentor, the security scanner, billing, and every admin/instructor
       flow -- none has a mobile screen yet. This phase is a real first
-      vertical slice (auth + one data screen), not the whole web app's
+      vertical slice (auth + two data tabs), not the whole web app's
       feature set, and is named as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a

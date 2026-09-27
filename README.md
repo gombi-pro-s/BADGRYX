@@ -287,11 +287,13 @@ and
   ADR 0025.
 - **Mobile (Flutter, `mobile/app`)**: a real first vertical slice, not
   the whole web app — Supabase Auth (sign up/log in/log out/persisted
-  session, same password policy as the web app) and one real,
-  RLS-scoped data screen (a skills list) against the same Supabase
-  project, via `supabase_flutter`. `flutter analyze` clean, 18 tests
-  passing, `flutter build web` succeeding, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADR 0026.
+  session, same password policy as the web app) and two real,
+  RLS-scoped tabs (a skills list, and CTF challenges with a real flag
+  submit through the same `submit_ctf_flag()` RPC the web app calls)
+  against the same Supabase project, via `supabase_flutter`. `flutter
+  analyze` clean, 22 tests passing, `flutter build web` succeeding, wired
+  into CI. See [`mobile/app/README.md`](./mobile/app/README.md) and ADRs
+  0026–0027.
 
 ## What's not built yet
 
