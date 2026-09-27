@@ -965,14 +965,21 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       private debounced-autosave notes scratchpad), Exams (a real
       countdown timer, single/multi-choice answers, grading exclusively
       through `submit_quiz_attempt()` -- same client-side-timer
-      limitation as the web app, not a new gap), and Capstones (skill/lab
+      limitation as the web app, not a new gap), Capstones (skill/lab
       tag chips, submission history with reviewer notes, a plain
       `capstone_submissions` report insert -- no RPC exists for this,
-      matching the web app)
-- [x] `flutter analyze` clean, 61 `flutter test`s passing, `flutter build
-      web` succeeding (verified in a sandbox with no Android SDK/Xcode/
-      GTK -- see ADR 0026); wired into CI (`.github/workflows/ci.yml`'s
-      `mobile` job)
+      matching the web app), and AI Mentor (general-chat modes only --
+      Explain/Hint/Teach/Analyze a failure, no lab/lesson/finding deep
+      links yet -- streaming the real NDJSON `/api/mentor/chat` response
+      token-by-token via a ported `parseNdjsonLines()`, authenticated with
+      a Bearer token instead of a cookie; degrades to a plain "not
+      configured" message if the optional `API_BASE_URL` build value is
+      unset, same pattern as web's Turnstile/billing. See ADR 0034.)
+- [x] `flutter analyze` clean, 69 `flutter test`s passing, `flutter build
+      web` succeeding both with and without `--dart-define=API_BASE_URL=...`
+      (verified in a sandbox with no Android SDK/Xcode/GTK -- see
+      ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
+      which now builds both configurations)
 - [x] Bearer-token API auth for Route Handlers a mobile client calls
       directly, not just Postgrest/RPC: `requireApiUser(request)`
       (`lib/auth/api.ts`) accepts an `Authorization: Bearer
@@ -985,11 +992,9 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `createClient()`. See ADR 0033.
 - [ ] Everything else on mobile: the terminal/Cyber Range simulator, the
       security scanner, billing, and every admin/instructor flow -- none
-      has a mobile screen yet. The AI Mentor's backend now accepts a
-      mobile bearer token (above) but has no Flutter screen yet either.
-      This phase is a real first vertical slice (auth + seven data
-      screens), not the whole web app's feature set, and is named as such
-      rather than implied complete.
+      has a mobile screen yet. This phase is a real vertical slice (auth +
+      seven data screens + streaming AI chat), not the whole web app's
+      feature set, and is named as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

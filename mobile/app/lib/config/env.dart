@@ -21,3 +21,19 @@ class SupabaseEnv {
 bool isSupabaseConfigured(String url, String anonKey) {
   return url.isNotEmpty && anonKey.isNotEmpty;
 }
+
+/// Unlike SupabaseEnv, this is optional: the app has a real backend
+/// (Supabase) without it, so a build with no API_BASE_URL still works for
+/// every Supabase-only screen. Only the AI Mentor screen -- the one
+/// feature that calls apps/web's Next.js Route Handlers directly, not
+/// Supabase -- degrades to a plain "not configured on this build" message
+/// (see mentor_screen.dart), the same "optional integration degrades
+/// gracefully, core functionality never blocked" pattern already used for
+/// Turnstile/billing providers on the web app.
+class AppEnv {
+  const AppEnv._();
+
+  static const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  static bool get isMentorConfigured => apiBaseUrl.isNotEmpty;
+}

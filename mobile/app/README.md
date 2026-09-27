@@ -38,8 +38,19 @@ for what's built so far and what's honestly still ahead.
     - **Capstones**: `/capstones`'s equivalent -- skill/lab tag chips,
       submission history with reviewer notes, and a plain report
       submission (a direct `capstone_submissions` insert, no RPC).
-- This is still a first vertical slice, not the whole web app. Mentor,
-  the scanner, billing, every admin flow, and the terminal/Cyber Range
+    - **AI Mentor**: `/mentor`'s equivalent, general-chat modes only
+      (Explain/Hint/Teach/Analyze a failure -- no lab/lesson/finding deep
+      links from mobile yet). Streams the exact same NDJSON
+      `/api/mentor/chat` Route Handler `apps/web` calls, authenticated with
+      an `Authorization: Bearer <session.accessToken>` header instead of a
+      browser cookie (see ADR 0033); text streams into the reply bubble
+      token-by-token, and the day's request quota is shown once a reply
+      finishes. Needs a second, **optional** build-time config value --
+      see Configuration below -- and degrades to a plain "not configured
+      on this build" message if it's absent, rather than blocking the rest
+      of the app.
+- This is still a first vertical slice, not the whole web app. The
+  scanner, billing, every admin flow, and the terminal/Cyber Range
   simulator do not have a mobile screen yet. Future pillars like these
   belong behind "More" too, not as new flat tabs.
 
@@ -51,15 +62,25 @@ build/run time via `--dart-define` (see `lib/config/env.dart`):
 ```bash
 flutter run \
   --dart-define=SUPABASE_URL=https://<your-project>.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=<your-anon-key>
+  --dart-define=SUPABASE_ANON_KEY=<your-anon-key> \
+  --dart-define=API_BASE_URL=https://<your-apps-web-deployment>
 ```
 
 The exact same project/keys as `apps/web/.env.local` (see the root
-`MANUAL_SETUP.md` §2). Running without these set shows a real
-"Supabase is not configured" screen rather than crashing or silently
-using placeholder data -- this app has no functionality at all without
-a real backend, unlike an optional integration (Turnstile, a billing
-provider) that can degrade gracefully.
+`MANUAL_SETUP.md` §2). Running without `SUPABASE_URL`/`SUPABASE_ANON_KEY`
+set shows a real "Supabase is not configured" screen rather than crashing
+or silently using placeholder data -- this app has no functionality at
+all without a real backend.
+
+`API_BASE_URL` (the origin `apps/web` is deployed at) is different:
+**it's optional**. It's only needed for the AI Mentor screen, which calls
+that deployment's `/api/mentor/chat` Route Handler directly (see
+ADR 0033/0034) rather than talking to Supabase. Every other screen works
+exactly the same with or without it. Omit it and the Mentor screen shows
+"AI Mentor isn't configured on this build" instead of the chat UI --
+this is the same "optional integration degrades gracefully, core
+functionality never blocked" pattern already used for Turnstile/billing
+providers on the web app, not a crash or fake data.
 
 ## Verifying this app in a sandbox with no Android/iOS toolchain
 

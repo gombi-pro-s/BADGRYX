@@ -39,6 +39,13 @@ dependencies:
   # access, no separate mobile backend. See ADR 0026.
   supabase_flutter: ^2.10.4
 
+  # Already a transitive dependency of supabase_flutter; declared directly
+  # now that the AI Mentor screen calls it itself for a streamed POST to
+  # apps/web's Route Handler (no Supabase client involved there -- see
+  # ADR 0033/0034). No reasonable hand-rolled alternative for HTTP, same
+  # reasoning as supabase_flutter's own inclusion.
+  http: ^1.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

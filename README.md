@@ -297,18 +297,26 @@ and
   grading through `submit_quiz_attempt()`, and Capstones with a plain
   report submission and reviewer-notes history) against the same
   Supabase project, via `supabase_flutter`. Terminal-backed labs show an
-  honest "not on mobile yet" banner rather than a fake terminal.
-  `flutter analyze` clean, 61 tests passing, `flutter build web`
-  succeeding, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0032.
+  honest "not on mobile yet" banner rather than a fake terminal. An eighth
+  screen, AI Mentor (general-chat modes only), streams the real
+  `/api/mentor/chat` NDJSON response token-by-token, authenticated with a
+  Bearer token against a new `requireApiUser()` Route Handler helper that
+  falls through to the existing cookie session for `apps/web`'s own
+  callers (see ADR 0033) — degrades to a plain "not configured" message
+  if the app is built without the optional `API_BASE_URL` value, the same
+  pattern already used for Turnstile/billing on web.
+  `flutter analyze` clean, 69 tests passing, `flutter build web`
+  succeeding both with and without `API_BASE_URL` set, wired into CI. See
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0034.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations
-for user-authored content, almost all of the mobile app's feature surface
-beyond auth + skills, a real Android/iOS build, and a real live/networked
-lab runtime beyond the virtual terminal/Cyber Range simulator).
+for user-authored content, the mobile app's terminal/Cyber Range simulator,
+security scanner, billing, and admin/instructor screens, a real Android/iOS
+build, and a real live/networked lab runtime beyond the virtual terminal/
+Cyber Range simulator).
 
 ## Local development
 

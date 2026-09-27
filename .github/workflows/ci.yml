@@ -145,6 +145,9 @@ jobs:
         working-directory: mobile/app
       - run: flutter test
         working-directory: mobile/app
-      - name: Build (web target -- no Android/iOS toolchain in CI yet)
+      - name: Build (web target, API_BASE_URL unset -- Mentor's "not configured" path)
         run: flutter build web --dart-define=SUPABASE_URL=https://placeholder.supabase.co --dart-define=SUPABASE_ANON_KEY=placeholder-anon-key
+        working-directory: mobile/app
+      - name: Build (web target, API_BASE_URL set -- Mentor's configured path)
+        run: flutter build web --dart-define=SUPABASE_URL=https://placeholder.supabase.co --dart-define=SUPABASE_ANON_KEY=placeholder-anon-key --dart-define=API_BASE_URL=https://placeholder.example.com
         working-directory: mobile/app
