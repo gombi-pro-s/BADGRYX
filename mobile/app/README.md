@@ -10,7 +10,9 @@ for what's built so far and what's honestly still ahead.
 - Real Supabase Auth: sign up (email/password, same password policy as
   `apps/web`), log in, log out, session persisted across app restarts by
   `supabase_flutter`.
-- Two real authenticated tabs (bottom navigation):
+- Three real authenticated tabs (bottom navigation):
+  - **Home**: `/dashboard`'s equivalent -- your real display name, your
+    real active plan (or "Free"), and up to 5 real active announcements.
   - **Skills**: `/skills`'s equivalent -- your own skill list with its
     real, per-user state, read live from `skills` and `user_skill_states`
     under the exact same RLS this repo's SQL tests already prove.
