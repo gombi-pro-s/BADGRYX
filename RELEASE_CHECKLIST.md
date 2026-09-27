@@ -981,8 +981,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       Bearer-token path to `/api/scanner/scan`, and a read-only scan-
       detail screen with severity-coded findings -- pasted-snippet scans
       only, no AI enrichment or manual status-transition actions on
-      mobile yet, named gaps rather than silently missing. See ADR 0036.)
-- [x] `flutter analyze` clean, 77 `flutter test`s passing, `flutter build
+      mobile yet, named gaps rather than silently missing. See ADR 0036.),
+      and Billing (real plan/status/entitlements from
+      `subscriptions`/`plans`/`plan_entitlements`, plain RLS-scoped
+      Postgrest, no Route Handler -- checkout/upgrade/cancel deliberately
+      not built, since a payment provider's hosted checkout isn't
+      something to reimplement in-app for a first slice; the screen says
+      to manage your plan from the web app instead. See ADR 0037.)
+- [x] `flutter analyze` clean, 86 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1000,14 +1006,15 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `/api/scanner/scan` (the scan-submission route the mobile Scanner
       screen calls) -- the finding-enrichment route stays on
       `requireUser()` since no mobile screen calls it yet. See ADR 0035.
-- [ ] Everything else on mobile: the terminal/Cyber Range simulator,
-      billing, and every admin/instructor flow -- none has a mobile
-      screen yet; nor does multi-file scan upload, AI-enriched findings,
-      or manual finding-status transitions on the Scanner screen that
-      does exist. This phase is a real vertical slice (auth + eight data
-      screens + streaming AI chat + a scan-and-review flow), not the
-      whole web app's feature set, and is named as such rather than
-      implied complete.
+- [ ] Everything else on mobile: the terminal/Cyber Range simulator and
+      every admin/instructor flow -- neither has a mobile screen yet;
+      nor does multi-file scan upload, AI-enriched findings, or manual
+      finding-status transitions on the Scanner screen that does exist,
+      nor checkout/upgrade/cancel on the Billing screen that does exist.
+      This phase is a real vertical slice (auth + nine data screens +
+      streaming AI chat + a scan-and-review flow + read-only billing
+      status), not the whole web app's feature set, and is named as such
+      rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

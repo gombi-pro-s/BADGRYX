@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../billing/billing_screen.dart';
 import '../capstones/capstones_list_screen.dart';
 import '../exams/exams_list_screen.dart';
 import '../investigations/investigations_list_screen.dart';
@@ -27,6 +28,7 @@ class MoreScreen extends StatelessWidget {
     _MoreItem(Icons.school_outlined, 'Capstones', (_) => const CapstonesListScreen()),
     _MoreItem(Icons.smart_toy_outlined, 'AI Mentor', (_) => const MentorScreen()),
     _MoreItem(Icons.security_outlined, 'Security Scanner', (_) => const ScannerListScreen()),
+    _MoreItem(Icons.credit_card_outlined, 'Billing', (_) => const BillingScreen()),
   ];
 
   @override

@@ -309,19 +309,24 @@ and
   paste-code submission (`/api/scanner/scan`, see ADR 0035) and shows past
   scans plus a combined posture summary and read-only, severity-coded
   findings — pasted-snippet scans only, no AI enrichment or manual
-  finding-status transitions on mobile yet (see ADR 0036).
-  `flutter analyze` clean, 77 tests passing, `flutter build web`
+  finding-status transitions on mobile yet (see ADR 0036). A tenth screen,
+  Billing, shows the user's real plan/status/entitlements via plain
+  RLS-scoped Postgrest (no Route Handler needed) — checkout/upgrade/cancel
+  deliberately stay web-only, since a payment provider's hosted checkout
+  isn't something to reimplement in-app for a first slice (see ADR 0037).
+  `flutter analyze` clean, 86 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0036.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0037.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations
-for user-authored content, the mobile app's terminal/Cyber Range simulator,
-billing, and admin/instructor screens, multi-file scan upload/AI
-enrichment/manual finding-status transitions on the mobile Scanner screen,
-a real Android/iOS build, and a real live/networked lab runtime beyond the
+for user-authored content, the mobile app's terminal/Cyber Range simulator
+and admin/instructor screens, multi-file scan upload/AI enrichment/manual
+finding-status transitions on the mobile Scanner screen, checkout/upgrade/
+cancel on the mobile Billing screen, a real Android/iOS build, and a real
+live/networked lab runtime beyond the
 virtual terminal/Cyber Range simulator).
 
 ## Local development

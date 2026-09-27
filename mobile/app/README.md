@@ -59,10 +59,18 @@ for what's built so far and what's honestly still ahead.
       or manual status-transition actions yet either -- both need this
       screen's read-only foundation first, and are named as gaps rather
       than silently missing. See ADR 0036.
-- This is still a first vertical slice, not the whole web app. Billing,
-  every admin flow, and the terminal/Cyber Range simulator do not have a
-  mobile screen yet. Future pillars like these belong behind "More" too,
-  not as new flat tabs.
+    - **Billing**: `/settings/billing`'s read side -- your real plan,
+      subscription status, and every entitlement, straight from
+      `subscriptions`/`plans`/`plan_entitlements` under the same RLS as
+      the web app, no Route Handler needed. Checkout/upgrade/cancel are
+      deliberately not built: a payment provider's hosted checkout page
+      isn't something to reimplement in-app for a first slice, so the
+      screen just says to manage your plan from the web app. See
+      ADR 0037.
+- This is still a first vertical slice, not the whole web app. Every
+  admin flow and the terminal/Cyber Range simulator do not have a mobile
+  screen yet. Future pillars like these belong behind "More" too, not as
+  new flat tabs.
 
 ## Configuration
 
