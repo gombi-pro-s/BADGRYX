@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../ctf/ctf_list_screen.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../investigations/investigations_list_screen.dart';
 import '../labs/labs_list_screen.dart';
 import 'skills_screen.dart';
 
-const List<String> _tabTitles = ['Dashboard', 'Labs', 'Skill Graph', 'CTF Challenges'];
+const List<String> _tabTitles = ['Dashboard', 'Labs', 'Investigations', 'Skill Graph', 'CTF Challenges'];
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -33,7 +34,13 @@ class _HomeShellState extends State<HomeShell> {
       ),
       body: IndexedStack(
         index: _index,
-        children: const [DashboardScreen(), LabsListScreen(), SkillsScreen(), CtfListScreen()],
+        children: const [
+          DashboardScreen(),
+          LabsListScreen(),
+          InvestigationsListScreen(),
+          SkillsScreen(),
+          CtfListScreen(),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -41,6 +48,7 @@ class _HomeShellState extends State<HomeShell> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.terminal_outlined), label: 'Labs'),
+          NavigationDestination(icon: Icon(Icons.search_outlined), label: 'Investigate'),
           NavigationDestination(icon: Icon(Icons.insights_outlined), label: 'Skills'),
           NavigationDestination(icon: Icon(Icons.flag_outlined), label: 'CTF'),
         ],
