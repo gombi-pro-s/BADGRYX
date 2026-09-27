@@ -12,8 +12,15 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] Design tokens (light + dark) established
 - [x] Pushed to GitHub (`main`, commit history from `3a3eaba`)
 - [ ] Flutter mobile app scaffolded (not started)
-- [ ] i18n framework in place (not started — content translations are
-      blocked on this specifically, see ADR 0017)
+- [x] i18n framework in place — `lib/i18n/` (a hand-rolled dictionary +
+      fallback + `{param}` interpolation, no new dependency, no `[locale]`
+      URL-prefix routing — every route keeps its exact path; see ADR
+      0025) with a real bilingual slice (English/Spanish): the public
+      landing page and `/settings`'s "Language" section, both genuinely
+      switchable via a cookie that persists across reloads. The rest of
+      the app remains English-only, stated plainly in the settings copy
+      itself. This specifically unblocks (but does not itself build)
+      the content-translations table ADR 0017 deferred.
 - [x] PWA / offline support — installable (real `app/manifest.ts`, two
       stable-URL icon routes at `/icons/192`/`/icons/512` generated with
       `next/og`'s `ImageResponse`, no image-processing dependency, plus
@@ -238,11 +245,12 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       nothing here is graded. Unlike other content types, a real delete is
       offered (nothing else references an announcement's id, so nothing
       can be orphaned by removing one) — see ADR 0017.
-- [ ] Translations — deliberately not built alongside announcements: there
-      is no i18n framework yet to ever render a translated string (see
-      "i18n framework in place" below), so a translations table today
-      would be schema nothing reads. Tracked there, not dropped — see ADR
-      0017.
+- [ ] Content translations (e.g. an `announcement_translations` table) —
+      still not built. The original blocker (no i18n framework existed at
+      all) is gone as of ADR 0025, but wiring a real translations table
+      into the announcements admin/learner UI is its own separate phase,
+      not silently bundled into the framework phase. See ADR 0017 and ADR
+      0025.
 - [x] Bulk import/export of content — scoped to learning paths (the one
       content type with a real FK hierarchy; labs/CTF are only informally
       tied to a path via shared skill tags, and their flags are stored only
@@ -843,7 +851,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       owner/staff/outsider visibility and the report mentor-context type +
       the CTF event leaderboard's ranking/tie-break/draft-event guard +
       Blue/Purple Team scenario linkage RLS and the real seeded pairing)
-- [x] 291 unit tests (validation logic, env guards, UI components including
+- [x] 301 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety including the EXPLAIN_FINDING/REVIEW_REPORT/
       REVIEW_METHODOLOGY grounding, Mentor mode-selection logic
@@ -855,18 +863,21 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       verification + request-building for Stripe/Paystack/Flutterwave,
       Turnstile verify-request/response logic, the learning-path
       import/export bundle schema, admin CMS form submission/pending/error
-      behavior via mocked server actions, the CTF event status classifier).
-      No new pure logic in the PWA phase (icon generation and the service
-      worker are both I/O/browser-runtime code, not pure functions) --
-      the +17 since the last count is entirely the Cyber Range phase.
-- [x] 26 e2e smoke tests (public pages, auth wall across all protected
+      behavior via mocked server actions, the CTF event status classifier,
+      the i18n `translate()` fallback/interpolation logic and locale
+      validation). No new pure logic in the PWA or Blue/Purple linkage
+      phases; the +10 since the last count is entirely `lib/i18n`.
+- [x] 27 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
       `/reports`, an invite link's `?next=` round-trip, login error
       handling, the MFA step-up page's own auth wall, the path-import
       page's own auth wall, the admin announcements/ctf-events pages'
-      own auth wall, and — new this phase — the landing page linking a
-      real web app manifest whose icon URLs actually return a 200 PNG, and
-      `/offline` rendering without requiring auth)
+      own auth wall, the landing page linking a real web app manifest
+      whose icon URLs actually return a 200 PNG, `/offline` rendering
+      without requiring auth, and — new this phase — a real click-through
+      switching the landing page to Spanish, confirming it actually
+      re-renders, reloading to confirm the choice persists via cookie,
+      and switching back)
 - [x] Component-level test coverage for a representative slice of admin CMS
       forms (10 tests: `admin/announcements` create+edit, the org-scoped
       `orgs/[orgId]/announcements` create form, and the original

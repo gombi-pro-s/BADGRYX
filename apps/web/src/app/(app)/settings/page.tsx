@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { getLocale } from "@/lib/i18n/cookie";
+import { translate } from "@/lib/i18n/translate";
 import { ProfileForm } from "./profile-form";
 
 export const metadata: Metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
-  const user = await requireUser();
+  const [user, locale] = await Promise.all([requireUser(), getLocale()]);
   const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
@@ -59,6 +62,14 @@ export default async function SettingsPage() {
         <h2 className="text-sm font-semibold text-foreground">Privacy &amp; data</h2>
         <p className="mt-1 text-xs text-foreground-subtle">Export your data, or permanently delete your account.</p>
       </Link>
+
+      <div className="mt-6 rounded-lg border border-border bg-surface p-6">
+        <h2 className="text-sm font-semibold text-foreground">{translate(locale, "settings.language.heading")}</h2>
+        <p className="mt-1 text-xs text-foreground-subtle">{translate(locale, "settings.language.description")}</p>
+        <div className="mt-4">
+          <LocaleSwitcher currentLocale={locale} currentPath="/settings" />
+        </div>
+      </div>
     </div>
   );
 }

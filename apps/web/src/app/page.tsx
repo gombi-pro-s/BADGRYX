@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button-link";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getLocale } from "@/lib/i18n/cookie";
+import { translate } from "@/lib/i18n/translate";
 
 export default async function HomePage() {
-  const user = await getCurrentUser();
+  const [user, locale] = await Promise.all([getCurrentUser(), getLocale()]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -12,17 +16,18 @@ export default async function HomePage() {
           iCore<span className="text-accent">Pen</span>
         </span>
         <nav className="flex items-center gap-3">
+          <LocaleSwitcher currentLocale={locale} currentPath="/" />
           {user ? (
             <ButtonLink href="/dashboard" size="sm">
-              Dashboard
+              {t("landing.nav.dashboard")}
             </ButtonLink>
           ) : (
             <>
               <Link href="/login" className="text-sm font-medium text-foreground-muted hover:text-foreground">
-                Log in
+                {t("landing.nav.login")}
               </Link>
               <ButtonLink href="/signup" size="sm">
-                Sign up
+                {t("landing.nav.signup")}
               </ButtonLink>
             </>
           )}
@@ -30,30 +35,23 @@ export default async function HomePage() {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-24 text-center">
-        <p className="font-mono text-xs uppercase tracking-widest text-accent">
-          Learn &rarr; Investigate &rarr; Practice &rarr; Prove
-        </p>
+        <p className="font-mono text-xs uppercase tracking-widest text-accent">{t("landing.tagline")}</p>
         <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-          A cybersecurity training platform that tracks real skill, not course completion.
+          {t("landing.heading")}
         </h1>
-        <p className="mt-5 max-w-xl text-base text-foreground-muted">
-          Every skill on the platform moves through a state machine backed by evidence: theory,
-          quizzes, guided labs, independent labs, CTF challenges, assessments, and retests. Opening
-          a lesson never counts as mastery.
-        </p>
+        <p className="mt-5 max-w-xl text-base text-foreground-muted">{t("landing.subheading")}</p>
         <div className="mt-8 flex items-center gap-3">
           <ButtonLink href="/signup" size="lg">
-            Start learning
+            {t("landing.cta.startLearning")}
           </ButtonLink>
           <ButtonLink href="/login" size="lg" variant="secondary">
-            Log in
+            {t("landing.cta.login")}
           </ButtonLink>
         </div>
       </main>
 
       <footer className="border-t border-border px-6 py-6 text-center text-xs text-foreground-subtle">
-        Authorized security training only. All labs, targets, and scanning run in isolated,
-        platform-controlled environments.
+        {t("landing.footer")}
       </footer>
     </div>
   );

@@ -132,6 +132,25 @@ test.describe("auth wall", () => {
   });
 });
 
+test.describe("i18n", () => {
+  test("switching to Spanish on the landing page actually re-renders the heading and persists across reload", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/skill, not course completion/i);
+
+    await page.getByRole("button", { name: "Español" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/habilidad real/i);
+    await expect(page.getByRole("navigation").getByRole("link", { name: "Iniciar sesión" })).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/habilidad real/i);
+
+    await page.getByRole("button", { name: "English" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/skill, not course completion/i);
+  });
+});
+
 test.describe("PWA", () => {
   test("the landing page links a web app manifest with real icon URLs", async ({ page }) => {
     await page.goto("/");

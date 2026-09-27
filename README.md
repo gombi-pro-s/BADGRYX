@@ -278,12 +278,20 @@ and
   literal blue-team side of the Cyber Range lab above — same leaked
   credential, same hosts, a log with the exact off-schedule login a SOC
   analyst has to catch. See ADR 0024.
+- **i18n framework**: a hand-rolled dictionary + fallback + interpolation
+  (`lib/i18n/`, no new dependency, cookie-based rather than `[locale]`
+  URL-prefix routing) with a real bilingual (English/Spanish) slice — the
+  public landing page and `/settings`'s Language section both genuinely
+  switch, persisted via cookie. This specifically unblocks (without
+  itself building) the content-translations table ADR 0017 deferred. See
+  ADR 0025.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
-tracked list of what remains (Blue/Purple Team scenarios, Cyber Range,
-dynamic CTF scoring, content translations, mobile app, i18n).
+tracked list of what remains (dynamic CTF scoring, content translations
+for user-authored content, a mobile app, and a real live/networked lab
+runtime beyond the virtual terminal/Cyber Range simulator).
 
 ## Local development
 
