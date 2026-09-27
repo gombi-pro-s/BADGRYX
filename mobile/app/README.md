@@ -10,9 +10,14 @@ for what's built so far and what's honestly still ahead.
 - Real Supabase Auth: sign up (email/password, same password policy as
   `apps/web`), log in, log out, session persisted across app restarts by
   `supabase_flutter`.
-- Three real authenticated tabs (bottom navigation):
+- Four real authenticated tabs (bottom navigation):
   - **Home**: `/dashboard`'s equivalent -- your real display name, your
     real active plan (or "Free"), and up to 5 real active announcements.
+  - **Labs**: `/labs`'s equivalent -- published labs, start guided/
+    unguided, unlock hints, and a real flag submit through the same
+    `submit_lab_flag()` RPC the web app calls. Terminal-backed labs show
+    an honest banner -- the interactive terminal/Cyber Range simulator is
+    web-only for now, not silently hidden or faked.
   - **Skills**: `/skills`'s equivalent -- your own skill list with its
     real, per-user state, read live from `skills` and `user_skill_states`
     under the exact same RLS this repo's SQL tests already prove.
@@ -20,10 +25,10 @@ for what's built so far and what's honestly still ahead.
     (`ctf_challenges_public`, flag hash never exposed) and a real flag
     submit calling the same `submit_ctf_flag()` RPC the web app calls --
     correct/incorrect is never decided client-side.
-- This is still a first vertical slice, not the whole web app. Labs
-  (including the terminal/Cyber Range simulator), investigations,
-  capstones, exams, Mentor, the scanner, billing, and every admin flow do
-  not have a mobile screen yet.
+- This is still a first vertical slice, not the whole web app.
+  Investigations, capstones, exams, Mentor, the scanner, billing, every
+  admin flow, and the terminal/Cyber Range simulator do not have a mobile
+  screen yet.
 
 ## Configuration
 
