@@ -5,35 +5,40 @@ import { Button } from "@/components/ui/button";
 import type { MentorContextType, MentorMode } from "@/types/database";
 import type { MentorQuota } from "@/lib/mentor/rate-limit";
 import { parseNdjsonLines, type MentorStreamEvent } from "@/lib/mentor/ndjson";
+import { GENERAL_MODES, MODE_LABELS, extraModesForContext } from "@/lib/mentor/modes";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
-const MODES: { value: MentorMode; label: string }[] = [
-  { value: "explain", label: "Explain" },
-  { value: "hint", label: "Hint" },
-  { value: "teach", label: "Teach" },
-  { value: "analyze_failure", label: "Analyze a failure" },
-];
-
 export function MentorChat({
   conversationId: initialConversationId,
   initialMessages,
   contextType,
   contextId,
+  initialMode,
   initialQuota,
 }: {
   conversationId: string | null;
   initialMessages: Message[];
   contextType: MentorContextType;
   contextId: string | null;
+  initialMode: MentorMode;
   initialQuota: MentorQuota;
 }) {
+  // Always the 4 general-purpose modes, plus whichever context-specific
+  // mode(s) actually apply here (e.g. EXPLAIN_FINDING for a finding) -- so
+  // a mode a deep link defaulted to is never hidden from the picker, and
+  // the user can still switch back to a generic mode if they want.
+  const modes: { value: MentorMode; label: string }[] = [
+    ...GENERAL_MODES,
+    ...extraModesForContext(contextType).filter((m) => !GENERAL_MODES.includes(m)),
+  ].map((value) => ({ value, label: MODE_LABELS[value] }));
+
   const [conversationId, setConversationId] = useState(initialConversationId);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [mode, setMode] = useState<MentorMode>("explain");
+  const [mode, setMode] = useState<MentorMode>(initialMode);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,7 +129,7 @@ export function MentorChat({
     <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-surface">
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <div className="flex gap-1.5">
-          {MODES.map((m) => (
+          {modes.map((m) => (
             <button
               key={m.value}
               type="button"

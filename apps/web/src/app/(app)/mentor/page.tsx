@@ -3,7 +3,8 @@ import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { checkMentorQuota } from "@/lib/mentor/rate-limit";
 import { ALL_MENTOR_CONTEXT_TYPES } from "@/lib/mentor/context";
-import type { MentorContextType } from "@/types/database";
+import { ALL_MENTOR_MODES, defaultModeForContext } from "@/lib/mentor/modes";
+import type { MentorContextType, MentorMode } from "@/types/database";
 import { MentorChat } from "./mentor-chat";
 
 export const metadata: Metadata = { title: "AI Mentor" };
@@ -11,12 +12,21 @@ export const metadata: Metadata = { title: "AI Mentor" };
 export default async function MentorPage({
   searchParams,
 }: {
-  searchParams: Promise<{ contextType?: string; contextId?: string }>;
+  searchParams: Promise<{ contextType?: string; contextId?: string; mode?: string }>;
 }) {
-  const { contextType: rawContextType, contextId } = await searchParams;
+  const { contextType: rawContextType, contextId, mode: rawMode } = await searchParams;
   const contextType: MentorContextType = ALL_MENTOR_CONTEXT_TYPES.includes(rawContextType as MentorContextType)
     ? (rawContextType as MentorContextType)
     : "general";
+  // An explicit ?mode= (set by a context-aware deep link, e.g. a finding's
+  // "Ask Mentor" button) always wins; otherwise default to whichever mode
+  // actually fits this context (see defaultModeForContext) rather than
+  // always falling back to the generic EXPLAIN -- that fallback is exactly
+  // what made EXPLAIN_FINDING/GUIDE_INVESTIGATION unreachable from the UI
+  // before this existed, despite both being fully implemented server-side.
+  const initialMode: MentorMode = ALL_MENTOR_MODES.includes(rawMode as MentorMode)
+    ? (rawMode as MentorMode)
+    : defaultModeForContext(contextType);
 
   const user = await requireUser();
   const supabase = await createClient();
@@ -63,6 +73,7 @@ export default async function MentorPage({
         initialMessages={initialMessages}
         contextType={contextType}
         contextId={contextId ?? null}
+        initialMode={initialMode}
         initialQuota={quota}
       />
     </div>
@@ -98,6 +109,10 @@ async function resolveFocusTitle(
   }
   if (contextType === "finding") {
     const { data } = await supabase.from("scan_findings").select("title").eq("id", contextId).maybeSingle();
+    return { data: data?.title ?? null };
+  }
+  if (contextType === "report") {
+    const { data } = await supabase.from("reports").select("title").eq("id", contextId).maybeSingle();
     return { data: data?.title ?? null };
   }
   return { data: null };

@@ -82,7 +82,7 @@ export default async function LessonPage({
       <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-foreground">{lesson.title}</h1>
         <Link
-          href={`/mentor?contextType=lesson&contextId=${lesson.id}`}
+          href={`/mentor?contextType=lesson&contextId=${lesson.id}&mode=teach`}
           className="shrink-0 text-xs font-medium text-accent hover:underline"
         >
           Ask Mentor

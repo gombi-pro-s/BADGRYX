@@ -101,7 +101,7 @@ export function FindingCard({ finding: initialFinding, filename }: { finding: Fi
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <Link
-            href={`/mentor?contextType=finding&contextId=${finding.id}`}
+            href={`/mentor?contextType=finding&contextId=${finding.id}&mode=explain_finding`}
             className="text-xs font-medium text-accent hover:underline"
           >
             Ask Mentor

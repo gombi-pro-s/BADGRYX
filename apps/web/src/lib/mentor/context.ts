@@ -33,6 +33,7 @@ export const ALL_MENTOR_CONTEXT_TYPES: MentorContextType[] = [
   "ctf",
   "investigation",
   "finding",
+  "report",
   "general",
 ];
 
@@ -184,6 +185,19 @@ async function buildFocusDetail(
       .maybeSingle();
     if (!data) return null;
     return { type: "investigation", title: data.title, description: data.briefing };
+  }
+
+  if (focusType === "report") {
+    // RLS on reports is owner-scoped (+ staff-readable) -- this can never
+    // return another user's report through the caller's own client, same
+    // guarantee as every other focus type queried here.
+    const { data } = await supabase.from("reports").select("title, kind, content_markdown").eq("id", focusId).maybeSingle();
+    if (!data) return null;
+    return {
+      type: "report",
+      title: data.title,
+      description: `Report kind: ${data.kind}\n\n${data.content_markdown}`,
+    };
   }
 
   if (focusType === "finding") {

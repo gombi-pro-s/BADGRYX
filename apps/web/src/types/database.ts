@@ -469,7 +469,15 @@ export type InvestigationSubmissionRow = {
   submitted_at: string;
 };
 
-export type MentorContextType = "skill" | "lesson" | "lab" | "ctf" | "investigation" | "finding" | "general";
+export type MentorContextType =
+  | "skill"
+  | "lesson"
+  | "lab"
+  | "ctf"
+  | "investigation"
+  | "finding"
+  | "report"
+  | "general";
 export type MentorMode =
   | "explain"
   | "hint"
@@ -504,6 +512,18 @@ export type MentorMessageRow = {
   mode: MentorMode | null;
   content: string;
   created_at: string;
+};
+
+export type ReportKind = "pentest_report" | "methodology";
+
+export type ReportRow = {
+  id: string;
+  user_id: string;
+  kind: ReportKind;
+  title: string;
+  content_markdown: string;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ScanStatus = "queued" | "running" | "completed" | "failed";
@@ -1031,6 +1051,12 @@ export interface Database {
           content: string;
         };
         Update: Record<string, never>;
+        Relationships: [];
+      };
+      reports: {
+        Row: ReportRow;
+        Insert: { user_id: string; kind?: ReportKind; title: string; content_markdown?: string };
+        Update: Partial<{ kind: ReportKind; title: string; content_markdown: string }>;
         Relationships: [];
       };
 

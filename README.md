@@ -157,13 +157,23 @@ and
   only in the user's actual Skill Graph data — never fabricated, and
   structurally unable to write skill evidence (see ADR 0007). Rate-limited
   through the real entitlement engine. "Ask Mentor" deep links exist from
-  lessons, labs, CTF challenges, investigations, and scanner findings,
-  each grounding the Mentor's focus in that specific item's real title/
-  description (labs: only the hints the user has actually unlocked;
-  findings: the finding's real category/severity/evidence/explanation/
-  impact/remediation, RLS-scoped to the caller's own scan). Responses
-  stream token-by-token (Anthropic SDK's `messages.stream()` over a
-  newline-delimited-JSON `ReadableStream`), not request/response.
+  lessons, labs, CTF challenges, investigations, scanner findings, and
+  reports (see below), each grounding the Mentor's focus in that specific
+  item's real title/description (labs: only the hints the user has
+  actually unlocked; findings: the finding's real category/severity/
+  evidence/explanation/impact/remediation, RLS-scoped to the caller's own
+  scan) and defaulting to the mode that actually fits that context
+  (EXPLAIN_FINDING for a finding, GUIDE_INVESTIGATION for an
+  investigation, REVIEW_REPORT/REVIEW_METHODOLOGY for a report) rather
+  than a generic explanation — see ADR 0020 for a real reachability bug
+  this caught and fixed along the way. Responses stream token-by-token
+  (Anthropic SDK's `messages.stream()` over a newline-delimited-JSON
+  `ReadableStream`), not request/response.
+- **Reports** (`/reports`): write a pentest report or methodology
+  write-up and ask the Mentor to critique it — structure, whether each
+  claim is backed by evidence, what's missing. Practice only, reviewed by
+  the Mentor, never graded; separate from a capstone's human-reviewed
+  report (`capstone_submissions.report_content`, ADR 0008). See ADR 0020.
 - **Security scanner** (`/scanner`): a real deterministic static-analysis
   rule engine (12 rule modules — secrets, SQL injection, XSS, command
   injection, path traversal, insecure eval, weak crypto, insecure CORS,

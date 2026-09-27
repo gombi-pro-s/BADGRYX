@@ -90,7 +90,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 165 SQL regression assertions passing against a real Postgres instance
+- [x] 173 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, announcements, and a full
       seeded-content walkthrough
@@ -494,12 +494,24 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       unit tests assert the mode actually uses this real data and that
       neither `review_report` nor `review_methodology` claims the
       scanner itself is unimplemented.
-- [ ] Not implemented: REVIEW_REPORT / REVIEW_METHODOLOGY — this platform
-      genuinely has no written-report feature (a document a learner
-      produces and the Mentor reviews), so these two honestly tell the
-      user that rather than inventing a report to discuss; unlike
-      EXPLAIN_FINDING above, there is no underlying data these could
-      ground themselves in yet
+- [x] REVIEW_REPORT / REVIEW_METHODOLOGY are real: `/reports` lets a
+      learner write a pentest report or methodology write-up
+      (`reports` table, owner-only RLS mirroring `mentor_conversations`),
+      `'report'` is a real `MentorContextType`
+      (`20260922000025_reports.sql`), and both modes now actually critique
+      the user's own real report/write-up (structure, whether each claim
+      is backed by evidence, what's missing) instead of the old
+      disclaimer. Deliberately separate from a capstone's staff-reviewed
+      `report_content` (ADR 0008) — this is Mentor-only practice, never
+      graded, no skill_evidence. While wiring this up, found and fixed a
+      real, separate bug: `explain_finding`/`guide_investigation` already
+      had working prompt logic and API support but were unreachable from
+      the UI (`mentor-chat.tsx`'s mode picker only ever offered 4 generic
+      modes, and nothing derived a context-appropriate default) — fixed
+      with a new `lib/mentor/modes.ts` (`defaultModeForContext()`,
+      `extraModesForContext()`, and a single `ALL_MENTOR_MODES` list
+      replacing a hand-maintained copy in the API route) and explicit
+      `&mode=` on every "Ask Mentor" deep link. See ADR 0020.
 - [x] AI-assisted reasoning layer for the security scanner — this entry
       was a stale duplicate (it said "waits on the scanner itself, not
       started," but the scanner and its AI enrichment layer both shipped
@@ -604,7 +616,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Reports
 
-- [ ] Not started.
+- [x] `/reports`: write a pentest report or methodology write-up, ask the
+      AI Mentor to review it (REVIEW_REPORT/REVIEW_METHODOLOGY — see the
+      AI Security Mentor section above and ADR 0020). Owner-only RLS,
+      real delete (nothing else references a report's id). This is
+      Mentor-reviewed practice, not a graded submission — a human-reviewed
+      report within a graded project is the capstone flow
+      (`capstone_submissions.report_content`, ADR 0008), which already
+      existed and is unchanged by this.
 
 ## Admin / Instructor / Teams
 
@@ -763,29 +782,32 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 165 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 173 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
       capstone review lifecycle + the seeded standalone exam + the real
       pro plan's entitlements + admin role management + org-scoped audit
       log coverage + account deletion + org member management + login
       rate limiting + subscription cleanup on user/org deletion +
       announcements read/write visibility across staff/instructor/member/
-      outsider + their ownership/attribution FK behavior)
-- [x] 256 unit tests (validation logic, env guards, UI components including
+      outsider + their ownership/attribution FK behavior + reports
+      owner/staff/outsider visibility and the report mentor-context type)
+- [x] 268 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
-      prompt safety including the EXPLAIN_FINDING grounding, streaming
-      NDJSON parsing, security scanner rule engine + enrichment prompt +
-      status transitions, lab terminal path resolution + command
-      interpreter + real-permission enforcement + the seeded lab's
-      solvability, live billing signature verification + request-building
-      for Stripe/Paystack/Flutterwave, Turnstile verify-request/response
-      logic, the learning-path import/export bundle schema, admin CMS form
-      submission/pending/error behavior via mocked server actions)
-- [x] 22 e2e smoke tests (public pages, auth wall across all protected
-      sections including `/scanner`/`/orgs`/`/capstones`/`/exams`, an
-      invite link's `?next=` round-trip, login error handling, the MFA
-      step-up page's own auth wall, the path-import page's own auth wall,
-      the admin announcements page's own auth wall)
+      prompt safety including the EXPLAIN_FINDING/REVIEW_REPORT/
+      REVIEW_METHODOLOGY grounding, Mentor mode-selection logic
+      (`lib/mentor/modes.ts`), streaming NDJSON parsing, security scanner
+      rule engine + enrichment prompt + status transitions, lab terminal
+      path resolution + command interpreter + real-permission enforcement
+      + the seeded lab's solvability, live billing signature verification
+      + request-building for Stripe/Paystack/Flutterwave, Turnstile
+      verify-request/response logic, the learning-path import/export
+      bundle schema, admin CMS form submission/pending/error behavior via
+      mocked server actions)
+- [x] 23 e2e smoke tests (public pages, auth wall across all protected
+      sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
+      `/reports`, an invite link's `?next=` round-trip, login error
+      handling, the MFA step-up page's own auth wall, the path-import
+      page's own auth wall, the admin announcements page's own auth wall)
 - [x] Component-level test coverage for a representative slice of admin CMS
       forms (10 tests: `admin/announcements` create+edit, the org-scoped
       `orgs/[orgId]/announcements` create form, and the original

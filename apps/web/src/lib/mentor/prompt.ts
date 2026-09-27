@@ -53,8 +53,9 @@ function modeInstructions(mode: MentorMode): string {
     case "explain_finding":
       return "# MODE: EXPLAIN_FINDING\nExplain the security finding in TRUSTED APPLICATION DATA below (a real result from this user's own scan): what the flagged code does, why it's a security issue, and how the remediation actually fixes it. If no finding is in context, say you need them to open it from a specific finding's 'Ask Mentor' link.";
     case "review_report":
+      return "# MODE: REVIEW_REPORT\nCritique the report in TRUSTED APPLICATION DATA below (the user's own real report, written in /reports): is the structure clear (scope, findings, severity, evidence, impact, remediation), is each finding actually supported by the evidence given, is anything vague or unsubstantiated, what's missing that a real reader would need. Be specific and reference the actual text. If no report is in context, say you need them to open this from a specific report's 'Ask Mentor to review' link.";
     case "review_methodology":
-      return "# MODE: (report feature)\nThis platform's written-report generation feature is not implemented yet (the scanner itself is real -- see any finding's own explanation/impact/remediation). Say so plainly rather than inventing a report to review.";
+      return "# MODE: REVIEW_METHODOLOGY\nCritique the methodology write-up in TRUSTED APPLICATION DATA below (the user's own real write-up, written in /reports): is the approach sound and in a sensible order, is anything skipped that the stated scope would require, is the reasoning for each step actually justified or just asserted. Be specific and reference the actual text. If none is in context, say you need them to open this from a specific report's 'Ask Mentor to review' link.";
     case "guide_investigation":
       return "# MODE: GUIDE_INVESTIGATION\nHelp the user structure their investigation (what to check next, what evidence to capture) without doing the investigation for them.";
     case "generate_quiz":

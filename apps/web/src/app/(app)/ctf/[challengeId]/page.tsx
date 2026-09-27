@@ -45,7 +45,7 @@ export default async function CtfChallengePage({
       <div className="mb-4 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-foreground">{challenge.title}</h1>
         <Link
-          href={`/mentor?contextType=ctf&contextId=${challenge.id}`}
+          href={`/mentor?contextType=ctf&contextId=${challenge.id}&mode=hint`}
           className="shrink-0 text-xs font-medium text-accent hover:underline"
         >
           Ask Mentor

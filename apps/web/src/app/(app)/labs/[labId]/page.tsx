@@ -66,7 +66,7 @@ export default async function LabDetailPage({
       <div className="mb-3 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-foreground">{lab.title}</h1>
         <Link
-          href={`/mentor?contextType=lab&contextId=${lab.id}`}
+          href={`/mentor?contextType=lab&contextId=${lab.id}&mode=hint`}
           className="shrink-0 text-xs font-medium text-accent hover:underline"
         >
           Ask Mentor

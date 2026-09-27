@@ -3,29 +3,15 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { buildMentorContext, ALL_MENTOR_CONTEXT_TYPES } from "@/lib/mentor/context";
+import { ALL_MENTOR_MODES } from "@/lib/mentor/modes";
 import { checkMentorQuota } from "@/lib/mentor/rate-limit";
 import { streamMentorReply, type MentorTurn } from "@/lib/mentor/client";
 import type { MentorStreamEvent } from "@/lib/mentor/ndjson";
 import type { MentorContextType, MentorMode } from "@/types/database";
 
-const MENTOR_MODES: MentorMode[] = [
-  "explain",
-  "hint",
-  "teach",
-  "analyze_failure",
-  "explain_command",
-  "explain_finding",
-  "explain_code",
-  "guide_investigation",
-  "review_methodology",
-  "generate_quiz",
-  "prepare_assessment",
-  "explain_remediation",
-  "review_report",
-];
 const requestSchema = z.object({
   conversationId: z.uuid().optional(),
-  mode: z.enum(MENTOR_MODES as [MentorMode, ...MentorMode[]]),
+  mode: z.enum(ALL_MENTOR_MODES as [MentorMode, ...MentorMode[]]),
   message: z.string().trim().min(1).max(4000),
   contextType: z.enum(ALL_MENTOR_CONTEXT_TYPES as [MentorContextType, ...MentorContextType[]]).default("general"),
   contextId: z.uuid().optional(),

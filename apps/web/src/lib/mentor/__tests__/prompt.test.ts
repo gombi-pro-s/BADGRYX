@@ -47,14 +47,42 @@ describe("buildMentorSystemPrompt", () => {
     },
   );
 
-  it("tells the truth about the unimplemented report feature instead of inventing content", () => {
+  it("says a report is needed when review_report has no report in context", () => {
     const prompt = buildMentorSystemPrompt("review_report", emptyContext);
-    expect(prompt).toMatch(/not implemented yet/i);
+    expect(prompt).toContain("MODE: REVIEW_REPORT");
+    expect(prompt).toMatch(/need them to open this from a specific report/i);
   });
 
-  it("never claims the scanner itself is unimplemented -- only report generation is", () => {
-    const prompt = buildMentorSystemPrompt("review_methodology", emptyContext);
-    expect(prompt).not.toMatch(/scanner.{0,20}not implemented/i);
+  it("grounds REVIEW_REPORT in the user's own real report, not a disclaimer", () => {
+    const context: MentorContext = {
+      ...emptyContext,
+      focus: {
+        type: "report",
+        title: "Acme Corp internal pentest",
+        description: "Report kind: pentest_report\n\nFinding 1: SQL injection in the login form.",
+      },
+    };
+    const prompt = buildMentorSystemPrompt("review_report", context);
+    expect(prompt).toContain("MODE: REVIEW_REPORT");
+    expect(prompt).toContain("Acme Corp internal pentest");
+    expect(prompt).toContain("SQL injection in the login form");
+    expect(prompt).not.toMatch(/not implemented yet/i);
+  });
+
+  it("grounds REVIEW_METHODOLOGY in the user's own real write-up, not a disclaimer", () => {
+    const context: MentorContext = {
+      ...emptyContext,
+      focus: {
+        type: "report",
+        title: "Web app assessment methodology",
+        description: "Report kind: methodology\n\nStep 1: passive recon via DNS enumeration.",
+      },
+    };
+    const prompt = buildMentorSystemPrompt("review_methodology", context);
+    expect(prompt).toContain("MODE: REVIEW_METHODOLOGY");
+    expect(prompt).toContain("Web app assessment methodology");
+    expect(prompt).toContain("passive recon via DNS enumeration");
+    expect(prompt).not.toMatch(/not implemented yet/i);
   });
 
   it("grounds EXPLAIN_FINDING in a real scan finding's own data, not a disclaimer", () => {

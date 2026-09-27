@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/orgs", label: "Organizations" },
   { href: "/mentor", label: "AI Mentor" },
   { href: "/scanner", label: "Scanner" },
+  { href: "/reports", label: "Reports" },
   { href: "/skills", label: "Skill Graph" },
   { href: "/settings", label: "Settings" },
 ];

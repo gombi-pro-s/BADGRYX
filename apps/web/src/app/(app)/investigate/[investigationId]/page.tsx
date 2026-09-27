@@ -99,7 +99,7 @@ export default async function InvestigationDetailPage({
       <div className="mb-3 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-foreground">{investigation.title}</h1>
         <Link
-          href={`/mentor?contextType=investigation&contextId=${investigation.id}`}
+          href={`/mentor?contextType=investigation&contextId=${investigation.id}&mode=guide_investigation`}
           className="shrink-0 text-xs font-medium text-accent hover:underline"
         >
           Ask Mentor
