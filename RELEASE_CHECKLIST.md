@@ -434,7 +434,19 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       pure evidence correlation. Proven genuinely solvable (correct
       answers pass, wrong answers genuinely fail) by
       `supabase/tests/012_more_seeded_investigations_e2e.sql`
-- [ ] Blue/Purple Team scenario linkage (not started)
+- [x] Blue/Purple Team scenario linkage — two plain junction tables
+      (`investigation_labs`/`investigation_ctf_challenges`, mirroring
+      `capstone_labs`'s shape: publicly readable, staff-write only) link an
+      investigation to the red-team lab(s)/CTF challenge(s) whose attack
+      it's the blue-team side of. Admin tagging UI on
+      `/admin/investigations/[id]`; a "Purple Team" banner on
+      `/investigate/[id]` links forward to the attack, and the same banner
+      on `/labs/[id]`/`/ctf/[id]` links back to the investigation. One real
+      seeded pairing, not just schema: "Purple Team: Detecting the Database
+      Lateral Movement" is the literal blue-team side of the Cyber Range
+      lateral-movement lab above — same leaked credential, same hosts, an
+      auth log with the exact off-schedule login a SOC analyst has to
+      catch. See ADR 0024.
 
 ## CTF / Arena / Exams / Capstones
 
@@ -820,7 +832,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 178 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 179 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
       capstone review lifecycle + the seeded standalone exam + the real
       pro plan's entitlements + admin role management + org-scoped audit
@@ -829,7 +841,8 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       announcements read/write visibility across staff/instructor/member/
       outsider + their ownership/attribution FK behavior + reports
       owner/staff/outsider visibility and the report mentor-context type +
-      the CTF event leaderboard's ranking/tie-break/draft-event guard)
+      the CTF event leaderboard's ranking/tie-break/draft-event guard +
+      Blue/Purple Team scenario linkage RLS and the real seeded pairing)
 - [x] 291 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety including the EXPLAIN_FINDING/REVIEW_REPORT/

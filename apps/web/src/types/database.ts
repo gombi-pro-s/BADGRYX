@@ -1062,6 +1062,18 @@ export interface Database {
         Update: Record<string, never>;
         Relationships: [];
       };
+      investigation_labs: {
+        Row: { investigation_id: string; lab_id: string };
+        Insert: { investigation_id: string; lab_id: string };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      investigation_ctf_challenges: {
+        Row: { investigation_id: string; challenge_id: string };
+        Insert: { investigation_id: string; challenge_id: string };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
 
       mentor_conversations: {
         Row: MentorConversationRow;

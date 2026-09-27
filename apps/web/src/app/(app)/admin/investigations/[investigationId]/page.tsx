@@ -2,10 +2,16 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PublishToggle } from "../../publish-toggle";
 import { SkillTagger } from "../../skill-tagger";
-import { setInvestigationSkillsAction, toggleInvestigationPublishedAction } from "../actions";
+import {
+  setInvestigationCtfChallengesAction,
+  setInvestigationLabsAction,
+  setInvestigationSkillsAction,
+  toggleInvestigationPublishedAction,
+} from "../actions";
 import { EditInvestigationForm } from "./edit-investigation-form";
 import { ArtifactsManager } from "./artifacts-manager";
 import { QuestionsManager } from "./questions-manager";
+import { ItemTagger } from "./item-tagger";
 
 export default async function AdminInvestigationDetailPage({
   params,
@@ -22,6 +28,10 @@ export default async function AdminInvestigationDetailPage({
     { data: artifacts },
     { data: questions },
     { data: choices },
+    { data: allLabs },
+    { data: investigationLabs },
+    { data: allChallenges },
+    { data: investigationChallenges },
   ] = await Promise.all([
     supabase
       .from("investigations")
@@ -41,6 +51,10 @@ export default async function AdminInvestigationDetailPage({
       .eq("investigation_id", investigationId)
       .order("order_index"),
     supabase.from("investigation_choices").select("id, question_id, choice_text, is_correct").order("order_index"),
+    supabase.from("labs").select("id, title").order("title"),
+    supabase.from("investigation_labs").select("lab_id").eq("investigation_id", investigationId),
+    supabase.from("ctf_challenges").select("id, title").order("title"),
+    supabase.from("investigation_ctf_challenges").select("challenge_id").eq("investigation_id", investigationId),
   ]);
 
   if (!investigation) notFound();
@@ -91,9 +105,35 @@ export default async function AdminInvestigationDetailPage({
         <ArtifactsManager investigationId={investigation.id} artifacts={artifacts ?? []} />
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="mb-6 rounded-lg border border-border bg-surface p-6">
         <h3 className="mb-4 text-sm font-semibold text-foreground">Questions</h3>
         <QuestionsManager investigationId={investigation.id} questions={questionsWithChoices} />
+      </div>
+
+      <div className="mb-6 rounded-lg border border-border bg-surface p-6">
+        <h3 className="mb-1 text-sm font-semibold text-foreground">Related attack scenario (Purple Team linkage)</h3>
+        <p className="mb-4 text-xs text-foreground-subtle">
+          Tag the red-team lab(s)/CTF challenge(s) whose attack this investigation&apos;s evidence is the
+          blue-team side of. See ADR 0024.
+        </p>
+        <h4 className="mb-2 text-xs font-semibold text-foreground-muted">Labs</h4>
+        <div className="mb-4">
+          <ItemTagger
+            allItems={(allLabs ?? []).map((l) => ({ id: l.id, title: l.title }))}
+            selectedIds={(investigationLabs ?? []).map((l) => l.lab_id)}
+            onSave={(labIds) => setInvestigationLabsAction(investigation.id, labIds)}
+            saveLabel="Save related labs"
+            emptyLabel="No labs exist yet."
+          />
+        </div>
+        <h4 className="mb-2 text-xs font-semibold text-foreground-muted">CTF challenges</h4>
+        <ItemTagger
+          allItems={(allChallenges ?? []).map((c) => ({ id: c.id, title: c.title }))}
+          selectedIds={(investigationChallenges ?? []).map((c) => c.challenge_id)}
+          onSave={(challengeIds) => setInvestigationCtfChallengesAction(investigation.id, challengeIds)}
+          saveLabel="Save related CTF challenges"
+          emptyLabel="No CTF challenges exist yet."
+        />
       </div>
     </div>
   );

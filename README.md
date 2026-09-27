@@ -270,6 +270,14 @@ and
   hostname. `exit`/`logout` restores the exact suspended session a pivot
   left. One real seeded lab, "Cyber Range: Lateral Movement to the
   Database Host," proves it end to end. See ADR 0023.
+- **Blue/Purple Team scenario linkage**: investigations (blue team) and
+  labs/CTF challenges (red team) can now be cross-referenced
+  (`investigation_labs`/`investigation_ctf_challenges`), with a "Purple
+  Team" link shown on each side. One real pairing is seeded, not just
+  schema: "Purple Team: Detecting the Database Lateral Movement" is the
+  literal blue-team side of the Cyber Range lab above — same leaked
+  credential, same hosts, a log with the exact off-schedule login a SOC
+  analyst has to catch. See ADR 0024.
 
 ## What's not built yet
 

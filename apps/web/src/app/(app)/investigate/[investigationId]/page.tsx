@@ -33,33 +33,52 @@ export default async function InvestigationDetailPage({
   const user = await requireUser();
   const supabase = await createClient();
 
-  const [{ data: investigation }, { data: skillLinks }, { data: artifacts }, { data: questionRows }, { data: instance }] =
-    await Promise.all([
-      supabase
-        .from("investigations")
-        .select("id, title, briefing, category, difficulty, estimated_minutes, points, passing_score")
-        .eq("id", investigationId)
-        .eq("published", true)
-        .single(),
-      supabase.from("investigation_skills").select("skills(name)").eq("investigation_id", investigationId),
-      supabase
-        .from("investigation_artifacts")
-        .select("id, artifact_type, title, content")
-        .eq("investigation_id", investigationId)
-        .order("order_index"),
-      supabase
-        .from("investigation_questions_for_attempt")
-        .select("question_id, question_text, question_type, choice_id, choice_text")
-        .eq("investigation_id", investigationId),
-      supabase
-        .from("investigation_instances")
-        .select("notes")
-        .eq("investigation_id", investigationId)
-        .eq("user_id", user.id)
-        .maybeSingle(),
-    ]);
+  const [
+    { data: investigation },
+    { data: skillLinks },
+    { data: artifacts },
+    { data: questionRows },
+    { data: instance },
+    { data: relatedLabs },
+    { data: relatedChallenges },
+  ] = await Promise.all([
+    supabase
+      .from("investigations")
+      .select("id, title, briefing, category, difficulty, estimated_minutes, points, passing_score")
+      .eq("id", investigationId)
+      .eq("published", true)
+      .single(),
+    supabase.from("investigation_skills").select("skills(name)").eq("investigation_id", investigationId),
+    supabase
+      .from("investigation_artifacts")
+      .select("id, artifact_type, title, content")
+      .eq("investigation_id", investigationId)
+      .order("order_index"),
+    supabase
+      .from("investigation_questions_for_attempt")
+      .select("question_id, question_text, question_type, choice_id, choice_text")
+      .eq("investigation_id", investigationId),
+    supabase
+      .from("investigation_instances")
+      .select("notes")
+      .eq("investigation_id", investigationId)
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase.from("investigation_labs").select("labs(id, slug, title)").eq("investigation_id", investigationId),
+    supabase
+      .from("investigation_ctf_challenges")
+      .select("ctf_challenges(id, slug, title)")
+      .eq("investigation_id", investigationId),
+  ]);
 
   if (!investigation) notFound();
+
+  const relatedLabItems = (relatedLabs ?? [])
+    .map((r) => r.labs as unknown as { id: string; slug: string; title: string } | null)
+    .filter((l): l is { id: string; slug: string; title: string } => !!l);
+  const relatedChallengeItems = (relatedChallenges ?? [])
+    .map((r) => r.ctf_challenges as unknown as { id: string; slug: string; title: string } | null)
+    .filter((c): c is { id: string; slug: string; title: string } => !!c);
 
   const skillNames = (skillLinks ?? [])
     .map((s) => (s.skills as unknown as { name: string } | null)?.name)
@@ -116,6 +135,34 @@ export default async function InvestigationDetailPage({
       )}
       {investigation.briefing && (
         <p className="mb-8 whitespace-pre-wrap text-sm text-foreground-muted">{investigation.briefing}</p>
+      )}
+
+      {(relatedLabItems.length > 0 || relatedChallengeItems.length > 0) && (
+        <div className="mb-8 rounded-lg border border-border bg-background-subtle p-4">
+          <p className="mb-2 text-xs font-semibold text-foreground-muted">
+            Purple Team: this is the blue-team side of a real attack scenario on this platform
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {relatedLabItems.map((lab) => (
+              <Link
+                key={lab.id}
+                href={`/labs/${lab.id}`}
+                className="rounded-full border border-border px-2.5 py-0.5 text-xs text-accent hover:underline"
+              >
+                Red team lab: {lab.title}
+              </Link>
+            ))}
+            {relatedChallengeItems.map((challenge) => (
+              <Link
+                key={challenge.id}
+                href={`/ctf/${challenge.id}`}
+                className="rounded-full border border-border px-2.5 py-0.5 text-xs text-accent hover:underline"
+              >
+                Red team CTF: {challenge.title}
+              </Link>
+            ))}
+          </div>
+        </div>
       )}
 
       <h2 className="mb-3 text-sm font-semibold text-foreground">Evidence</h2>

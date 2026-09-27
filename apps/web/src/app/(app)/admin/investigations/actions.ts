@@ -135,6 +135,39 @@ export async function setInvestigationSkillsAction(investigationId: string, skil
   revalidatePath(`/admin/investigations/${investigationId}`);
 }
 
+// ---- Blue/Purple Team scenario linkage (ADR 0024) ----------------------------
+
+export async function setInvestigationLabsAction(investigationId: string, labIds: string[]) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error: deleteError } = await supabase.from("investigation_labs").delete().eq("investigation_id", investigationId);
+  if (deleteError) throw new Error(deleteError.message);
+  if (labIds.length > 0) {
+    const { error: insertError } = await supabase
+      .from("investigation_labs")
+      .insert(labIds.map((lab_id) => ({ investigation_id: investigationId, lab_id })));
+    if (insertError) throw new Error(insertError.message);
+  }
+  revalidatePath(`/admin/investigations/${investigationId}`);
+}
+
+export async function setInvestigationCtfChallengesAction(investigationId: string, challengeIds: string[]) {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error: deleteError } = await supabase
+    .from("investigation_ctf_challenges")
+    .delete()
+    .eq("investigation_id", investigationId);
+  if (deleteError) throw new Error(deleteError.message);
+  if (challengeIds.length > 0) {
+    const { error: insertError } = await supabase
+      .from("investigation_ctf_challenges")
+      .insert(challengeIds.map((challenge_id) => ({ investigation_id: investigationId, challenge_id })));
+    if (insertError) throw new Error(insertError.message);
+  }
+  revalidatePath(`/admin/investigations/${investigationId}`);
+}
+
 // ---- Artifacts --------------------------------------------------------------
 
 const ARTIFACT_TYPES: InvestigationArtifactType[] = [

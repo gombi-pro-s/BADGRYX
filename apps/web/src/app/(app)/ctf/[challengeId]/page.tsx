@@ -22,13 +22,20 @@ export default async function CtfChallengePage({
 
   if (!challenge) notFound();
 
-  const { data: solved } = await supabase
-    .from("ctf_submissions")
-    .select("id")
-    .eq("challenge_id", challengeId)
-    .eq("user_id", user.id)
-    .eq("correct", true)
-    .maybeSingle();
+  const [{ data: solved }, { data: relatedInvestigations }] = await Promise.all([
+    supabase
+      .from("ctf_submissions")
+      .select("id")
+      .eq("challenge_id", challengeId)
+      .eq("user_id", user.id)
+      .eq("correct", true)
+      .maybeSingle(),
+    supabase.from("investigation_ctf_challenges").select("investigations(id, title)").eq("challenge_id", challengeId),
+  ]);
+
+  const relatedInvestigationItems = (relatedInvestigations ?? [])
+    .map((r) => r.investigations as unknown as { id: string; title: string } | null)
+    .filter((i): i is { id: string; title: string } => !!i);
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
@@ -53,6 +60,25 @@ export default async function CtfChallengePage({
       </div>
       {challenge.description && (
         <p className="mb-8 whitespace-pre-wrap text-sm text-foreground-muted">{challenge.description}</p>
+      )}
+
+      {relatedInvestigationItems.length > 0 && (
+        <div className="mb-6 rounded-lg border border-border bg-background-subtle p-4">
+          <p className="mb-2 text-xs font-semibold text-foreground-muted">
+            Purple Team: a blue-team investigation analyzes this exact attack
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {relatedInvestigationItems.map((investigation) => (
+              <Link
+                key={investigation.id}
+                href={`/investigate/${investigation.id}`}
+                className="rounded-full border border-border px-2.5 py-0.5 text-xs text-accent hover:underline"
+              >
+                Blue team investigation: {investigation.title}
+              </Link>
+            ))}
+          </div>
+        </div>
       )}
 
       <FlagSubmit challengeId={challenge.id} initiallySolved={!!solved} />

@@ -14,25 +14,31 @@ export default async function LabDetailPage({
   const user = await requireUser();
   const supabase = await createClient();
 
-  const [{ data: lab }, { data: skillLinks }, { data: hints }, { data: instances }] = await Promise.all([
-    supabase
-      .from("labs")
-      .select("id, title, description, category, difficulty, estimated_minutes, points, has_terminal")
-      .eq("id", labId)
-      .eq("published", true)
-      .single(),
-    supabase.from("lab_skills").select("skills(name)").eq("lab_id", labId),
-    supabase.from("lab_hints").select("id, level, point_cost").eq("lab_id", labId),
-    supabase
-      .from("lab_instances")
-      .select("id, guided, status")
-      .eq("lab_id", labId)
-      .eq("user_id", user.id)
-      .order("started_at", { ascending: false })
-      .limit(1),
-  ]);
+  const [{ data: lab }, { data: skillLinks }, { data: hints }, { data: instances }, { data: relatedInvestigations }] =
+    await Promise.all([
+      supabase
+        .from("labs")
+        .select("id, title, description, category, difficulty, estimated_minutes, points, has_terminal")
+        .eq("id", labId)
+        .eq("published", true)
+        .single(),
+      supabase.from("lab_skills").select("skills(name)").eq("lab_id", labId),
+      supabase.from("lab_hints").select("id, level, point_cost").eq("lab_id", labId),
+      supabase
+        .from("lab_instances")
+        .select("id, guided, status")
+        .eq("lab_id", labId)
+        .eq("user_id", user.id)
+        .order("started_at", { ascending: false })
+        .limit(1),
+      supabase.from("investigation_labs").select("investigations(id, title)").eq("lab_id", labId),
+    ]);
 
   if (!lab) notFound();
+
+  const relatedInvestigationItems = (relatedInvestigations ?? [])
+    .map((r) => r.investigations as unknown as { id: string; title: string } | null)
+    .filter((i): i is { id: string; title: string } => !!i);
 
   const runningInstance = instances?.find((i) => i.status === "running") ?? null;
   let initialTranscript: { command: string; output: string }[] = [];
@@ -83,6 +89,25 @@ export default async function LabDetailPage({
       )}
       {lab.description && (
         <p className="mb-6 whitespace-pre-wrap text-sm text-foreground-muted">{lab.description}</p>
+      )}
+
+      {relatedInvestigationItems.length > 0 && (
+        <div className="mb-6 rounded-lg border border-border bg-background-subtle p-4">
+          <p className="mb-2 text-xs font-semibold text-foreground-muted">
+            Purple Team: a blue-team investigation analyzes this exact attack
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {relatedInvestigationItems.map((investigation) => (
+              <Link
+                key={investigation.id}
+                href={`/investigate/${investigation.id}`}
+                className="rounded-full border border-border px-2.5 py-0.5 text-xs text-accent hover:underline"
+              >
+                Blue team investigation: {investigation.title}
+              </Link>
+            ))}
+          </div>
+        </div>
       )}
 
       {!lab.has_terminal && (
