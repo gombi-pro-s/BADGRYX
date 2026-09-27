@@ -9,6 +9,7 @@ const ADMIN_SECTIONS = [
   { href: "/admin/labs", label: "Labs" },
   { href: "/admin/quizzes", label: "Quizzes" },
   { href: "/admin/ctf", label: "CTF Challenges" },
+  { href: "/admin/ctf-events", label: "CTF Events" },
   { href: "/admin/investigations", label: "Investigations" },
   { href: "/admin/capstones", label: "Capstones" },
 ];

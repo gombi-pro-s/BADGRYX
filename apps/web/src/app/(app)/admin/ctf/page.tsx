@@ -7,10 +7,10 @@ export const metadata: Metadata = { title: "CTF Challenges" };
 
 export default async function AdminCtfPage() {
   const supabase = await createClient();
-  const { data: challenges } = await supabase
-    .from("ctf_challenges")
-    .select("id, slug, title, category, difficulty, points, published")
-    .order("title");
+  const [{ data: challenges }, { data: events }] = await Promise.all([
+    supabase.from("ctf_challenges").select("id, slug, title, category, difficulty, points, published").order("title"),
+    supabase.from("ctf_events").select("id, title").order("title"),
+  ]);
 
   return (
     <div>
@@ -46,7 +46,7 @@ export default async function AdminCtfPage() {
 
       <div className="rounded-lg border border-border bg-surface p-6">
         <h3 className="mb-4 text-sm font-semibold text-foreground">New challenge</h3>
-        <CreateChallengeForm />
+        <CreateChallengeForm events={events ?? []} />
       </div>
     </div>
   );

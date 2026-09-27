@@ -13,14 +13,15 @@ export default async function AdminChallengeDetailPage({
   const { challengeId } = await params;
   const supabase = await createClient();
 
-  const [{ data: challenge }, { data: allSkills }, { data: challengeSkills }] = await Promise.all([
+  const [{ data: challenge }, { data: allSkills }, { data: challengeSkills }, { data: events }] = await Promise.all([
     supabase
       .from("ctf_challenges")
-      .select("id, slug, title, description, category, difficulty, points, published")
+      .select("id, slug, title, description, category, difficulty, points, published, event_id")
       .eq("id", challengeId)
       .single(),
     supabase.from("skills").select("id, name").order("name"),
     supabase.from("ctf_challenge_skills").select("skill_id").eq("challenge_id", challengeId),
+    supabase.from("ctf_events").select("id, title").order("title"),
   ]);
 
   if (!challenge) notFound();
@@ -46,7 +47,9 @@ export default async function AdminChallengeDetailPage({
             category: challenge.category,
             difficulty: challenge.difficulty,
             points: challenge.points,
+            event_id: challenge.event_id,
           }}
+          events={events ?? []}
         />
       </div>
 

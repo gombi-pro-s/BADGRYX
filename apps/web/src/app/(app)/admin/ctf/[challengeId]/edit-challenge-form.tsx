@@ -16,15 +16,24 @@ interface Initial {
   category: LabCategory;
   difficulty: DifficultyLevel;
   points: number;
+  event_id: string | null;
 }
 
-export function EditChallengeForm({ challengeId, initial }: { challengeId: string; initial: Initial }) {
+export function EditChallengeForm({
+  challengeId,
+  initial,
+  events,
+}: {
+  challengeId: string;
+  initial: Initial;
+  events: { id: string; title: string }[];
+}) {
   const action = updateChallengeAction.bind(null, challengeId);
   const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
     <form action={formAction} className="space-y-4">
-      <ChallengeFormFields initial={initial} flagOptional />
+      <ChallengeFormFields initial={initial} flagOptional events={events} />
       <FormError>{state.error}</FormError>
       <Button type="submit" disabled={pending}>
         {pending ? "Saving..." : "Save changes"}

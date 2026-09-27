@@ -90,7 +90,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 ## Database / Security Rules
 
 - [x] Every table has RLS enabled and `FORCE ROW LEVEL SECURITY`
-- [x] 173 SQL regression assertions passing against a real Postgres instance
+- [x] 178 SQL regression assertions passing against a real Postgres instance
       (`bash scripts/run-sql-tests.sh`), covering identity/RBAC, skill graph,
       grading pipeline, entitlements, announcements, and a full
       seeded-content walkthrough
@@ -441,7 +441,20 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `'quiz'`) and an incomplete multi-select answer genuinely fails with
       no partial credit, by `supabase/tests/015_seeded_exam_e2e.sql`
 - [x] Capstone schema with staff-reviewed report submissions
-- [ ] Arena/mission UI (CTF timers/leaderboard specifically) — not started
+- [x] Arena/mission UI (CTF timers/leaderboard) — `ctf_events` and
+      `ctf_challenges.event_id` already existed with real RLS; nothing had
+      ever built the UI for them. `/admin/ctf-events` authors events
+      (title/slug/scoring type/start-end window/publish) and challenges
+      can be assigned to one. `/ctf` groups published events (live status
+      badge: upcoming/live/ended) above independent challenges;
+      `/ctf/events/[eventId]` has a ticking countdown and a real
+      leaderboard (`ctf_event_leaderboard()`, a `SECURITY DEFINER`
+      function returning only the cross-user aggregate -- never which
+      challenges a rival solved -- ranked by points desc, ties broken by
+      earliest last-solve). `ctf_scoring_type='dynamic'` remains inert
+      (disclosed in the admin UI itself, not silently ignored) -- decaying
+      scoring is a separate feature touching a grading function and
+      deserves its own design pass. See ADR 0021.
 - [x] Capstone submission/review UI: `review_capstone_submission()` is now
       the only way a submission's status changes (the blanket staff UPDATE
       RLS policy was dropped, mirroring the scanner finding lifecycle in
@@ -782,7 +795,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 173 SQL regression assertions (RLS + grading + entitlements + a full
+- [x] 178 SQL regression assertions (RLS + grading + entitlements + a full
       seeded-content walkthrough + org-instructor visibility + invitations +
       capstone review lifecycle + the seeded standalone exam + the real
       pro plan's entitlements + admin role management + org-scoped audit
@@ -790,8 +803,9 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       rate limiting + subscription cleanup on user/org deletion +
       announcements read/write visibility across staff/instructor/member/
       outsider + their ownership/attribution FK behavior + reports
-      owner/staff/outsider visibility and the report mentor-context type)
-- [x] 268 unit tests (validation logic, env guards, UI components including
+      owner/staff/outsider visibility and the report mentor-context type +
+      the CTF event leaderboard's ranking/tie-break/draft-event guard)
+- [x] 274 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety including the EXPLAIN_FINDING/REVIEW_REPORT/
       REVIEW_METHODOLOGY grounding, Mentor mode-selection logic
@@ -802,12 +816,13 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       + request-building for Stripe/Paystack/Flutterwave, Turnstile
       verify-request/response logic, the learning-path import/export
       bundle schema, admin CMS form submission/pending/error behavior via
-      mocked server actions)
-- [x] 23 e2e smoke tests (public pages, auth wall across all protected
+      mocked server actions, the CTF event status classifier)
+- [x] 24 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
       `/reports`, an invite link's `?next=` round-trip, login error
       handling, the MFA step-up page's own auth wall, the path-import
-      page's own auth wall, the admin announcements page's own auth wall)
+      page's own auth wall, the admin announcements/ctf-events pages'
+      own auth wall)
 - [x] Component-level test coverage for a representative slice of admin CMS
       forms (10 tests: `admin/announcements` create+edit, the org-scoped
       `orgs/[orgId]/announcements` create form, and the original

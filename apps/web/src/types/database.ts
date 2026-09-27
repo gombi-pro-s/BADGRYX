@@ -349,6 +349,28 @@ export type LabProgressRow = {
   last_attempt_at: string | null;
 };
 
+export type CtfScoringType = "static" | "dynamic";
+
+export type CtfEventRow = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  scoring_type: CtfScoringType;
+  starts_at: string | null;
+  ends_at: string | null;
+  published: boolean;
+  created_at: string;
+};
+
+export interface CtfLeaderboardEntry {
+  user_id: string;
+  display_name: string;
+  total_points: number;
+  solved_count: number;
+  last_solve_at: string;
+}
+
 export type CtfChallengeRow = {
   id: string;
   event_id: string | null;
@@ -930,6 +952,12 @@ export interface Database {
         Relationships: [];
       };
 
+      ctf_events: {
+        Row: CtfEventRow;
+        Insert: Partial<CtfEventRow> & { slug: string; title: string };
+        Update: Partial<CtfEventRow>;
+        Relationships: [];
+      };
       ctf_challenges: {
         Row: CtfChallengeRow;
         // flag_hash must only ever be written by a server action that hashes
@@ -1193,6 +1221,10 @@ export interface Database {
       submit_ctf_flag: {
         Args: { p_challenge_id: string; p_flag: string };
         Returns: CtfSubmissionRow;
+      };
+      ctf_event_leaderboard: {
+        Args: { p_event_id: string };
+        Returns: CtfLeaderboardEntry[];
       };
       submit_investigation_answers: {
         Args: { p_investigation_id: string; p_answers: Record<string, string[] | string> };

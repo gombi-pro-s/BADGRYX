@@ -8,12 +8,12 @@ import { ChallengeFormFields } from "./challenge-form-fields";
 
 const initialState: FormState = { error: null };
 
-export function CreateChallengeForm() {
+export function CreateChallengeForm({ events }: { events: { id: string; title: string }[] }) {
   const [state, formAction, pending] = useActionState(createChallengeAction, initialState);
 
   return (
     <form action={formAction} className="space-y-4">
-      <ChallengeFormFields />
+      <ChallengeFormFields events={events} />
       <FormError>{state.error}</FormError>
       <Button type="submit" disabled={pending}>
         {pending ? "Creating..." : "Create challenge"}

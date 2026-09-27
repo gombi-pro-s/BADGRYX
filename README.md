@@ -105,6 +105,12 @@ and
   (`/orgs/[orgId]/announcements`, instructors and above) notices shown on
   every affected user's `/dashboard` while published and not expired — see
   ADR 0017.
+- **CTF events** (`/ctf`, `/ctf/events/[eventId]`): challenges can be
+  grouped under a timed event (`/admin/ctf-events`) with a live countdown/
+  status banner and a real leaderboard — `ctf_event_leaderboard()`, a
+  `SECURITY DEFINER` function that returns only the cross-user aggregate
+  (never which challenges a rival solved), ranked by points with a
+  real earliest-solve tie-break. See ADR 0021.
 - **Learner UI**: `/learn`, `/labs`, `/ctf` — real markdown lessons with
   embedded live quizzes, guided/unguided lab attempts with hint unlocking,
   and CTF flag submission, all backed by live queries/RPCs.
@@ -251,8 +257,7 @@ and
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (Blue/Purple Team scenarios, Cyber Range,
-Arena/mission timers and leaderboards, content translations, mobile app,
-i18n, PWA).
+dynamic CTF scoring, content translations, mobile app, i18n, PWA).
 
 ## Local development
 

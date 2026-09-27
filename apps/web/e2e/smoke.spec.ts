@@ -125,6 +125,11 @@ test.describe("auth wall", () => {
     await page.goto("/admin/announcements");
     await expect(page).toHaveURL(/\/login/);
   });
+
+  test("an unauthenticated visitor is redirected away from admin ctf events", async ({ page }) => {
+    await page.goto("/admin/ctf-events");
+    await expect(page).toHaveURL(/\/login/);
+  });
 });
 
 test.describe("login form validation", () => {

@@ -38,6 +38,7 @@ const createSchema = z.object({
   category: z.enum(CATEGORIES as [LabCategory, ...LabCategory[]]),
   difficulty: z.enum(DIFFICULTIES as [DifficultyLevel, ...DifficultyLevel[]]),
   points: z.coerce.number().int().min(0).max(10000),
+  event_id: z.uuid().optional(),
   plaintext: z.string().trim().min(4, "Flag must be at least 4 characters.").max(500),
 });
 
@@ -50,6 +51,7 @@ export async function createChallengeAction(_prev: FormState, formData: FormData
     category: formData.get("category"),
     difficulty: formData.get("difficulty"),
     points: formData.get("points"),
+    event_id: formData.get("event_id") || undefined,
     plaintext: formData.get("plaintext"),
   });
   if (!parsed.success) return { error: firstIssue(parsed, "Invalid input.") };
@@ -62,6 +64,7 @@ export async function createChallengeAction(_prev: FormState, formData: FormData
     category: parsed.data.category,
     difficulty: parsed.data.difficulty,
     points: parsed.data.points,
+    event_id: parsed.data.event_id ?? null,
     flag_hash: hashFlag(parsed.data.plaintext),
   });
   if (error) return { error: error.code === "23505" ? "That slug is already in use." : error.message };
@@ -77,6 +80,7 @@ const updateSchema = z.object({
   category: z.enum(CATEGORIES as [LabCategory, ...LabCategory[]]),
   difficulty: z.enum(DIFFICULTIES as [DifficultyLevel, ...DifficultyLevel[]]),
   points: z.coerce.number().int().min(0).max(10000),
+  event_id: z.uuid().optional(),
   plaintext: z.string().trim().max(500).optional(), // blank = keep existing flag
 });
 
@@ -93,6 +97,7 @@ export async function updateChallengeAction(
     category: formData.get("category"),
     difficulty: formData.get("difficulty"),
     points: formData.get("points"),
+    event_id: formData.get("event_id") || undefined,
     plaintext: formData.get("plaintext"),
   });
   if (!parsed.success) return { error: firstIssue(parsed, "Invalid input.") };
@@ -108,6 +113,7 @@ export async function updateChallengeAction(
     category: parsed.data.category,
     difficulty: parsed.data.difficulty,
     points: parsed.data.points,
+    event_id: parsed.data.event_id ?? null,
   };
   if (parsed.data.plaintext) {
     update.flag_hash = hashFlag(parsed.data.plaintext);

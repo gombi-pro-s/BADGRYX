@@ -27,14 +27,17 @@ interface Initial {
   category?: LabCategory;
   difficulty?: DifficultyLevel;
   points?: number;
+  event_id?: string | null;
 }
 
 export function ChallengeFormFields({
   initial = {},
   flagOptional = false,
+  events = [],
 }: {
   initial?: Initial;
   flagOptional?: boolean;
+  events?: { id: string; title: string }[];
 }) {
   return (
     <>
@@ -47,6 +50,17 @@ export function ChallengeFormFields({
           <Label htmlFor="slug">Slug</Label>
           <Input id="slug" name="slug" defaultValue={initial.slug} required pattern="[a-z0-9-]{3,64}" placeholder="web-sqli-1" />
         </div>
+      </div>
+      <div>
+        <Label htmlFor="event_id">CTF event (optional)</Label>
+        <select id="event_id" name="event_id" defaultValue={initial.event_id ?? ""} className={selectClasses()}>
+          <option value="">None -- independent challenge</option>
+          {events.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.title}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
