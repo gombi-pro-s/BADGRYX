@@ -137,10 +137,12 @@ test.describe("PWA", () => {
     await page.goto("/");
     const manifestLink = page.locator('link[rel="manifest"]');
     await expect(manifestLink).toHaveAttribute("href", /\/manifest\.webmanifest$/);
+    const manifestHref = await manifestLink.getAttribute("href");
+    if (!manifestHref) throw new Error("manifest link has no href");
     const manifest = await page.evaluate(async (href) => {
       const response = await fetch(href);
       return response.json();
-    }, await manifestLink.getAttribute("href"));
+    }, manifestHref);
     expect(manifest.name).toBe("iCorePen");
     expect(manifest.icons).toHaveLength(2);
     for (const icon of manifest.icons) {

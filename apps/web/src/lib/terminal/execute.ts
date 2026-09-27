@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { executeCommand } from "./interpreter";
-import { environmentSpecSchema, initialTerminalState, type TerminalState } from "./spec";
+import { environmentSpecSchema, initialTerminalState, resolveHost, type HostSession, type TerminalState } from "./spec";
 
 export class TerminalError extends Error {}
 
@@ -17,6 +17,16 @@ export interface TerminalExecutionResult {
   hostname: string;
 }
 
+function isHostSession(value: unknown): value is HostSession {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    typeof (value as Record<string, unknown>).host === "string" &&
+    typeof (value as Record<string, unknown>).user === "string" &&
+    typeof (value as Record<string, unknown>).cwd === "string"
+  );
+}
+
 function parseState(raw: unknown, fallback: TerminalState): TerminalState {
   if (
     raw &&
@@ -25,8 +35,14 @@ function parseState(raw: unknown, fallback: TerminalState): TerminalState {
     typeof (raw as Record<string, unknown>).user === "string" &&
     Array.isArray((raw as Record<string, unknown>).discovered)
   ) {
-    const r = raw as { cwd: string; user: string; discovered: unknown[] };
-    return { cwd: r.cwd, user: r.user, discovered: r.discovered.filter((d): d is string => typeof d === "string") };
+    const r = raw as { cwd: string; user: string; discovered: unknown[]; host?: unknown; sessionStack?: unknown };
+    return {
+      cwd: r.cwd,
+      user: r.user,
+      discovered: r.discovered.filter((d): d is string => typeof d === "string"),
+      host: typeof r.host === "string" ? r.host : fallback.host,
+      sessionStack: Array.isArray(r.sessionStack) ? r.sessionStack.filter(isHostSession) : fallback.sessionStack,
+    };
   }
   return fallback;
 }
@@ -110,5 +126,6 @@ export async function runTerminalCommand(
     if (logError) console.error("Failed to log terminal command:", logError);
   }
 
-  return { output, cwd: newState.cwd, user: newState.user, hostname: spec.hostname };
+  const currentHostname = resolveHost(spec, newState.host)?.hostname ?? spec.hostname;
+  return { output, cwd: newState.cwd, user: newState.user, hostname: currentHostname };
 }

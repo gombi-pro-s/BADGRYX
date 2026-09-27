@@ -261,6 +261,15 @@ and
   dynamic page. This app needs a live backend for almost everything, and
   the service worker's scope says so rather than pretending otherwise. See
   ADR 0022.
+- **Cyber Range interconnected environments**: the terminal engine's
+  `EnvironmentSpec` can now describe multiple networked hosts
+  (`hosts`/`reachable_hosts`), and a new `ssh <user>@<hostname> <password>`
+  command pivots between them — gated by real network-topology
+  reachability and a genuine credential match the learner has to find
+  first (e.g. via `cat`/`grep` on the current host), not just knowing a
+  hostname. `exit`/`logout` restores the exact suspended session a pivot
+  left. One real seeded lab, "Cyber Range: Lateral Movement to the
+  Database Host," proves it end to end. See ADR 0023.
 
 ## What's not built yet
 

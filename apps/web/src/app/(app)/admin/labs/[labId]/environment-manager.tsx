@@ -19,6 +19,13 @@ const PLACEHOLDER_SPEC = JSON.stringify(
       "/home/user/notes.txt": { type: "file", owner: "user", perms: "rw-r--r--", content: "..." },
       "/root/flag.txt": { type: "file", owner: "root", perms: "rw-------", content: "ICOREPEN{...}" },
     },
+    // Optional "Cyber Range" extension -- omit both fields entirely for a
+    // single-host lab. `reachable_hosts` lists hostnames this host can
+    // `ssh` to; each entry in `hosts` needs its own `credentials` (checked
+    // against `ssh <user>@<hostname> <password>`) and its own
+    // `reachable_hosts` for further pivoting.
+    reachable_hosts: [],
+    hosts: {},
   },
   null,
   2,
@@ -41,7 +48,9 @@ export function EnvironmentManager({ labId, environments }: { labId: string; env
       <p className="mb-3 text-xs text-foreground-subtle">
         The spec is never sent to a learner&apos;s browser directly (see ADR 0009) -- only the output of a
         command they run against it. Saving here validates against the exact schema the terminal execution
-        engine parses, so a spec that saves is one that will actually work.
+        engine parses, so a spec that saves is one that will actually work. Add `hosts`/`reachable_hosts` for
+        a multi-host &quot;Cyber Range&quot; lab where the learner has to `ssh` laterally using real
+        credentials they find on this host -- see ADR 0023.
       </p>
 
       {environments.length > 0 ? (

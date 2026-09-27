@@ -1,4 +1,5 @@
-import type { EnvironmentSpec, TerminalState } from "./spec";
+import type { EnvironmentSpec, ResolvedHost, TerminalState } from "./spec";
+import { resolveHost } from "./spec";
 import { canReadFile, getEntry, isDirectory, isFile, listChildren, resolvePath } from "./path";
 import { tokenize } from "./tokenize";
 
@@ -23,6 +24,12 @@ export function executeCommand(spec: EnvironmentSpec, state: TerminalState, comm
   if (trimmed.length === 0) return { output: "", state };
 
   const [cmd, ...args] = tokenize(trimmed);
+  const currentHost = resolveHost(spec, state.host) ?? resolveHost(spec, spec.hostname);
+  if (!currentHost) return { output: "", state };
+
+  if (cmd === "ssh") return sshCommand(spec, currentHost, state, args);
+  if (cmd === "exit" || cmd === "logout") return exitCommand(currentHost, state);
+
   const handler = COMMANDS[cmd];
   if (!handler) {
     return { output: `${cmd}: command not found`, state };
@@ -30,18 +37,74 @@ export function executeCommand(spec: EnvironmentSpec, state: TerminalState, comm
   return handler(args, spec, state);
 }
 
+/**
+ * "Cyber Range" pivoting: ssh from the current host to another one the
+ * network topology (`reachable_hosts`) actually allows, gated by a real
+ * credential match on the target -- knowing a hostname isn't enough, the
+ * learner has to have found valid creds (e.g. via `cat`/`grep` on the
+ * current host) first, same "find it, don't get told it" shape as every
+ * other lab flag.
+ */
+function sshCommand(spec: EnvironmentSpec, currentHost: ResolvedHost, state: TerminalState, args: string[]): CommandResult {
+  const target = args[0];
+  const atIdx = target?.indexOf("@") ?? -1;
+  if (!target || atIdx <= 0) {
+    return { output: "usage: ssh <user>@<hostname> <password>", state };
+  }
+  const sshUser = target.slice(0, atIdx);
+  const hostname = target.slice(atIdx + 1);
+  const password = args[1];
+
+  if (!currentHost.reachable_hosts.includes(hostname)) {
+    return { output: `ssh: connect to host ${hostname} port 22: No route to host`, state };
+  }
+  const targetHost = resolveHost(spec, hostname);
+  if (!targetHost) {
+    return { output: `ssh: Could not resolve hostname ${hostname}: Name or service not known`, state };
+  }
+  const validCredential = targetHost.credentials.some((c) => c.user === sshUser && c.password === password);
+  if (!validCredential) {
+    return { output: `${sshUser}@${hostname}: Permission denied (publickey,password).`, state };
+  }
+
+  const nextState: TerminalState = {
+    cwd: targetHost.initial_cwd,
+    user: sshUser,
+    discovered: state.discovered,
+    host: hostname,
+    sessionStack: [...state.sessionStack, { host: state.host, user: state.user, cwd: state.cwd }],
+  };
+  return { output: `Welcome to ${hostname}.`, state: nextState };
+}
+
+/** Returns to the host `ssh` was run from, restoring exactly the session (user/cwd) that was suspended there. A no-op message at the origin host, mirroring a real shell refusing to exit a login session from a script context. */
+function exitCommand(currentHost: ResolvedHost, state: TerminalState): CommandResult {
+  if (state.sessionStack.length === 0) {
+    return { output: "exit: cannot exit the origin session", state };
+  }
+  const previous = state.sessionStack[state.sessionStack.length - 1];
+  const nextState: TerminalState = {
+    cwd: previous.cwd,
+    user: previous.user,
+    discovered: state.discovered,
+    host: previous.host,
+    sessionStack: state.sessionStack.slice(0, -1),
+  };
+  return { output: `Connection to ${currentHost.hostname} closed.`, state: nextState };
+}
+
 function resolveUid(user: string): number {
   return user === "root" ? 0 : 1000;
 }
 
-function readTarget(spec: EnvironmentSpec, state: TerminalState, args: string[]): { path: string; content: string } | { error: string } {
+function readTarget(host: ResolvedHost, state: TerminalState, args: string[]): { path: string; content: string } | { error: string } {
   const nFlagIdx = args.indexOf("-n");
   const target = args.find((a, i) => !a.startsWith("-") && !(nFlagIdx >= 0 && i === nFlagIdx + 1));
   if (!target) return { error: "missing file operand" };
   const path = resolvePath(state.cwd, target);
-  const entry = getEntry(spec, path);
+  const entry = getEntry(host, path);
   if (!entry) {
-    if (isDirectory(spec, path)) return { error: `${target}: Is a directory` };
+    if (isDirectory(host, path)) return { error: `${target}: Is a directory` };
     return { error: `${target}: No such file or directory` };
   }
   if (entry.type !== "file") return { error: `${target}: Is a directory` };
@@ -54,7 +117,7 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
     output: [
       "Available commands:",
       "  pwd, cd, ls, cat, echo, head, tail, wc, file, find, grep,",
-      "  whoami, id, hostname, uname, sudo, clear, help",
+      "  whoami, id, hostname, uname, sudo, ssh, exit, clear, help",
       "No pipes, redirects, or command chaining -- one command at a time.",
       "Use the up/down arrows to recall previous commands.",
     ].join("\n"),
@@ -65,7 +128,7 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
 
   whoami: (_args, _spec, state) => ({ output: state.user, state }),
 
-  hostname: (_args, spec, state) => ({ output: spec.hostname, state }),
+  hostname: (_args, spec, state) => ({ output: resolveHost(spec, state.host)?.hostname ?? spec.hostname, state }),
 
   id: (_args, _spec, state) => {
     const uid = resolveUid(state.user);
@@ -73,8 +136,9 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
   },
 
   uname: (args, spec, state) => {
+    const host = resolveHost(spec, state.host);
     if (args.includes("-a")) {
-      return { output: `Linux ${spec.hostname} 5.15.0-generic #1 SMP x86_64 GNU/Linux`, state };
+      return { output: `Linux ${host?.hostname ?? spec.hostname} 5.15.0-generic #1 SMP x86_64 GNU/Linux`, state };
     }
     return { output: "Linux", state };
   },
@@ -82,34 +146,38 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
   echo: (args, _spec, state) => ({ output: args.join(" "), state }),
 
   cd: (args, spec, state) => {
+    const host = resolveHost(spec, state.host);
+    if (!host) return { output: "", state };
     const target = args[0];
-    const newCwd = resolvePath(state.cwd, target ?? spec.initial_cwd);
-    if (!isDirectory(spec, newCwd)) {
+    const newCwd = resolvePath(state.cwd, target ?? host.initial_cwd);
+    if (!isDirectory(host, newCwd)) {
       return { output: `cd: ${target}: No such file or directory`, state };
     }
     return { output: "", state: { ...state, cwd: newCwd } };
   },
 
   ls: (args, spec, state) => {
+    const host = resolveHost(spec, state.host);
+    if (!host) return { output: "", state };
     const long = args.includes("-l") || args.includes("-la") || args.includes("-al");
     const targetArg = args.find((a) => !a.startsWith("-"));
     const path = resolvePath(state.cwd, targetArg ?? ".");
 
-    if (isFile(spec, path)) {
+    if (isFile(host, path)) {
       return { output: path.split("/").pop() ?? path, state };
     }
-    if (!isDirectory(spec, path)) {
+    if (!isDirectory(host, path)) {
       return { output: `ls: cannot access '${targetArg ?? "."}': No such file or directory`, state };
     }
 
-    const children = listChildren(spec, path);
+    const children = listChildren(host, path);
     if (children.length === 0) return { output: "", state };
 
     if (!long) {
       return { output: children.map((c) => c.name).join("  "), state };
     }
     const lines = children.map((c) => {
-      const entry = getEntry(spec, c.path);
+      const entry = getEntry(host, c.path);
       const perms = entry?.perms ?? (c.type === "dir" ? "rwxr-xr-x" : "rw-r--r--");
       const owner = entry?.owner ?? "user";
       const typeChar = c.type === "dir" ? "d" : "-";
@@ -119,14 +187,16 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
   },
 
   cat: (args, spec, state) => {
+    const host = resolveHost(spec, state.host);
+    if (!host) return { output: "", state };
     if (args.length === 0) return { output: "cat: missing file operand", state };
     const outputs: string[] = [];
     let newDiscovered = state.discovered;
     for (const target of args) {
       const path = resolvePath(state.cwd, target);
-      const entry = getEntry(spec, path);
+      const entry = getEntry(host, path);
       if (!entry) {
-        outputs.push(isDirectory(spec, path) ? `cat: ${target}: Is a directory` : `cat: ${target}: No such file or directory`);
+        outputs.push(isDirectory(host, path) ? `cat: ${target}: Is a directory` : `cat: ${target}: No such file or directory`);
         continue;
       }
       if (entry.type !== "file") {
@@ -144,24 +214,30 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
   },
 
   head: (args, spec, state) => {
+    const host = resolveHost(spec, state.host);
+    if (!host) return { output: "", state };
     const nFlagIdx = args.indexOf("-n");
     const n = nFlagIdx >= 0 ? parseInt(args[nFlagIdx + 1] ?? "10", 10) : 10;
-    const result = readTarget(spec, state, args);
+    const result = readTarget(host, state, args);
     if ("error" in result) return { output: `head: ${result.error}`, state };
     return { output: result.content.split("\n").slice(0, n).join("\n"), state };
   },
 
   tail: (args, spec, state) => {
+    const host = resolveHost(spec, state.host);
+    if (!host) return { output: "", state };
     const nFlagIdx = args.indexOf("-n");
     const n = nFlagIdx >= 0 ? parseInt(args[nFlagIdx + 1] ?? "10", 10) : 10;
-    const result = readTarget(spec, state, args);
+    const result = readTarget(host, state, args);
     if ("error" in result) return { output: `tail: ${result.error}`, state };
     const lines = result.content.split("\n");
     return { output: lines.slice(Math.max(0, lines.length - n)).join("\n"), state };
   },
 
   wc: (args, spec, state) => {
-    const result = readTarget(spec, state, args);
+    const host = resolveHost(spec, state.host);
+    if (!host) return { output: "", state };
+    const result = readTarget(host, state, args);
     if ("error" in result) return { output: `wc: ${result.error}`, state };
     const lines = result.content.split("\n").length;
     const words = result.content.split(/\s+/).filter(Boolean).length;
@@ -173,23 +249,27 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
   },
 
   file: (args, spec, state) => {
+    const host = resolveHost(spec, state.host);
+    if (!host) return { output: "", state };
     const target = args[0];
     if (!target) return { output: "file: missing operand", state };
     const path = resolvePath(state.cwd, target);
-    const entry = getEntry(spec, path);
-    if (entry?.type === "dir" || (!entry && isDirectory(spec, path))) return { output: `${target}: directory`, state };
+    const entry = getEntry(host, path);
+    if (entry?.type === "dir" || (!entry && isDirectory(host, path))) return { output: `${target}: directory`, state };
     if (entry?.type === "file") return { output: `${target}: ASCII text`, state };
     return { output: `${target}: cannot open (No such file or directory)`, state };
   },
 
   find: (args, spec, state) => {
+    const host = resolveHost(spec, state.host);
+    if (!host) return { output: "", state };
     const nameFlagIdx = args.indexOf("-name");
     const pattern = nameFlagIdx >= 0 ? args[nameFlagIdx + 1] : undefined;
     const startArg = args.find((a) => !a.startsWith("-") && a !== pattern);
     const startPath = resolvePath(state.cwd, startArg ?? ".");
     const regex = pattern ? globToRegExp(pattern) : null;
 
-    const matches = Object.keys(spec.filesystem)
+    const matches = Object.keys(host.filesystem)
       .filter((p) => p === startPath || p.startsWith(startPath === "/" ? "/" : `${startPath}/`))
       .filter((p) => !regex || regex.test(p.split("/").pop() ?? ""))
       .sort();
@@ -198,6 +278,8 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
   },
 
   grep: (args, spec, state) => {
+    const host = resolveHost(spec, state.host);
+    if (!host) return { output: "", state };
     const recursive = args.includes("-r") || args.includes("-R");
     const positional = args.filter((a) => !a.startsWith("-"));
     const pattern = positional[0];
@@ -213,7 +295,7 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
     }
 
     if (!recursive) {
-      const entry = getEntry(spec, startPath);
+      const entry = getEntry(host, startPath);
       if (!entry || entry.type !== "file") {
         return { output: `grep: ${target}: No such file or directory`, state };
       }
@@ -223,8 +305,8 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
     }
 
     const filesToSearch: string[] = recursive
-      ? Object.keys(spec.filesystem).filter((p) => {
-          const entry = getEntry(spec, p);
+      ? Object.keys(host.filesystem).filter((p) => {
+          const entry = getEntry(host, p);
           return (
             entry?.type === "file" &&
             canReadFile(entry, state.user) &&
@@ -235,7 +317,7 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
 
     const lines: string[] = [];
     for (const path of filesToSearch) {
-      const entry = getEntry(spec, path);
+      const entry = getEntry(host, path);
       if (entry?.type !== "file") continue;
       for (const line of entry.content.split("\n")) {
         if (matcher.test(line)) {
@@ -247,16 +329,18 @@ const COMMANDS: Record<string, (args: string[], spec: EnvironmentSpec, state: Te
   },
 
   sudo: (args, spec, state) => {
+    const host = resolveHost(spec, state.host);
+    if (!host) return { output: "", state };
     if (args[0] === "-l") {
-      const rule = spec.sudo_rules.find((r) => r.user === state.user);
-      if (!rule) return { output: `Sorry, user ${state.user} may not run sudo on ${spec.hostname}.`, state };
+      const rule = host.sudo_rules.find((r) => r.user === state.user);
+      if (!rule) return { output: `Sorry, user ${state.user} may not run sudo on ${host.hostname}.`, state };
       const allowed = rule.allowed === "all" ? "(ALL) ALL" : rule.allowed.map((c) => `(ALL) ${c}`).join("\n");
-      return { output: `User ${state.user} may run the following commands on ${spec.hostname}:\n${allowed}`, state };
+      return { output: `User ${state.user} may run the following commands on ${host.hostname}:\n${allowed}`, state };
     }
 
     if (args.length === 0) return { output: "sudo: a command is required", state };
 
-    const rule = spec.sudo_rules.find((r) => r.user === state.user);
+    const rule = host.sudo_rules.find((r) => r.user === state.user);
     const commandName = args[0];
     const isAllowed = rule && (rule.allowed === "all" || rule.allowed.includes(commandName));
     if (!isAllowed) {

@@ -287,12 +287,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       8 SQL regression assertions (`supabase/tests/009_lab_terminal_rls.sql`)
 - [x] Terminal command interpreter (`lib/terminal/interpreter.ts`) — pure,
       no I/O, real Unix-like subset: `pwd cd ls cat echo head tail wc file
-      find grep whoami id hostname uname sudo clear help`. Deliberately not
-      a shell (no pipes/redirects/chaining) — documented as an honest scope
-      boundary, same as the scanner's rule engine not being a real parser.
-      `sudo` enforces a per-user allow-list from the spec and elevates only
-      for that one call, never persisting. 57 unit tests (path resolution/
-      implicit directories + every command's real and error-path behavior)
+      find grep whoami id hostname uname sudo ssh exit clear help`.
+      Deliberately not a shell (no pipes/redirects/chaining) — documented
+      as an honest scope boundary, same as the scanner's rule engine not
+      being a real parser. `sudo` enforces a per-user allow-list from the
+      spec and elevates only for that one call, never persisting. `ssh`/
+      `exit` pivot between multiple networked hosts in a single lab
+      environment (see "Cyber Range interconnected environments" below,
+      ADR 0023). 57 unit tests for the original single-host command set
+      (path resolution/implicit directories + every command's real and
+      error-path behavior) plus 13 more for `ssh`/`exit`'s multi-host
+      behavior
 - [x] Server-side terminal execution engine (`lib/terminal/execute.ts`) —
       verifies lab_instance ownership + running status through the
       caller's own RLS-scoped session first, only then escalates (via
@@ -345,7 +350,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       container per attempt) is intentionally out of scope — the terminal
       simulator is a deterministic virtual environment, not a provisioned
       live host; this remains clearly labeled wherever it matters
-- [ ] Cyber Range interconnected environments (not started)
+- [x] Cyber Range interconnected environments — `EnvironmentSpec` gained
+      `hosts`/`reachable_hosts` (additively, every pre-existing single-host
+      lab keeps working unchanged), and two new terminal commands: `ssh
+      <user>@<hostname> <password>` (gated by real network-topology
+      reachability AND a genuine credential match found by the learner
+      elsewhere on the host, e.g. via `cat`/`grep` — never just "knowing a
+      hostname") and `exit`/`logout` (restores the exact suspended session
+      a pivot left). One real seeded lab, "Cyber Range: Lateral Movement to
+      the Database Host," proves it end to end: a leaked cron-job
+      credential on one host is the only way to reach a flag that exists
+      only on a second. See ADR 0023.
 
 ## OSINT / Forensics / Blue-Purple Team
 
@@ -815,21 +830,22 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       outsider + their ownership/attribution FK behavior + reports
       owner/staff/outsider visibility and the report mentor-context type +
       the CTF event leaderboard's ranking/tie-break/draft-event guard)
-- [x] 274 unit tests (validation logic, env guards, UI components including
+- [x] 291 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety including the EXPLAIN_FINDING/REVIEW_REPORT/
       REVIEW_METHODOLOGY grounding, Mentor mode-selection logic
       (`lib/mentor/modes.ts`), streaming NDJSON parsing, security scanner
       rule engine + enrichment prompt + status transitions, lab terminal
       path resolution + command interpreter + real-permission enforcement
-      + the seeded lab's solvability, live billing signature verification
-      + request-building for Stripe/Paystack/Flutterwave, Turnstile
-      verify-request/response logic, the learning-path import/export
-      bundle schema, admin CMS form submission/pending/error behavior via
-      mocked server actions, the CTF event status classifier). No new pure
-      logic in the PWA phase (icon generation and the service worker are
-      both I/O/browser-runtime code, not pure functions), so this count is
-      unchanged.
+      + multi-host ssh/exit pivoting + the seeded labs' solvability
+      (including the new Cyber Range lab), live billing signature
+      verification + request-building for Stripe/Paystack/Flutterwave,
+      Turnstile verify-request/response logic, the learning-path
+      import/export bundle schema, admin CMS form submission/pending/error
+      behavior via mocked server actions, the CTF event status classifier).
+      No new pure logic in the PWA phase (icon generation and the service
+      worker are both I/O/browser-runtime code, not pure functions) --
+      the +17 since the last count is entirely the Cyber Range phase.
 - [x] 26 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
       `/reports`, an invite link's `?next=` round-trip, login error

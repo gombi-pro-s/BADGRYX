@@ -1,4 +1,7 @@
-import type { EnvironmentSpec, FilesystemEntry } from "./spec";
+import type { FilesystemEntry } from "./spec";
+
+/** Anything with a filesystem -- the entry EnvironmentSpec or a resolved remote ResolvedHost both satisfy this, so these functions don't care which host they're running against. */
+type FilesystemHost = { filesystem: Record<string, FilesystemEntry> };
 
 /** Joins/resolves `input` against `cwd` (POSIX-style: absolute inputs replace cwd entirely, `.`/`..` are collapsed). Always returns an absolute path with no trailing slash (except root, which is exactly "/"). */
 export function resolvePath(cwd: string, input: string): string {
@@ -16,7 +19,7 @@ export function resolvePath(cwd: string, input: string): string {
 }
 
 /** The direct entry for `path`, if it was declared explicitly in the spec. */
-export function getEntry(spec: EnvironmentSpec, path: string): FilesystemEntry | null {
+export function getEntry(spec: FilesystemHost, path: string): FilesystemEntry | null {
   return spec.filesystem[path] ?? null;
 }
 
@@ -26,7 +29,7 @@ export function getEntry(spec: EnvironmentSpec, path: string): FilesystemEntry |
  * as a prefix (an implicit directory -- authors don't have to declare every
  * intermediate directory just to place a file deep in a tree).
  */
-export function isDirectory(spec: EnvironmentSpec, path: string): boolean {
+export function isDirectory(spec: FilesystemHost, path: string): boolean {
   if (path === "/") return true;
   const entry = getEntry(spec, path);
   if (entry?.type === "dir") return true;
@@ -35,7 +38,7 @@ export function isDirectory(spec: EnvironmentSpec, path: string): boolean {
   return Object.keys(spec.filesystem).some((p) => p.startsWith(prefix));
 }
 
-export function isFile(spec: EnvironmentSpec, path: string): boolean {
+export function isFile(spec: FilesystemHost, path: string): boolean {
   return getEntry(spec, path)?.type === "file";
 }
 
@@ -65,7 +68,7 @@ export interface DirectoryChild {
 }
 
 /** Immediate children of a directory path, sorted, deduplicated (a directory can be "known" both explicitly and by having descendants). */
-export function listChildren(spec: EnvironmentSpec, dirPath: string): DirectoryChild[] {
+export function listChildren(spec: FilesystemHost, dirPath: string): DirectoryChild[] {
   const prefix = dirPath === "/" ? "/" : `${dirPath}/`;
   const children = new Map<string, DirectoryChild>();
 
