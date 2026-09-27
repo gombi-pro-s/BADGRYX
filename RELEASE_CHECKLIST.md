@@ -801,8 +801,35 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       questions, CTF, capstones, investigations, users, org member
       management) still have only the pattern to follow, not tests written
       against it yet.
-- [ ] Load/performance testing (not started)
-- [ ] Load/performance testing (not started)
+- [x] Load/performance testing — two scripts, each honest about what it
+      measures (see ADR 0019):
+      `bash scripts/perf-test-sql.sh` seeds a real local Postgres (300
+      users, with one user's `skill_evidence`/`scans` history deliberately
+      grown to 300/800 rows amid the shared table) and runs
+      `EXPLAIN (ANALYZE, BUFFERS)` on this app's actual hot, RLS-evaluated
+      queries (dashboard, skills matrix, scanner list); gates on "no
+      sequential scan on a table this test grew large" rather than an
+      absolute millisecond budget, since this sandbox's hardware isn't
+      representative of any real deployment. A run here: all 8 queries
+      under 2ms, zero seq scans.
+      `node scripts/perf-test-http.mjs` runs real concurrent HTTP load
+      (hand-rolled, no new dependency) against a real `next start`
+      production server's public pages (`/`, `/login`, `/signup` — the
+      only ones that render without a live Supabase project); gates on
+      zero request failures under load. A run here: 20 concurrent workers
+      for 15s, 3675 requests, 0 failures (`/` p50=104ms/p95=142ms/
+      p99=214ms; `/login` p50=91ms/p95=183ms/p99=290ms; `/signup`
+      p50=31ms/p95=103ms/p99=204ms). While verifying this script, found and
+      fixed a real bug in it: spawning via `npx next start` and cleaning up
+      with a plain `.kill()` reliably killed `npx` but orphaned the actual
+      `next-server` process (reparented to pid 1, left running indefinitely
+      holding the port) — fixed by spawning the local `next` binary
+      directly in its own process group and killing the whole group, with
+      a SIGKILL fallback (see ADR 0019). Neither script is wired into CI —
+      deliberately manual, see ADR 0019. A real load test against
+      authenticated, database-backed routes still needs a provisioned
+      Supabase project, the same limitation as everything else in this
+      sandbox.
 
 ## Production readiness
 

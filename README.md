@@ -230,13 +230,19 @@ and
   investigation); a `needs_revision` review records a real failed attempt,
   not a silent drop. Admin authoring + an inline review queue at
   `/admin/capstones`.
+- **Load/performance testing tooling**: `bash scripts/perf-test-sql.sh`
+  seeds realistic volume into a real local Postgres and asserts (via
+  `EXPLAIN ANALYZE`) that the app's hot, RLS-evaluated queries stay
+  index-backed as their tables grow; `node scripts/perf-test-http.mjs`
+  runs real concurrent HTTP load against a production build's public
+  pages. Manual/local tools, not wired into CI — see ADR 0019.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (Blue/Purple Team scenarios, Cyber Range,
 Arena/mission timers and leaderboards, content translations, mobile app,
-i18n, PWA, load/performance testing).
+i18n, PWA).
 
 ## Local development
 
