@@ -220,7 +220,22 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       see `supabase/migrations/20260921000014_seed_sample_content.sql`
 - [ ] Announcements, translations (not built — section 29's full content
       type list is broader than what's built)
-- [ ] Bulk import/export of content
+- [x] Bulk import/export of content — scoped to learning paths (the one
+      content type with a real FK hierarchy; labs/CTF are only informally
+      tied to a path via shared skill tags, and their flags are stored only
+      as a hash, so a real export/import for them needs its own design —
+      see ADR 0016). `GET /admin/paths/[pathId]/export` downloads a
+      `icorepen.learning_path.v1` JSON bundle (path → modules → lessons →
+      skill tags by slug → quiz → questions → choices);
+      `/admin/paths/import` accepts a pasted/uploaded bundle and always
+      creates a new path, never merges into an existing one. A failure
+      partway through is cleaned up automatically (the partial path is
+      deleted, cascading through everything created under it) rather than
+      leaving orphaned rows. Verified by 9 unit tests on the pure
+      schema/parser (`lib/content-io/path-bundle.ts`), `tsc`, ESLint, a
+      clean build (both routes present), and 1 new e2e test. A real
+      authenticated export→import round trip needs a provisioned Supabase
+      project — do that first if you want this verified live.
 
 ## Learner-facing UI
 
@@ -741,7 +756,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       pro plan's entitlements + admin role management + org-scoped audit
       log coverage + account deletion + org member management + login
       rate limiting + subscription cleanup on user/org deletion)
-- [x] 237 unit tests (validation logic, env guards, UI components including
+- [x] 246 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety including the EXPLAIN_FINDING grounding, streaming
       NDJSON parsing, security scanner rule engine + enrichment prompt +
@@ -749,11 +764,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       interpreter + real-permission enforcement + the seeded lab's
       solvability, live billing signature verification + request-building
       for Stripe/Paystack/Flutterwave, Turnstile verify-request/response
-      logic)
-- [x] 20 e2e smoke tests (public pages, auth wall across all protected
+      logic, the learning-path import/export bundle schema)
+- [x] 21 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`, an
       invite link's `?next=` round-trip, login error handling, the MFA
-      step-up page's own auth wall)
+      step-up page's own auth wall, the path-import page's own auth wall)
 - [ ] Test coverage for admin CMS CRUD flows (built and manually verified
       via typecheck/lint/build; no dedicated e2e tests exercising the forms
       themselves yet — would need a real Supabase project or a more

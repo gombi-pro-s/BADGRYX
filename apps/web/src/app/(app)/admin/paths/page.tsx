@@ -14,7 +14,12 @@ export default async function AdminPathsPage() {
 
   return (
     <div>
-      <h2 className="mb-4 text-lg font-semibold text-foreground">Learning Paths</h2>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-foreground">Learning Paths</h2>
+        <Link href="/admin/paths/import" className="text-sm text-foreground-muted hover:underline">
+          Import a path
+        </Link>
+      </div>
 
       {paths && paths.length > 0 ? (
         <ul className="mb-8 divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">

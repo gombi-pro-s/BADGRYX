@@ -110,6 +110,11 @@ test.describe("auth wall", () => {
     await page.goto("/login/verify-mfa");
     await expect(page).toHaveURL(/\/login/);
   });
+
+  test("an unauthenticated visitor is redirected away from the path import page", async ({ page }) => {
+    await page.goto("/admin/paths/import");
+    await expect(page).toHaveURL(/\/login/);
+  });
 });
 
 test.describe("login form validation", () => {

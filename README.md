@@ -98,7 +98,9 @@ and
 - **Admin CMS**: full authoring UI at `/admin` for learning paths, modules,
   lessons (markdown), labs (hints + hashed flags), quizzes (question/choice
   builder), and CTF challenges — all enforced by the same staff-only RLS
-  policies as everything else, not a service-role bypass.
+  policies as everything else, not a service-role bypass. A learning path
+  (with its modules/lessons/skill tags/quiz/questions/choices) can be
+  exported as a JSON bundle and re-imported as a new path — see ADR 0016.
 - **Learner UI**: `/learn`, `/labs`, `/ctf` — real markdown lessons with
   embedded live quizzes, guided/unguided lab attempts with hint unlocking,
   and CTF flag submission, all backed by live queries/RPCs.
