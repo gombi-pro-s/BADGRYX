@@ -235,8 +235,8 @@ and
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (Blue/Purple Team scenarios, Cyber Range,
-Arena/mission timers and leaderboards, bulk content import/export, mobile
-app, i18n, PWA).
+Arena/mission timers and leaderboards, content translations, mobile app,
+i18n, PWA, load/performance testing).
 
 ## Local development
 

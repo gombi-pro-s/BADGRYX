@@ -771,7 +771,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       rate limiting + subscription cleanup on user/org deletion +
       announcements read/write visibility across staff/instructor/member/
       outsider + their ownership/attribution FK behavior)
-- [x] 246 unit tests (validation logic, env guards, UI components including
+- [x] 256 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety including the EXPLAIN_FINDING grounding, streaming
       NDJSON parsing, security scanner rule engine + enrichment prompt +
@@ -779,16 +779,29 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       interpreter + real-permission enforcement + the seeded lab's
       solvability, live billing signature verification + request-building
       for Stripe/Paystack/Flutterwave, Turnstile verify-request/response
-      logic, the learning-path import/export bundle schema)
+      logic, the learning-path import/export bundle schema, admin CMS form
+      submission/pending/error behavior via mocked server actions)
 - [x] 22 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`, an
       invite link's `?next=` round-trip, login error handling, the MFA
       step-up page's own auth wall, the path-import page's own auth wall,
       the admin announcements page's own auth wall)
-- [ ] Test coverage for admin CMS CRUD flows (built and manually verified
-      via typecheck/lint/build; no dedicated e2e tests exercising the forms
-      themselves yet — would need a real Supabase project or a more
-      elaborate local auth fixture than the current e2e setup has)
+- [x] Component-level test coverage for a representative slice of admin CMS
+      forms (10 tests: `admin/announcements` create+edit, the org-scoped
+      `orgs/[orgId]/announcements` create form, and the original
+      `admin/paths` create form) — `vi.mock()`s the "use server" actions
+      module and asserts the real form component's own behavior: the
+      `FormData`/bound-id it submits, pending-state button label/disabled
+      attribute, and error rendering. See ADR 0018 for why this is a
+      genuinely different (and narrower) claim than a real RLS-backed
+      click-through: confirmed in this sandbox that neither the `supabase`
+      CLI nor a reachable Docker daemon exist here, so that part remains
+      blocked on a provisioned Supabase project, same as every other
+      admin-CMS/org flow. The remaining CMS forms (labs, quizzes/
+      questions, CTF, capstones, investigations, users, org member
+      management) still have only the pattern to follow, not tests written
+      against it yet.
+- [ ] Load/performance testing (not started)
 - [ ] Load/performance testing (not started)
 
 ## Production readiness
