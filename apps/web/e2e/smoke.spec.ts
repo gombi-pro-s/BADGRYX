@@ -186,3 +186,27 @@ test.describe("login form validation", () => {
     await expect(page.getByRole("alert")).toBeVisible({ timeout: 15_000 });
   });
 });
+
+test.describe("mobile API auth", () => {
+  test("an unauthenticated call to /api/mentor/chat gets a 401 JSON body, not a login redirect", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/mentor/chat", {
+      data: { mode: "explain", message: "hello", contextType: "general" },
+    });
+    expect(response.status()).toBe(401);
+    expect(response.headers()["content-type"]).toContain("application/json");
+    const body = await response.json();
+    expect(body).toEqual({ error: "Unauthorized" });
+  });
+
+  test("a bogus Bearer token on /api/mentor/chat is rejected with 401 JSON", async ({ request }) => {
+    const response = await request.post("/api/mentor/chat", {
+      headers: { Authorization: "Bearer not-a-real-token" },
+      data: { mode: "explain", message: "hello", contextType: "general" },
+    });
+    expect(response.status()).toBe(401);
+    const body = await response.json();
+    expect(body).toEqual({ error: "Unauthorized" });
+  });
+});

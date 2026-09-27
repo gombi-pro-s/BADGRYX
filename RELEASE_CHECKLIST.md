@@ -851,7 +851,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       owner/staff/outsider visibility and the report mentor-context type +
       the CTF event leaderboard's ranking/tie-break/draft-event guard +
       Blue/Purple Team scenario linkage RLS and the real seeded pairing)
-- [x] 301 unit tests (validation logic, env guards, UI components including
+- [x] 308 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety including the EXPLAIN_FINDING/REVIEW_REPORT/
       REVIEW_METHODOLOGY grounding, Mentor mode-selection logic
@@ -865,19 +865,24 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       import/export bundle schema, admin CMS form submission/pending/error
       behavior via mocked server actions, the CTF event status classifier,
       the i18n `translate()` fallback/interpolation logic and locale
-      validation). No new pure logic in the PWA or Blue/Purple linkage
-      phases; the +10 since the last count is entirely `lib/i18n`.
-- [x] 27 e2e smoke tests (public pages, auth wall across all protected
+      validation, and — new this phase — `extractBearerToken()`'s
+      `Authorization: Bearer <token>` parsing for the mobile API auth
+      path). The +7 since the last count is entirely `lib/auth/bearer.ts`.
+- [x] 29 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
       `/reports`, an invite link's `?next=` round-trip, login error
       handling, the MFA step-up page's own auth wall, the path-import
       page's own auth wall, the admin announcements/ctf-events pages'
       own auth wall, the landing page linking a real web app manifest
       whose icon URLs actually return a 200 PNG, `/offline` rendering
-      without requiring auth, and — new this phase — a real click-through
-      switching the landing page to Spanish, confirming it actually
-      re-renders, reloading to confirm the choice persists via cookie,
-      and switching back)
+      without requiring auth, a real click-through switching the landing
+      page to Spanish, confirming it actually re-renders, reloading to
+      confirm the choice persists via cookie, and switching back, and —
+      new this phase — `/api/mentor/chat` returning a real `401` JSON body
+      rather than a login redirect for both a request with no auth at all
+      and one with a bogus `Bearer` token, proving the new mobile-facing
+      auth path doesn't change the route's behavior for a browser caller
+      and fails closed for an invalid mobile one)
 - [x] Component-level test coverage for a representative slice of admin CMS
       forms (10 tests: `admin/announcements` create+edit, the org-scoped
       `orgs/[orgId]/announcements` create form, and the original
@@ -968,12 +973,23 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       web` succeeding (verified in a sandbox with no Android SDK/Xcode/
       GTK -- see ADR 0026); wired into CI (`.github/workflows/ci.yml`'s
       `mobile` job)
+- [x] Bearer-token API auth for Route Handlers a mobile client calls
+      directly, not just Postgrest/RPC: `requireApiUser(request)`
+      (`lib/auth/api.ts`) accepts an `Authorization: Bearer
+      <supabase_flutter session.accessToken>` header, verified with the
+      explicit `supabase.auth.getUser(token)` form, and returns the same
+      RLS-scoped (never `service_role`) client either caller gets --
+      falls straight through to the existing cookie-session path when no
+      such header is present, so `apps/web`'s own behavior is unchanged.
+      Wired into `/api/mentor/chat` in place of `requireUser()` +
+      `createClient()`. See ADR 0033.
 - [ ] Everything else on mobile: the terminal/Cyber Range simulator, the
-      AI Mentor, the security scanner, billing, and every admin/
-      instructor flow -- none has a mobile screen yet. This phase is a
-      real first vertical slice (auth + seven data screens), not the
-      whole web app's feature set, and is named as such rather than
-      implied complete.
+      security scanner, billing, and every admin/instructor flow -- none
+      has a mobile screen yet. The AI Mentor's backend now accepts a
+      mobile bearer token (above) but has no Flutter screen yet either.
+      This phase is a real first vertical slice (auth + seven data
+      screens), not the whole web app's feature set, and is named as such
+      rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

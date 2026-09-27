@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiUser } from "@/lib/auth/api";
 import { buildMentorContext, ALL_MENTOR_CONTEXT_TYPES } from "@/lib/mentor/context";
 import { ALL_MENTOR_MODES } from "@/lib/mentor/modes";
 import { checkMentorQuota } from "@/lib/mentor/rate-limit";
@@ -18,7 +17,9 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const user = await requireUser();
+  const auth = await requireApiUser(request);
+  if ("unauthorized" in auth) return auth.unauthorized;
+  const { user, supabase } = auth;
 
   const body = await request.json().catch(() => null);
   const parsed = requestSchema.safeParse(body);
@@ -26,8 +27,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
   }
   const { conversationId, mode, message, contextType, contextId } = parsed.data;
-
-  const supabase = await createClient();
 
   const quota = await checkMentorQuota(supabase, user.id);
   if (!quota.allowed) {
