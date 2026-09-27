@@ -10,7 +10,7 @@ for what's built so far and what's honestly still ahead.
 - Real Supabase Auth: sign up (email/password, same password policy as
   `apps/web`), log in, log out, session persisted across app restarts by
   `supabase_flutter`.
-- Five real authenticated tabs (bottom navigation):
+- Six real authenticated tabs (bottom navigation):
   - **Home**: `/dashboard`'s equivalent -- your real display name, your
     real active plan (or "Free"), and up to 5 real active announcements.
   - **Labs**: `/labs`'s equivalent -- published labs, start guided/
@@ -29,9 +29,16 @@ for what's built so far and what's honestly still ahead.
     (`ctf_challenges_public`, flag hash never exposed) and a real flag
     submit calling the same `submit_ctf_flag()` RPC the web app calls --
     correct/incorrect is never decided client-side.
+  - **Exams**: `/exams`'s equivalent -- a real countdown timer, single/
+    multi-choice answers, grading exclusively through
+    `submit_quiz_attempt()`. Same honestly-documented limitation as the
+    web app: the timer is client-side only (a refresh restarts it).
 - This is still a first vertical slice, not the whole web app.
-  Capstones, exams, Mentor, the scanner, billing, every admin flow, and
-  the terminal/Cyber Range simulator do not have a mobile screen yet.
+  Capstones, Mentor, the scanner, billing, every admin flow, and the
+  terminal/Cyber Range simulator do not have a mobile screen yet.
+- Six tabs is the practical ceiling for a bottom nav bar on a phone --
+  a real, named consideration for whichever phase adds the next one, not
+  an oversight (see ADR 0031).
 
 ## Configuration
 

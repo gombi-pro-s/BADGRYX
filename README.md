@@ -287,16 +287,17 @@ and
   ADR 0025.
 - **Mobile (Flutter, `mobile/app`)**: a real first vertical slice, not
   the whole web app — Supabase Auth (sign up/log in/log out/persisted
-  session, same password policy as the web app) and five real,
+  session, same password policy as the web app) and six real,
   RLS-scoped tabs (Home/dashboard, Labs with real hint-unlock/flag-submit
   RPCs, Investigate with real graded mixed-question-type answers and a
-  private autosaved notes scratchpad, a skills list, and CTF challenges
-  with a real flag submit through the same `submit_ctf_flag()` RPC the
-  web app calls) against the same Supabase project, via
+  private autosaved notes scratchpad, a skills list, CTF challenges with
+  a real flag submit through the same `submit_ctf_flag()` RPC the web
+  app calls, and Exams with a real countdown timer and grading through
+  `submit_quiz_attempt()`) against the same Supabase project, via
   `supabase_flutter`. Terminal-backed labs show an honest "not on mobile
-  yet" banner rather than a fake terminal. `flutter analyze` clean, 43
+  yet" banner rather than a fake terminal. `flutter analyze` clean, 54
   tests passing, `flutter build web` succeeding, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0030.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0031.
 
 ## What's not built yet
 
