@@ -56,13 +56,15 @@ for what's built so far and what's honestly still ahead.
     - **Security Scanner**: `/scanner`'s equivalent -- past scans plus a
       combined posture summary, a "New scan" screen that pastes code and
       submits it through the same `Authorization: Bearer` path as the
-      Mentor to `/api/scanner/scan` (see ADR 0033/0035), and a read-only
-      scan-detail screen showing each finding (severity-coded,
-      most-severe-first) with its evidence/explanation/impact/remediation.
-      Pasted-snippet scans only (no file upload yet); no "Enrich with AI"
-      or manual status-transition actions yet either -- both need this
-      screen's read-only foundation first, and are named as gaps rather
-      than silently missing. See ADR 0036.
+      Mentor to `/api/scanner/scan` (see ADR 0033/0035), and a scan-detail
+      screen showing each finding (severity-coded, most-severe-first) with
+      its evidence/explanation/impact/remediation, a status chip, and real
+      manual status-transition buttons (`transition_scan_finding_status()`
+      RPC, plain RLS-scoped, no Route Handler -- see ADR 0044). Pasted-
+      snippet scans only (no file upload yet); no "Enrich with AI" action
+      yet -- it needs the same kind of Bearer-auth Route Handler wiring as
+      Mentor/scan-submission/the lab terminal, and is named as a gap rather
+      than silently missing. See ADR 0036/0044.
     - **Billing**: `/settings/billing`'s read side -- your real plan,
       subscription status, and every entitlement, straight from
       `subscriptions`/`plans`/`plan_entitlements` under the same RLS as

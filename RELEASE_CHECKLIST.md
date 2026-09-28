@@ -998,17 +998,20 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       unset, same pattern as web's Turnstile/billing. See ADR 0034.), and
       the Security Scanner (past scans + a combined posture summary, a
       "New scan" screen that pastes code and submits it via the same
-      Bearer-token path to `/api/scanner/scan`, and a read-only scan-
-      detail screen with severity-coded findings -- pasted-snippet scans
-      only, no AI enrichment or manual status-transition actions on
-      mobile yet, named gaps rather than silently missing. See ADR 0036.),
+      Bearer-token path to `/api/scanner/scan`, and a scan-detail screen
+      with severity-coded findings and real manual status-transition
+      buttons (`transition_scan_finding_status()` RPC, plain RLS-scoped,
+      no Route Handler -- see ADR 0044) -- pasted-snippet scans only, no
+      AI enrichment on mobile yet since that needs Route Handler wiring
+      of its own, a named gap rather than silently missing. See
+      ADR 0036/0044.),
       and Billing (real plan/status/entitlements from
       `subscriptions`/`plans`/`plan_entitlements`, plain RLS-scoped
       Postgrest, no Route Handler -- checkout/upgrade/cancel deliberately
       not built, since a payment provider's hosted checkout isn't
       something to reimplement in-app for a first slice; the screen says
       to manage your plan from the web app instead. See ADR 0037.)
-- [x] `flutter analyze` clean, 113 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 116 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1064,13 +1067,21 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       Spanish translation authoring (`announcement_translations`,
       ADR 0038) stays web-only, a named gap rather than silently missing.
       Closes ADR 0041's last named Organizations gap. See ADR 0043.
+- [x] Manual finding-status transitions on the mobile Scanner: the
+      `transition_scan_finding_status()` RPC, plain RLS-scoped, no Route
+      Handler, wired straight into the scan-detail screen's finding
+      cards -- a status chip plus one button per legal next status,
+      LEGAL_TRANSITIONS/labels ported as plain Dart consts from
+      `status-transitions.ts`/`finding-status-badge.tsx`. Narrows ADR
+      0036's Scanner gap to just AI enrichment and multi-file upload. See
+      ADR 0044.
 - [ ] Everything else on mobile: every other admin/instructor CMS flow
-      has no mobile screen at all; nor does multi-file scan upload,
-      AI-enriched findings, or manual finding-status transitions on the
-      Scanner screen that does exist, nor checkout/upgrade/cancel on the
-      Billing screen that does exist, nor command-history recall on the
-      terminal screen that does exist, nor Spanish translation authoring
-      on the announcement screens that do exist. This phase is a real
+      has no mobile screen at all; nor does multi-file scan upload or
+      AI-enriched findings on the Scanner screen that does exist, nor
+      checkout/upgrade/cancel on the Billing screen that does exist, nor
+      command-history recall on the terminal screen that does exist, nor
+      Spanish translation authoring on the announcement screens that do
+      exist. This phase is a real
       vertical slice, not the whole web app's feature set, and is named
       as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through

@@ -127,3 +127,39 @@ Map<String, int> aggregatePosture(List<Scan> scans) {
 /// Drops the fractional seconds off DateTime's default toString() --
 /// "2026-01-01 12:00:00.000" -> "2026-01-01 12:00:00".
 String formatScanTimestamp(DateTime dateTime) => dateTime.toLocal().toString().split('.').first;
+
+/// Mirrors lib/scanner/status-transitions.ts's LEGAL_TRANSITIONS exactly --
+/// only decides which buttons the UI offers. transition_scan_finding_status()
+/// re-validates every transition server-side regardless, so a mismatch here
+/// would only ever show a wrong button, never allow an illegal write.
+const Map<String, List<String>> legalStatusTransitions = {
+  'discovered': ['remediation_required', 'false_positive', 'wont_fix'],
+  'remediation_required': ['fix_applied', 'false_positive', 'wont_fix'],
+  'fix_applied': ['retested', 'remediation_required'],
+  'retested': ['verified_fixed', 'remediation_required'],
+  'false_positive': ['remediation_required'],
+  'wont_fix': ['remediation_required'],
+  'verified_fixed': ['remediation_required'],
+};
+
+/// Mirrors that same file's STATUS_ACTION_LABELS exactly.
+const Map<String, String> statusActionLabel = {
+  'discovered': 'Mark discovered',
+  'remediation_required': 'Mark remediation required',
+  'fix_applied': 'Mark fix applied',
+  'retested': 'Mark retested',
+  'verified_fixed': 'Mark verified fixed',
+  'false_positive': 'Mark false positive',
+  'wont_fix': "Mark won't fix",
+};
+
+/// Mirrors components/finding-status-badge.tsx's STATUS_META labels exactly.
+const Map<String, String> findingStatusLabel = {
+  'discovered': 'Discovered',
+  'remediation_required': 'Remediation required',
+  'fix_applied': 'Fix applied',
+  'retested': 'Retested',
+  'verified_fixed': 'Verified fixed',
+  'false_positive': 'False positive',
+  'wont_fix': "Won't fix",
+};

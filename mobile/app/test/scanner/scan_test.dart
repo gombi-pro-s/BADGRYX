@@ -112,4 +112,41 @@ void main() {
       expect(formatted, startsWith('2026-01-01 12:30:45'));
     });
   });
+
+  group('legalStatusTransitions', () {
+    const allStatuses = [
+      'discovered',
+      'remediation_required',
+      'fix_applied',
+      'retested',
+      'verified_fixed',
+      'false_positive',
+      'wont_fix',
+    ];
+
+    test('every status has an entry, and every listed status is itself a real status', () {
+      for (final status in allStatuses) {
+        final nextStatuses = legalStatusTransitions[status];
+        expect(nextStatuses, isNotNull, reason: 'missing transitions for $status');
+        for (final next in nextStatuses!) {
+          expect(allStatuses, contains(next), reason: '$status lists unknown next status $next');
+        }
+      }
+    });
+
+    test('every status reachable by a transition has an action label and a status label', () {
+      for (final nextStatuses in legalStatusTransitions.values) {
+        for (final next in nextStatuses) {
+          expect(statusActionLabel[next], isNotNull, reason: 'missing action label for $next');
+          expect(findingStatusLabel[next], isNotNull, reason: 'missing status label for $next');
+        }
+      }
+    });
+
+    test('terminal-sounding statuses can still be walked back to remediation_required', () {
+      expect(legalStatusTransitions['false_positive'], contains('remediation_required'));
+      expect(legalStatusTransitions['wont_fix'], contains('remediation_required'));
+      expect(legalStatusTransitions['verified_fixed'], contains('remediation_required'));
+    });
+  });
 }

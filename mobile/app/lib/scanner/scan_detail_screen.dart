@@ -46,9 +46,11 @@ Color _severityColor(String severity) {
   }
 }
 
-/// Read-only findings (no enrich-with-AI or manual status-transition
-/// actions yet -- see ADR 0036 for why that's an honest scope boundary,
-/// not an oversight).
+/// Findings support real manual status transitions
+/// (transition_scan_finding_status() RPC, plain RLS-scoped, no Route
+/// Handler needed -- see ADR 0044) but not yet "Enrich with AI"
+/// (`/api/scanner/findings/{id}/enrich`, which does need one) -- a named,
+/// narrower remaining gap, not silently missing.
 class ScanDetailScreen extends StatefulWidget {
   const ScanDetailScreen({super.key, required this.scanId});
 
@@ -131,10 +133,42 @@ class _FindingCard extends StatefulWidget {
 
 class _FindingCardState extends State<_FindingCard> {
   bool _expanded = false;
+  late String _status;
+  String? _transitioning;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _status = widget.finding.status;
+  }
+
+  Future<void> _transition(String newStatus) async {
+    setState(() {
+      _transitioning = newStatus;
+      _error = null;
+    });
+    try {
+      final result = await Supabase.instance.client.rpc(
+        'transition_scan_finding_status',
+        params: {'p_finding_id': widget.finding.id, 'p_new_status': newStatus},
+      );
+      setState(() {
+        _status = (result as Map<String, dynamic>)['status'] as String;
+        _transitioning = null;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Could not update status.';
+        _transitioning = null;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final finding = widget.finding;
+    final nextStatuses = legalStatusTransitions[_status] ?? const [];
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -154,6 +188,12 @@ class _FindingCardState extends State<_FindingCard> {
                     severityLabel[finding.severity] ?? finding.severity,
                     style: TextStyle(color: _severityColor(finding.severity), fontWeight: FontWeight.w600, fontSize: 12),
                   ),
+                ),
+                const SizedBox(width: 8),
+                Chip(
+                  label: Text(findingStatusLabel[_status] ?? _status, style: const TextStyle(fontSize: 11)),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 if (finding.aiEnriched) ...[
                   const SizedBox(width: 8),
@@ -200,6 +240,23 @@ class _FindingCardState extends State<_FindingCard> {
                   ),
                   child: Text(finding.secureExample!, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
                 ),
+              ],
+              if (nextStatuses.isNotEmpty) ...[
+                const Divider(height: 20),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: nextStatuses.map((next) {
+                    return OutlinedButton(
+                      onPressed: _transitioning != null ? null : () => _transition(next),
+                      child: Text(_transitioning == next ? 'Updating...' : statusActionLabel[next] ?? next),
+                    );
+                  }).toList(),
+                ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
             ],
           ],
