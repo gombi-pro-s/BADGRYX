@@ -20,10 +20,6 @@ Future<List<OrgAnnouncement>> fetchOrgAnnouncements(SupabaseClient client, Strin
 /// RLS-scoped Postgrest throughout -- announcements_write already restricts
 /// writes to this org's own instructors, so there is no separate
 /// authorization check to port here.
-///
-/// Spanish-translation authoring (announcement_translations, see ADR 0038)
-/// stays web-only for this first mobile slice -- a real gap, named here and
-/// in the mobile README, not silently missing.
 class OrgAnnouncementsScreen extends StatefulWidget {
   const OrgAnnouncementsScreen({super.key, required this.organizationId});
 
@@ -128,6 +124,8 @@ class OrgAnnouncementFormScreen extends StatefulWidget {
 class _OrgAnnouncementFormScreenState extends State<OrgAnnouncementFormScreen> {
   final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
+  final _titleEsController = TextEditingController();
+  final _bodyEsController = TextEditingController();
   DateTime? _expiresAt;
   bool _published = false;
   bool _loading = true;
@@ -158,6 +156,16 @@ class _OrgAnnouncementFormScreenState extends State<OrgAnnouncementFormScreen> {
       final announcement = OrgAnnouncement.fromRow({...row, 'created_at': DateTime.now().toIso8601String()});
       _titleController.text = announcement.title;
       _bodyController.text = announcement.bodyMarkdown;
+      final translationRow = await Supabase.instance.client
+          .from('announcement_translations')
+          .select('title, body_markdown')
+          .eq('announcement_id', widget.announcementId!)
+          .eq('locale', 'es')
+          .maybeSingle();
+      if (translationRow != null) {
+        _titleEsController.text = translationRow['title'] as String;
+        _bodyEsController.text = translationRow['body_markdown'] as String;
+      }
       setState(() {
         _published = announcement.published;
         _expiresAt = announcement.expiresAt;
@@ -199,21 +207,29 @@ class _OrgAnnouncementFormScreenState extends State<OrgAnnouncementFormScreen> {
     });
     final client = Supabase.instance.client;
     try {
+      String announcementId;
       if (_isEditing) {
+        announcementId = widget.announcementId!;
         await client
             .from('announcements')
             .update({'title': title, 'body_markdown': body, 'expires_at': _expiresAt?.toUtc().toIso8601String()})
-            .eq('id', widget.announcementId!)
+            .eq('id', announcementId)
             .eq('organization_id', widget.organizationId);
       } else {
-        await client.from('announcements').insert({
-          'organization_id': widget.organizationId,
-          'title': title,
-          'body_markdown': body,
-          'expires_at': _expiresAt?.toUtc().toIso8601String(),
-          'created_by': client.auth.currentUser!.id,
-        });
+        final created = await client
+            .from('announcements')
+            .insert({
+              'organization_id': widget.organizationId,
+              'title': title,
+              'body_markdown': body,
+              'expires_at': _expiresAt?.toUtc().toIso8601String(),
+              'created_by': client.auth.currentUser!.id,
+            })
+            .select('id')
+            .single();
+        announcementId = created['id'] as String;
       }
+      await _upsertSpanishTranslation(client, announcementId, _titleEsController.text.trim(), _bodyEsController.text.trim());
       _changed = true;
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -222,6 +238,19 @@ class _OrgAnnouncementFormScreenState extends State<OrgAnnouncementFormScreen> {
         _saving = false;
       });
     }
+  }
+
+  /// Mirrors admin/announcements/actions.ts's upsertSpanishTranslation()
+  /// exactly: both fields filled upserts the translation row, either blank
+  /// deletes it -- see that file's own comment for why only 'es' exists.
+  Future<void> _upsertSpanishTranslation(SupabaseClient client, String announcementId, String titleEs, String bodyEs) {
+    if (shouldUpsertSpanishTranslation(titleEs, bodyEs)) {
+      return client.from('announcement_translations').upsert(
+        {'announcement_id': announcementId, 'locale': 'es', 'title': titleEs, 'body_markdown': bodyEs},
+        onConflict: 'announcement_id,locale',
+      );
+    }
+    return client.from('announcement_translations').delete().eq('announcement_id', announcementId).eq('locale', 'es');
   }
 
   Future<void> _togglePublished(bool value) async {
@@ -317,6 +346,39 @@ class _OrgAnnouncementFormScreenState extends State<OrgAnnouncementFormScreen> {
                       if (_expiresAt != null)
                         TextButton(onPressed: () => setState(() => _expiresAt = null), child: const Text('Clear')),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Spanish translation (optional) -- shown instead of the text above when a member's "
+                          'language is set to Spanish. Leave blank for no translation.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _titleEsController,
+                          maxLength: 200,
+                          decoration: const InputDecoration(labelText: 'Title (Spanish)'),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _bodyEsController,
+                          maxLines: 6,
+                          decoration: const InputDecoration(
+                            labelText: 'Body (Spanish, markdown)',
+                            alignLabelWithHint: true,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 8),

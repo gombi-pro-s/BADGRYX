@@ -49,4 +49,22 @@ void main() {
       expect(announcementStatusLabel(announcement, now), 'Expired');
     });
   });
+
+  group('shouldUpsertSpanishTranslation', () {
+    test('true when both fields are filled', () {
+      expect(shouldUpsertSpanishTranslation('Título', 'Cuerpo'), isTrue);
+    });
+
+    test('false when title is blank', () {
+      expect(shouldUpsertSpanishTranslation('', 'Cuerpo'), isFalse);
+    });
+
+    test('false when body is blank', () {
+      expect(shouldUpsertSpanishTranslation('Título', ''), isFalse);
+    });
+
+    test('false when both are blank', () {
+      expect(shouldUpsertSpanishTranslation('', ''), isFalse);
+    });
+  });
 }

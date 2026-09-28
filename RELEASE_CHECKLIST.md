@@ -1013,7 +1013,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       not built, since a payment provider's hosted checkout isn't
       something to reimplement in-app for a first slice; the screen says
       to manage your plan from the web app instead. See ADR 0037.)
-- [x] `flutter analyze` clean, 116 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 120 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1067,9 +1067,13 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       list/create/edit/publish-toggle/delete screen against the same
       `announcements` table and `announcements_write` RLS the web CMS
       uses -- plain RLS-scoped Postgrest, no Route Handler, no new RPC.
-      Spanish translation authoring (`announcement_translations`,
-      ADR 0038) stays web-only, a named gap rather than silently missing.
       Closes ADR 0041's last named Organizations gap. See ADR 0043.
+- [x] Spanish translation authoring on the mobile org announcement form:
+      an optional "Spanish translation" section (title/body) using the
+      exact same both-fields-or-neither upsert-or-delete rule as
+      `upsertSpanishTranslation()` (`announcement_translations`,
+      ADR 0038), ported as a pure `shouldUpsertSpanishTranslation()`
+      helper. Closes ADR 0043's named gap. See ADR 0046.
 - [x] Manual finding-status transitions on the mobile Scanner: the
       `transition_scan_finding_status()` RPC, plain RLS-scoped, no Route
       Handler, wired straight into the scan-detail screen's finding
@@ -1088,8 +1092,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       has no mobile screen at all; nor does multi-file scan upload on the
       Scanner screen that does exist, nor checkout/upgrade/cancel on the
       Billing screen that does exist, nor command-history recall on the
-      terminal screen that does exist, nor Spanish translation authoring
-      on the announcement screens that do exist. This phase is a real
+      terminal screen that does exist. This phase is a real
       vertical slice, not the whole web app's feature set, and is named
       as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through

@@ -42,3 +42,8 @@ String announcementStatusLabel(OrgAnnouncement announcement, DateTime now) {
   if (isAnnouncementExpired(announcement, now)) return 'Expired';
   return announcement.published ? 'Published' : 'Draft';
 }
+
+/// Mirrors admin/announcements/actions.ts's upsertSpanishTranslation()
+/// branch condition exactly: only upsert when BOTH fields are filled;
+/// either blank means "no translation" and the row should be deleted.
+bool shouldUpsertSpanishTranslation(String titleEs, String bodyEs) => titleEs.isNotEmpty && bodyEs.isNotEmpty;

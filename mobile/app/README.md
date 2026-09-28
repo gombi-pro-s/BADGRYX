@@ -89,11 +89,11 @@ for what's built so far and what's honestly still ahead.
       page runs, no new RPC (ADR 0042) -- and "Announcements" -- a real
       list/create/edit/publish-toggle/delete screen for that org's own
       announcements, straight against the same `announcements` table and
-      RLS the web CMS uses (ADR 0043). Plain RLS-scoped Postgrest/RPC
-      throughout this whole screen, no Route Handler needed anywhere in
-      Organizations. Spanish translation authoring for announcements
-      (`announcement_translations`, ADR 0038) stays web-only -- a real,
-      named gap, not silently missing.
+      RLS the web CMS uses, plus an optional Spanish translation section
+      (`announcement_translations`, same both-fields-or-neither rule as
+      the web CMS) on the create/edit form (ADR 0043/0046). Plain
+      RLS-scoped Postgrest/RPC throughout this whole screen, no Route
+      Handler needed anywhere in Organizations.
 - This is still a first vertical slice, not the whole web app. Every
   other admin/instructor flow does not have a mobile screen yet. Future
   pillars like these belong behind "More" too, not as new flat tabs.
