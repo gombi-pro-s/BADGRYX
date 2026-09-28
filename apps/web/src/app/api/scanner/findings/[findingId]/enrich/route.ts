@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiUser } from "@/lib/auth/api";
 import { enrichScanFinding, EnrichmentError, FindingNotFoundError } from "@/lib/scanner/enrich";
 import { checkEnrichmentQuota } from "@/lib/scanner/rate-limit";
 
 const paramsSchema = z.object({ findingId: z.uuid() });
 
-export async function POST(_request: Request, { params }: { params: Promise<{ findingId: string }> }) {
-  const user = await requireUser();
+export async function POST(request: Request, { params }: { params: Promise<{ findingId: string }> }) {
+  const auth = await requireApiUser(request);
+  if ("unauthorized" in auth) return auth.unauthorized;
+  const { user, supabase } = auth;
 
   const parsedParams = paramsSchema.safeParse(await params);
   if (!parsedParams.success) {
     return NextResponse.json({ error: "Invalid finding id." }, { status: 400 });
   }
-
-  const supabase = await createClient();
 
   const quota = await checkEnrichmentQuota(supabase, user.id);
   if (!quota.allowed) {

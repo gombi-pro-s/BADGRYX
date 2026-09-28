@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/env.dart';
 import 'scan.dart';
 
 /// Mirrors apps/web's /scanner/[scanId] page's queries: the scan itself,
@@ -48,9 +52,12 @@ Color _severityColor(String severity) {
 
 /// Findings support real manual status transitions
 /// (transition_scan_finding_status() RPC, plain RLS-scoped, no Route
-/// Handler needed -- see ADR 0044) but not yet "Enrich with AI"
-/// (`/api/scanner/findings/{id}/enrich`, which does need one) -- a named,
-/// narrower remaining gap, not silently missing.
+/// Handler needed -- see ADR 0044) and real "Enrich with AI"
+/// (`/api/scanner/findings/{id}/enrich`, Bearer-authed like Mentor/scan-
+/// submission/the lab terminal, degrading to a disabled button with an
+/// explanatory tooltip when the app is built without `API_BASE_URL` --
+/// see ADR 0045). Multi-file upload on the "New scan" screen remains the
+/// one named gap left from ADR 0036.
 class ScanDetailScreen extends StatefulWidget {
   const ScanDetailScreen({super.key, required this.scanId});
 
@@ -134,13 +141,24 @@ class _FindingCard extends StatefulWidget {
 class _FindingCardState extends State<_FindingCard> {
   bool _expanded = false;
   late String _status;
+  late String _explanation;
+  late String _impact;
+  late String _remediation;
+  late String? _secureExample;
+  late bool _aiEnriched;
   String? _transitioning;
+  bool _enriching = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     _status = widget.finding.status;
+    _explanation = widget.finding.explanation;
+    _impact = widget.finding.impact;
+    _remediation = widget.finding.remediation;
+    _secureExample = widget.finding.secureExample;
+    _aiEnriched = widget.finding.aiEnriched;
   }
 
   Future<void> _transition(String newStatus) async {
@@ -161,6 +179,42 @@ class _FindingCardState extends State<_FindingCard> {
       setState(() {
         _error = 'Could not update status.';
         _transitioning = null;
+      });
+    }
+  }
+
+  Future<void> _enrich() async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) {
+      setState(() => _error = 'Your session has expired. Please log in again.');
+      return;
+    }
+    setState(() {
+      _enriching = true;
+      _error = null;
+    });
+    try {
+      final response = await http.post(
+        Uri.parse('${AppEnv.apiBaseUrl}/api/scanner/findings/${widget.finding.id}/enrich'),
+        headers: {'Authorization': 'Bearer ${session.accessToken}'},
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode != 200) {
+        throw Exception(body['error'] as String? ?? 'Enrichment failed (${response.statusCode}).');
+      }
+      final finding = body['finding'] as Map<String, dynamic>;
+      setState(() {
+        _explanation = finding['explanation'] as String;
+        _impact = finding['impact'] as String;
+        _remediation = finding['remediation'] as String;
+        _secureExample = finding['secure_example'] as String?;
+        _aiEnriched = true;
+        _enriching = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString().replaceFirst('Exception: ', '');
+        _enriching = false;
       });
     }
   }
@@ -195,7 +249,7 @@ class _FindingCardState extends State<_FindingCard> {
                   visualDensity: VisualDensity.compact,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                if (finding.aiEnriched) ...[
+                if (_aiEnriched) ...[
                   const SizedBox(width: 8),
                   Text('AI-enriched', style: Theme.of(context).textTheme.bodySmall),
                 ],
@@ -224,10 +278,10 @@ class _FindingCardState extends State<_FindingCard> {
                 child: Text(finding.evidence, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
               ),
               const SizedBox(height: 10),
-              _Section(title: 'Explanation', body: finding.explanation),
-              _Section(title: 'Impact', body: finding.impact),
-              _Section(title: 'Remediation', body: finding.remediation),
-              if (finding.secureExample != null) ...[
+              _Section(title: 'Explanation', body: _explanation),
+              _Section(title: 'Impact', body: _impact),
+              _Section(title: 'Remediation', body: _remediation),
+              if (_secureExample != null) ...[
                 const SizedBox(height: 8),
                 Text('Secure example', style: Theme.of(context).textTheme.labelMedium),
                 const SizedBox(height: 4),
@@ -238,22 +292,28 @@ class _FindingCardState extends State<_FindingCard> {
                     color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(finding.secureExample!, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+                  child: Text(_secureExample!, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
                 ),
               ],
-              if (nextStatuses.isNotEmpty) ...[
-                const Divider(height: 20),
+              if (nextStatuses.isNotEmpty || AppEnv.isApiConfigured) const Divider(height: 20),
+              if (nextStatuses.isNotEmpty || AppEnv.isApiConfigured)
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: nextStatuses.map((next) {
-                    return OutlinedButton(
-                      onPressed: _transitioning != null ? null : () => _transition(next),
-                      child: Text(_transitioning == next ? 'Updating...' : statusActionLabel[next] ?? next),
-                    );
-                  }).toList(),
+                  children: [
+                    ...nextStatuses.map((next) {
+                      return OutlinedButton(
+                        onPressed: _transitioning != null ? null : () => _transition(next),
+                        child: Text(_transitioning == next ? 'Updating...' : statusActionLabel[next] ?? next),
+                      );
+                    }),
+                    if (AppEnv.isApiConfigured)
+                      FilledButton.tonal(
+                        onPressed: _enriching ? null : _enrich,
+                        child: Text(_enriching ? 'Enriching...' : 'Enrich with AI'),
+                      ),
+                  ],
                 ),
-              ],
               if (_error != null) ...[
                 const SizedBox(height: 8),
                 Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),

@@ -58,13 +58,15 @@ for what's built so far and what's honestly still ahead.
       submits it through the same `Authorization: Bearer` path as the
       Mentor to `/api/scanner/scan` (see ADR 0033/0035), and a scan-detail
       screen showing each finding (severity-coded, most-severe-first) with
-      its evidence/explanation/impact/remediation, a status chip, and real
-      manual status-transition buttons (`transition_scan_finding_status()`
-      RPC, plain RLS-scoped, no Route Handler -- see ADR 0044). Pasted-
-      snippet scans only (no file upload yet); no "Enrich with AI" action
-      yet -- it needs the same kind of Bearer-auth Route Handler wiring as
-      Mentor/scan-submission/the lab terminal, and is named as a gap rather
-      than silently missing. See ADR 0036/0044.
+      its evidence/explanation/impact/remediation, a status chip, real
+      manual status-transition buttons
+      (`transition_scan_finding_status()` RPC, plain RLS-scoped, no Route
+      Handler -- see ADR 0044), and a real "Enrich with AI" button calling
+      the now Bearer-authed `/api/scanner/findings/{id}/enrich` (see
+      ADR 0045). Pasted-snippet scans only -- multi-file upload on "New
+      scan" needs a file picker this first slice doesn't build, named as
+      the one remaining Scanner gap rather than silently missing. See
+      ADR 0036/0044/0045.
     - **Billing**: `/settings/billing`'s read side -- your real plan,
       subscription status, and every entitlement, straight from
       `subscriptions`/`plans`/`plan_entitlements` under the same RLS as

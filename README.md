@@ -313,13 +313,15 @@ and
   if the app is built without the optional `API_BASE_URL` value, the same
   pattern already used for Turnstile/billing on web. A ninth screen, the
   Security Scanner, shares that same Bearer-auth path for its "New scan"
-  paste-code submission (`/api/scanner/scan`, see ADR 0035) and shows past
-  scans plus a combined posture summary and severity-coded findings with
-  real manual status-transition buttons
+  paste-code submission (`/api/scanner/scan`, see ADR 0035) and for a real
+  "Enrich with AI" button on the scan-detail screen
+  (`/api/scanner/findings/{id}/enrich`, see ADR 0045), which also shows
+  past scans plus a combined posture summary and severity-coded findings
+  with real manual status-transition buttons
   (`transition_scan_finding_status()` RPC, plain RLS-scoped, no Route
-  Handler, see ADR 0044) — pasted-snippet scans only, no AI enrichment yet,
-  since that action needs the same kind of Route Handler wiring as the
-  scan-submission screen itself (see ADR 0036/0044). A tenth screen,
+  Handler, see ADR 0044) — pasted-snippet scans only, since multi-file
+  upload needs a file picker this first slice doesn't build (see
+  ADR 0036/0044/0045). A tenth screen,
   Billing, shows the user's real plan/status/entitlements via plain
   RLS-scoped Postgrest (no Route Handler needed) — checkout/upgrade/cancel
   deliberately stay web-only, since a payment provider's hosted checkout
@@ -337,7 +339,7 @@ and
   gap rather than silently missing.
   `flutter analyze` clean, 116 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0044.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0045.
 
 ## What's not built yet
 

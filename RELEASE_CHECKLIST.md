@@ -884,7 +884,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       plus component tests proving the admin/org announcement forms'
       optional Spanish fields round-trip through `FormData` and clear
       correctly (ADR 0038))
-- [x] 31 e2e smoke tests (public pages, auth wall across all protected
+- [x] 32 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
       `/reports`, an invite link's `?next=` round-trip, login error
       handling, the MFA step-up page's own auth wall, the path-import
@@ -897,8 +897,8 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       same 401-not-redirect proof (a request with no auth at all, and one
       with a bogus `Bearer` token where relevant) across every Bearer-
       auth-wired mobile-facing route: `/api/mentor/chat` (ADR 0033),
-      `/api/scanner/scan` (ADR 0035), and — new this phase —
-      `/api/labs/{id}/terminal` (ADR 0039))
+      `/api/scanner/scan` (ADR 0035), `/api/labs/{id}/terminal`
+      (ADR 0039), and `/api/scanner/findings/{id}/enrich` (ADR 0045))
 - [x] Component-level test coverage for a representative slice of admin CMS
       forms (14 tests: `admin/announcements` create+edit, including the
       optional Spanish translation fields (ADR 0038), the org-scoped
@@ -999,12 +999,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       the Security Scanner (past scans + a combined posture summary, a
       "New scan" screen that pastes code and submits it via the same
       Bearer-token path to `/api/scanner/scan`, and a scan-detail screen
-      with severity-coded findings and real manual status-transition
+      with severity-coded findings, real manual status-transition
       buttons (`transition_scan_finding_status()` RPC, plain RLS-scoped,
-      no Route Handler -- see ADR 0044) -- pasted-snippet scans only, no
-      AI enrichment on mobile yet since that needs Route Handler wiring
-      of its own, a named gap rather than silently missing. See
-      ADR 0036/0044.),
+      no Route Handler -- see ADR 0044), and a real "Enrich with AI"
+      button against the now Bearer-authed
+      `/api/scanner/findings/{id}/enrich` -- pasted-snippet scans only,
+      since multi-file upload needs a file picker this first slice
+      doesn't build, a named gap rather than silently missing. See
+      ADR 0036/0044/0045.),
       and Billing (real plan/status/entitlements from
       `subscriptions`/`plans`/`plan_entitlements`, plain RLS-scoped
       Postgrest, no Route Handler -- checkout/upgrade/cancel deliberately
@@ -1027,8 +1029,9 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       Wired into `/api/mentor/chat` in place of `requireUser()` +
       `createClient()`. See ADR 0033. Also wired into
       `/api/scanner/scan` (the scan-submission route the mobile Scanner
-      screen calls) -- the finding-enrichment route stays on
-      `requireUser()` since no mobile screen calls it yet. See ADR 0035.
+      screen calls). See ADR 0035. Also wired into
+      `/api/scanner/findings/[findingId]/enrich` (the enrichment route
+      the mobile Scanner's "Enrich with AI" button calls). See ADR 0045.
       Also wired into `/api/labs/[labInstanceId]/terminal` -- the lab
       terminal command route the mobile terminal screen calls. See
       ADR 0039.
@@ -1075,13 +1078,18 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `status-transitions.ts`/`finding-status-badge.tsx`. Narrows ADR
       0036's Scanner gap to just AI enrichment and multi-file upload. See
       ADR 0044.
+- [x] "Enrich with AI" on the mobile Scanner: `requireApiUser()` wired
+      into `/api/scanner/findings/[findingId]/enrich` (same pattern as
+      Mentor/scan-submission/the lab terminal), and a real button on the
+      scan-detail screen calling it with the session's Bearer token,
+      shown only when `AppEnv.isApiConfigured`. Narrows ADR 0036's
+      Scanner gap down to just multi-file upload. See ADR 0045.
 - [ ] Everything else on mobile: every other admin/instructor CMS flow
-      has no mobile screen at all; nor does multi-file scan upload or
-      AI-enriched findings on the Scanner screen that does exist, nor
-      checkout/upgrade/cancel on the Billing screen that does exist, nor
-      command-history recall on the terminal screen that does exist, nor
-      Spanish translation authoring on the announcement screens that do
-      exist. This phase is a real
+      has no mobile screen at all; nor does multi-file scan upload on the
+      Scanner screen that does exist, nor checkout/upgrade/cancel on the
+      Billing screen that does exist, nor command-history recall on the
+      terminal screen that does exist, nor Spanish translation authoring
+      on the announcement screens that do exist. This phase is a real
       vertical slice, not the whole web app's feature set, and is named
       as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
