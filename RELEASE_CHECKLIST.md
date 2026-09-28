@@ -11,7 +11,8 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] ESLint clean, `tsc --noEmit` clean
 - [x] Design tokens (light + dark) established
 - [x] Pushed to GitHub (`main`, commit history from `3a3eaba`)
-- [ ] Flutter mobile app scaffolded (not started)
+- [x] Flutter mobile app scaffolded (`mobile/app`) — see Mobile readiness
+      section below for the full, current state
 - [x] i18n framework in place — `lib/i18n/` (a hand-rolled dictionary +
       fallback + `{param}` interpolation, no new dependency, no `[locale]`
       URL-prefix routing — every route keeps its exact path; see ADR
@@ -245,12 +246,16 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       nothing here is graded. Unlike other content types, a real delete is
       offered (nothing else references an announcement's id, so nothing
       can be orphaned by removing one) — see ADR 0017.
-- [ ] Content translations (e.g. an `announcement_translations` table) —
-      still not built. The original blocker (no i18n framework existed at
-      all) is gone as of ADR 0025, but wiring a real translations table
-      into the announcements admin/learner UI is its own separate phase,
-      not silently bundled into the framework phase. See ADR 0017 and ADR
-      0025.
+- [x] Content translations for announcements — `announcement_translations`
+      (one optional row per `(announcement_id, locale)`, RLS mirroring the
+      parent announcement's own visibility/write rules exactly), an
+      optional "Spanish translation" fieldset on the admin and org-scoped
+      create/edit forms, and `/dashboard` rendering the matching
+      translation (via the pure, unit-tested `pickAnnouncementText()`)
+      instead of the raw English row when the viewer's locale is Spanish.
+      Other user-authored content types (paths, lessons, etc.) remain
+      untranslated — a separate, larger decision, not bundled into this
+      one. See ADR 0038.
 - [x] Bulk import/export of content — scoped to learning paths (the one
       content type with a real FK hierarchy; labs/CTF are only informally
       tied to a path via shared skill tags, and their flags are stored only
@@ -840,18 +845,26 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 
 ## Testing
 
-- [x] 179 SQL regression assertions (RLS + grading + entitlements + a full
-      seeded-content walkthrough + org-instructor visibility + invitations +
-      capstone review lifecycle + the seeded standalone exam + the real
-      pro plan's entitlements + admin role management + org-scoped audit
-      log coverage + account deletion + org member management + login
-      rate limiting + subscription cleanup on user/org deletion +
-      announcements read/write visibility across staff/instructor/member/
-      outsider + their ownership/attribution FK behavior + reports
-      owner/staff/outsider visibility and the report mentor-context type +
-      the CTF event leaderboard's ranking/tie-break/draft-event guard +
-      Blue/Purple Team scenario linkage RLS and the real seeded pairing)
-- [x] 308 unit tests (validation logic, env guards, UI components including
+- [x] 191 SQL regression assertions across 26 files (`supabase/tests/`),
+      verified in this sandbox by actually starting the local Postgres
+      cluster and running `scripts/run-sql-tests.sh` against it (this
+      count is a direct `grep -c "PASS:"` tally across every test file,
+      not a hand-carried running total, since that had drifted slightly
+      out of sync with the actual files in earlier phases): RLS + grading
+      + entitlements + a full seeded-content walkthrough + org-instructor
+      visibility + invitations + capstone review lifecycle + the seeded
+      standalone exam + the real pro plan's entitlements + admin role
+      management + org-scoped audit log coverage + account deletion + org
+      member management + login rate limiting + subscription cleanup on
+      user/org deletion + announcements read/write visibility across
+      staff/instructor/member/outsider + their ownership/attribution FK
+      behavior + reports owner/staff/outsider visibility and the report
+      mentor-context type + the CTF event leaderboard's ranking/tie-break/
+      draft-event guard + Blue/Purple Team scenario linkage RLS and the
+      real seeded pairing + announcement translations' RLS (mirroring the
+      parent announcement's visibility exactly), uniqueness, and cascade
+      delete (new this phase, see ADR 0038)
+- [x] 316 unit tests (validation logic, env guards, UI components including
       the Prove Your Skill matrix's evidence-cell indicator, AI Mentor
       prompt safety including the EXPLAIN_FINDING/REVIEW_REPORT/
       REVIEW_METHODOLOGY grounding, Mentor mode-selection logic
@@ -865,9 +878,12 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       import/export bundle schema, admin CMS form submission/pending/error
       behavior via mocked server actions, the CTF event status classifier,
       the i18n `translate()` fallback/interpolation logic and locale
-      validation, and — new this phase — `extractBearerToken()`'s
-      `Authorization: Bearer <token>` parsing for the mobile API auth
-      path). The +7 since the last count is entirely `lib/auth/bearer.ts`.
+      validation, `extractBearerToken()`'s `Authorization: Bearer <token>`
+      parsing for the mobile API auth path, and — new this phase —
+      `pickAnnouncementText()`'s default-locale/translated/fallback cases
+      plus component tests proving the admin/org announcement forms'
+      optional Spanish fields round-trip through `FormData` and clear
+      correctly (ADR 0038))
 - [x] 30 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
       `/reports`, an invite link's `?next=` round-trip, login error

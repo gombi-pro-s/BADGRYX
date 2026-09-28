@@ -282,9 +282,12 @@ and
   (`lib/i18n/`, no new dependency, cookie-based rather than `[locale]`
   URL-prefix routing) with a real bilingual (English/Spanish) slice — the
   public landing page and `/settings`'s Language section both genuinely
-  switch, persisted via cookie. This specifically unblocks (without
-  itself building) the content-translations table ADR 0017 deferred. See
-  ADR 0025.
+  switch, persisted via cookie. See ADR 0025. This unblocked the real
+  `announcement_translations` table ADR 0017 deferred: an optional
+  Spanish translation on the admin/org announcement forms, rendered on
+  `/dashboard` instead of the English text when the viewer's locale is
+  Spanish, RLS-scoped identically to the announcement it translates. See
+  ADR 0038.
 - **Mobile (Flutter, `mobile/app`)**: a real first vertical slice, not
   the whole web app — Supabase Auth (sign up/log in/log out/persisted
   session, same password policy as the web app) and seven real,
@@ -321,13 +324,13 @@ and
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
-tracked list of what remains (dynamic CTF scoring, content translations
-for user-authored content, the mobile app's terminal/Cyber Range simulator
-and admin/instructor screens, multi-file scan upload/AI enrichment/manual
-finding-status transitions on the mobile Scanner screen, checkout/upgrade/
-cancel on the mobile Billing screen, a real Android/iOS build, and a real
-live/networked lab runtime beyond the
-virtual terminal/Cyber Range simulator).
+tracked list of what remains (dynamic CTF scoring, content translations for
+other user-authored content types beyond announcements (paths, lessons,
+etc.), the mobile app's terminal/Cyber Range simulator and admin/instructor
+screens, multi-file scan upload/AI enrichment/manual finding-status
+transitions on the mobile Scanner screen, checkout/upgrade/cancel on the
+mobile Billing screen, a real Android/iOS build, and a real live/networked
+lab runtime beyond the virtual terminal/Cyber Range simulator).
 
 ## Local development
 

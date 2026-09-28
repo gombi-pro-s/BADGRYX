@@ -25,6 +25,13 @@ export default async function OrgAnnouncementDetailPage({
 
   if (!announcement) notFound();
 
+  const { data: translation } = await supabase
+    .from("announcement_translations")
+    .select("title, body_markdown")
+    .eq("announcement_id", announcementId)
+    .eq("locale", "es")
+    .maybeSingle();
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <Link href={`/orgs/${orgId}/announcements`} className="mb-4 inline-block text-sm text-foreground-muted hover:underline">
@@ -50,6 +57,8 @@ export default async function OrgAnnouncementDetailPage({
             title: announcement.title,
             body_markdown: announcement.body_markdown,
             expires_at: announcement.expires_at,
+            title_es: translation?.title ?? null,
+            body_markdown_es: translation?.body_markdown ?? null,
           }}
         />
       </div>

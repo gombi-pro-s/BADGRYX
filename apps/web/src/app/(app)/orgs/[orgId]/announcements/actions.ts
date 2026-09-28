@@ -22,7 +22,35 @@ const announcementSchema = z.object({
     .trim()
     .optional()
     .transform((v) => (v ? new Date(v).toISOString() : null)),
+  title_es: z.string().trim().max(200).optional(),
+  body_markdown_es: z.string().trim().optional(),
 });
+
+/** Mirrors admin/announcements/actions.ts's upsertSpanishTranslation exactly
+ * -- see that file's comment for why only 'es' exists as a field pair. */
+async function upsertSpanishTranslation(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  announcementId: string,
+  titleEs: string | undefined,
+  bodyEs: string | undefined,
+) {
+  if (titleEs && bodyEs) {
+    const { error } = await supabase
+      .from("announcement_translations")
+      .upsert(
+        { announcement_id: announcementId, locale: "es", title: titleEs, body_markdown: bodyEs },
+        { onConflict: "announcement_id,locale" },
+      );
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase
+      .from("announcement_translations")
+      .delete()
+      .eq("announcement_id", announcementId)
+      .eq("locale", "es");
+    if (error) throw new Error(error.message);
+  }
+}
 
 export async function createOrgAnnouncementAction(
   organizationId: string,
@@ -34,18 +62,30 @@ export async function createOrgAnnouncementAction(
     title: formData.get("title"),
     body_markdown: formData.get("body_markdown"),
     expires_at: formData.get("expires_at"),
+    title_es: formData.get("title_es"),
+    body_markdown_es: formData.get("body_markdown_es"),
   });
   if (!parsed.success) return { error: firstIssue(parsed, "Invalid input.") };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("announcements").insert({
-    organization_id: organizationId,
-    title: parsed.data.title,
-    body_markdown: parsed.data.body_markdown,
-    expires_at: parsed.data.expires_at,
-    created_by: user.id,
-  });
-  if (error) return { error: error.message };
+  const { data: created, error } = await supabase
+    .from("announcements")
+    .insert({
+      organization_id: organizationId,
+      title: parsed.data.title,
+      body_markdown: parsed.data.body_markdown,
+      expires_at: parsed.data.expires_at,
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
+  if (error || !created) return { error: error?.message ?? "Could not create the announcement." };
+
+  try {
+    await upsertSpanishTranslation(supabase, created.id, parsed.data.title_es, parsed.data.body_markdown_es);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not save the Spanish translation." };
+  }
 
   revalidatePath(`/orgs/${organizationId}/announcements`);
   return { error: null };
@@ -62,6 +102,8 @@ export async function updateOrgAnnouncementAction(
     title: formData.get("title"),
     body_markdown: formData.get("body_markdown"),
     expires_at: formData.get("expires_at"),
+    title_es: formData.get("title_es"),
+    body_markdown_es: formData.get("body_markdown_es"),
   });
   if (!parsed.success) return { error: firstIssue(parsed, "Invalid input.") };
 
@@ -76,6 +118,12 @@ export async function updateOrgAnnouncementAction(
     .eq("id", announcementId)
     .eq("organization_id", organizationId);
   if (error) return { error: error.message };
+
+  try {
+    await upsertSpanishTranslation(supabase, announcementId, parsed.data.title_es, parsed.data.body_markdown_es);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not save the Spanish translation." };
+  }
 
   revalidatePath(`/orgs/${organizationId}/announcements`);
   revalidatePath(`/orgs/${organizationId}/announcements/${announcementId}`);

@@ -180,6 +180,20 @@ export type AnnouncementRow = {
   updated_at: string;
 };
 
+/** `locale` is 'en' | 'es' at the DB level (see the CHECK constraint in
+ * 20260922000030_announcement_translations.sql); kept as plain `string`
+ * here rather than importing `Locale` (lib/i18n/locales.ts) just to
+ * describe a DB row shape -- callers narrow it via `isSupportedLocale()`. */
+export type AnnouncementTranslationRow = {
+  id: string;
+  announcement_id: string;
+  locale: string;
+  title: string;
+  body_markdown: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type LearningPathRow = {
   id: string;
   slug: string;
@@ -800,6 +814,17 @@ export interface Database {
         Row: AnnouncementRow;
         Insert: Partial<AnnouncementRow> & { title: string; body_markdown: string };
         Update: Partial<AnnouncementRow>;
+        Relationships: [];
+      };
+      announcement_translations: {
+        Row: AnnouncementTranslationRow;
+        Insert: Partial<AnnouncementTranslationRow> & {
+          announcement_id: string;
+          locale: string;
+          title: string;
+          body_markdown: string;
+        };
+        Update: Partial<AnnouncementTranslationRow>;
         Relationships: [];
       };
 

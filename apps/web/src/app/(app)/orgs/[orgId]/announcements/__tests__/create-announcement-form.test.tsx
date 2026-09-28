@@ -28,6 +28,22 @@ describe("CreateOrgAnnouncementForm", () => {
     expect(formData.get("body_markdown")).toBe("9pm-10pm UTC.");
   });
 
+  it("submits the optional Spanish translation fields as FormData", async () => {
+    vi.mocked(createOrgAnnouncementAction).mockResolvedValue({ error: null });
+    render(<CreateOrgAnnouncementForm organizationId="org-1" />);
+
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Lab maintenance tonight" } });
+    fireEvent.change(screen.getByLabelText("Body (markdown)"), { target: { value: "9pm-10pm UTC." } });
+    fireEvent.change(screen.getByLabelText("Title (Spanish)"), { target: { value: "Mantenimiento esta noche" } });
+    fireEvent.change(screen.getByLabelText("Body (Spanish, markdown)"), { target: { value: "9pm-10pm UTC." } });
+    fireEvent.click(screen.getByRole("button", { name: "Post announcement" }));
+
+    await waitFor(() => expect(createOrgAnnouncementAction).toHaveBeenCalledTimes(1));
+    const formData = vi.mocked(createOrgAnnouncementAction).mock.calls[0][2];
+    expect(formData.get("title_es")).toBe("Mantenimiento esta noche");
+    expect(formData.get("body_markdown_es")).toBe("9pm-10pm UTC.");
+  });
+
   it("renders an error returned by the action", async () => {
     vi.mocked(createOrgAnnouncementAction).mockResolvedValue({ error: "Invalid input." });
     render(<CreateOrgAnnouncementForm organizationId="org-1" />);

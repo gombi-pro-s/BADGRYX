@@ -35,6 +35,22 @@ describe("CreateAnnouncementForm", () => {
     expect(formData.get("body_markdown")).toBe("Details about the event.");
   });
 
+  it("submits the optional Spanish translation fields as FormData", async () => {
+    vi.mocked(createAnnouncementAction).mockResolvedValue({ error: null });
+    render(<CreateAnnouncementForm />);
+
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "New CTF event live" } });
+    fireEvent.change(screen.getByLabelText("Body (markdown)"), { target: { value: "Details about the event." } });
+    fireEvent.change(screen.getByLabelText("Title (Spanish)"), { target: { value: "Nuevo evento CTF en vivo" } });
+    fireEvent.change(screen.getByLabelText("Body (Spanish, markdown)"), { target: { value: "Detalles..." } });
+    fireEvent.click(screen.getByRole("button", { name: "Create announcement" }));
+
+    await waitFor(() => expect(createAnnouncementAction).toHaveBeenCalledTimes(1));
+    const formData = vi.mocked(createAnnouncementAction).mock.calls[0][1];
+    expect(formData.get("title_es")).toBe("Nuevo evento CTF en vivo");
+    expect(formData.get("body_markdown_es")).toBe("Detalles...");
+  });
+
   it("disables the button and shows a pending label while the action is in flight", async () => {
     let resolveAction!: (value: { error: null }) => void;
     vi.mocked(createAnnouncementAction).mockImplementation(

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { getLocale } from "@/lib/i18n/cookie";
+import { pickAnnouncementText } from "@/lib/i18n/announcement-translation";
 import type { SkillState } from "@/types/database";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -9,6 +11,7 @@ export const metadata: Metadata = { title: "Dashboard" };
 export default async function DashboardPage() {
   const user = await requireUser();
   const supabase = await createClient();
+  const locale = await getLocale();
 
   const nowIso = new Date().toISOString();
   const [{ data: profile }, { data: states }, { data: subscription }, { data: announcements }] = await Promise.all([
@@ -34,6 +37,28 @@ export default async function DashboardPage() {
       .limit(5),
   ]);
 
+  // A second round-trip rather than a join: announcement_translations'
+  // own RLS (mirroring announcements_select through the parent row, see
+  // 20260922000030_announcement_translations.sql) already scopes this to
+  // exactly the rows above, so an `.in()` on their ids is just an
+  // efficiency filter, not a second security boundary.
+  const { data: translations } =
+    announcements && announcements.length > 0
+      ? await supabase
+          .from("announcement_translations")
+          .select("announcement_id, locale, title, body_markdown")
+          .in(
+            "announcement_id",
+            announcements.map((a) => a.id),
+          )
+      : { data: [] };
+  const translationsByAnnouncementId = new Map<string, typeof translations>();
+  for (const t of translations ?? []) {
+    const existing = translationsByAnnouncementId.get(t.announcement_id) ?? [];
+    existing.push(t);
+    translationsByAnnouncementId.set(t.announcement_id, existing);
+  }
+
   const counts = new Map<SkillState, number>();
   for (const row of states ?? []) {
     const s = row.state as SkillState;
@@ -55,12 +80,15 @@ export default async function DashboardPage() {
 
       {announcements && announcements.length > 0 && (
         <div className="mt-6 space-y-3">
-          {announcements.map((a) => (
-            <div key={a.id} className="rounded-lg border border-accent/30 bg-accent-muted p-4">
-              <p className="text-sm font-medium text-accent">{a.title}</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-foreground-muted">{a.body_markdown}</p>
-            </div>
-          ))}
+          {announcements.map((a) => {
+            const text = pickAnnouncementText(a, translationsByAnnouncementId.get(a.id) ?? [], locale);
+            return (
+              <div key={a.id} className="rounded-lg border border-accent/30 bg-accent-muted p-4">
+                <p className="text-sm font-medium text-accent">{text.title}</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-foreground-muted">{text.body_markdown}</p>
+              </div>
+            );
+          })}
         </div>
       )}
 
