@@ -884,7 +884,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       plus component tests proving the admin/org announcement forms'
       optional Spanish fields round-trip through `FormData` and clear
       correctly (ADR 0038))
-- [x] 30 e2e smoke tests (public pages, auth wall across all protected
+- [x] 31 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
       `/reports`, an invite link's `?next=` round-trip, login error
       handling, the MFA step-up page's own auth wall, the path-import
@@ -893,15 +893,15 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       whose icon URLs actually return a 200 PNG, `/offline` rendering
       without requiring auth, a real click-through switching the landing
       page to Spanish, confirming it actually re-renders, reloading to
-      confirm the choice persists via cookie, and switching back,
-      `/api/mentor/chat` returning a real `401` JSON body rather than a
-      login redirect for both a request with no auth at all and one with
-      a bogus `Bearer` token, proving the mobile-facing auth path doesn't
-      change the route's behavior for a browser caller and fails closed
-      for an invalid mobile one, and — new this phase — the same 401-not-
-      redirect proof for `/api/scanner/scan`, see ADR 0035)
+      confirm the choice persists via cookie, and switching back, and the
+      same 401-not-redirect proof (a request with no auth at all, and one
+      with a bogus `Bearer` token where relevant) across every Bearer-
+      auth-wired mobile-facing route: `/api/mentor/chat` (ADR 0033),
+      `/api/scanner/scan` (ADR 0035), and — new this phase —
+      `/api/labs/{id}/terminal` (ADR 0039))
 - [x] Component-level test coverage for a representative slice of admin CMS
-      forms (10 tests: `admin/announcements` create+edit, the org-scoped
+      forms (14 tests: `admin/announcements` create+edit, including the
+      optional Spanish translation fields (ADR 0038), the org-scoped
       `orgs/[orgId]/announcements` create form, and the original
       `admin/paths` create form) — `vi.mock()`s the "use server" actions
       module and asserts the real form component's own behavior: the
@@ -1022,15 +1022,19 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `/api/scanner/scan` (the scan-submission route the mobile Scanner
       screen calls) -- the finding-enrichment route stays on
       `requireUser()` since no mobile screen calls it yet. See ADR 0035.
-- [ ] Everything else on mobile: the terminal/Cyber Range simulator and
-      every admin/instructor flow -- neither has a mobile screen yet;
-      nor does multi-file scan upload, AI-enriched findings, or manual
-      finding-status transitions on the Scanner screen that does exist,
-      nor checkout/upgrade/cancel on the Billing screen that does exist.
-      This phase is a real vertical slice (auth + nine data screens +
-      streaming AI chat + a scan-and-review flow + read-only billing
-      status), not the whole web app's feature set, and is named as such
-      rather than implied complete.
+      Also wired into `/api/labs/[labInstanceId]/terminal` -- the lab
+      terminal command route -- ahead of a mobile terminal screen that
+      doesn't exist yet, the same order ADR 0033's Mentor auth landed
+      before ADR 0034's Mentor screen. See ADR 0039.
+- [ ] Everything else on mobile: the interactive lab terminal (the Route
+      Handler now accepts a mobile Bearer token, per above, but no mobile
+      screen calls it yet) and every admin/instructor flow -- neither has
+      a mobile screen yet; nor does multi-file scan upload, AI-enriched
+      findings, or manual finding-status transitions on the Scanner
+      screen that does exist, nor checkout/upgrade/cancel on the Billing
+      screen that does exist. This phase is a real vertical slice, not
+      the whole web app's feature set, and is named as such rather than
+      implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

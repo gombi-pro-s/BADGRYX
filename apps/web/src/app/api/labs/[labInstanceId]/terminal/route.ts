@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiUser } from "@/lib/auth/api";
 import { runTerminalCommand, TerminalError } from "@/lib/terminal/execute";
 
 const paramsSchema = z.object({ labInstanceId: z.uuid() });
 const bodySchema = z.object({ command: z.string().max(2000) });
 
 export async function POST(request: Request, { params }: { params: Promise<{ labInstanceId: string }> }) {
-  const user = await requireUser();
+  const auth = await requireApiUser(request);
+  if ("unauthorized" in auth) return auth.unauthorized;
+  const { user, supabase } = auth;
 
   const parsedParams = paramsSchema.safeParse(await params);
   if (!parsedParams.success) {
@@ -20,8 +21,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ lab
   if (!parsedBody.success) {
     return NextResponse.json({ error: parsedBody.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
   }
-
-  const supabase = await createClient();
 
   try {
     const result = await runTerminalCommand(supabase, user.id, parsedParams.data.labInstanceId, parsedBody.data.command);
