@@ -71,10 +71,19 @@ for what's built so far and what's honestly still ahead.
       isn't something to reimplement in-app for a first slice, so the
       screen just says to manage your plan from the web app. See
       ADR 0037.
+    - **Organizations**: `/orgs` and `/orgs/[orgId]`'s equivalent -- your
+      real memberships, a "Create organization" flow, the member roster
+      (admins can change roles or remove members via the real
+      `update_organization_member_role()`/`remove_organization_member()`
+      RPCs; anyone can leave), and, for admins, a real invite-link flow
+      (`create_organization_invitation()`) with revoke. Plain RLS-scoped
+      Postgrest/RPC, no Route Handler needed. The instructor dashboard
+      (real per-member progress) and org-scoped announcement authoring
+      stay web-only -- both are substantial features of their own, not
+      silently missing. See ADR 0041.
 - This is still a first vertical slice, not the whole web app. Every
-  admin flow and the terminal/Cyber Range simulator do not have a mobile
-  screen yet. Future pillars like these belong behind "More" too, not as
-  new flat tabs.
+  other admin/instructor flow does not have a mobile screen yet. Future
+  pillars like these belong behind "More" too, not as new flat tabs.
 
 ## Configuration
 

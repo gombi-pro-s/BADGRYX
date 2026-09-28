@@ -1008,7 +1008,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       not built, since a payment provider's hosted checkout isn't
       something to reimplement in-app for a first slice; the screen says
       to manage your plan from the web app instead. See ADR 0037.)
-- [x] `flutter analyze` clean, 89 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 101 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1039,14 +1039,26 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       named as a real gap, not silently missing. Closes the last "not on
       mobile yet" gap this app named for labs since ADR 0026. See
       ADR 0040.
-- [ ] Everything else on mobile: every admin/instructor flow has no
-      mobile screen yet; nor does multi-file scan upload, AI-enriched
-      findings, or manual finding-status transitions on the Scanner
-      screen that does exist, nor checkout/upgrade/cancel on the Billing
-      screen that does exist, nor command-history recall on the terminal
-      screen that does exist. This phase is a real vertical slice, not
-      the whole web app's feature set, and is named as such rather than
-      implied complete.
+- [x] Organizations on mobile: real memberships, a "Create organization"
+      flow (a plain insert -- the existing `handle_new_organization`
+      trigger makes the creator its `team_owner`), the member roster
+      (admins can change roles/remove members via the real
+      `update_organization_member_role()`/`remove_organization_member()`
+      RPCs; anyone can leave), and, for admins, a real invite-link flow
+      (`create_organization_invitation()`) with revoke -- plain RLS-
+      scoped Postgrest/RPC, no Route Handler needed. The instructor
+      dashboard (real per-member progress) and org-scoped announcement
+      authoring stay web-only, named gaps rather than silently missing.
+      See ADR 0041.
+- [ ] Everything else on mobile: the instructor dashboard and org
+      announcement authoring on the Organizations screen that does exist;
+      every other admin/instructor CMS flow has no mobile screen at all;
+      nor does multi-file scan upload, AI-enriched findings, or manual
+      finding-status transitions on the Scanner screen that does exist,
+      nor checkout/upgrade/cancel on the Billing screen that does exist,
+      nor command-history recall on the terminal screen that does exist.
+      This phase is a real vertical slice, not the whole web app's
+      feature set, and is named as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

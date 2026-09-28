@@ -321,9 +321,15 @@ and
   RLS-scoped Postgrest (no Route Handler needed) — checkout/upgrade/cancel
   deliberately stay web-only, since a payment provider's hosted checkout
   isn't something to reimplement in-app for a first slice (see ADR 0037).
-  `flutter analyze` clean, 89 tests passing, `flutter build web`
+  An eleventh screen, Organizations, ports real membership/invitation
+  management (`/orgs`, `/orgs/[orgId]`) — plain RLS-scoped Postgrest/RPC,
+  no Route Handler needed unlike the three screens above. The instructor
+  dashboard (real per-member progress) and org-scoped announcement
+  authoring stay web-only, named gaps rather than silently missing (see
+  ADR 0041).
+  `flutter analyze` clean, 101 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0040.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0041.
 
 ## What's not built yet
 
