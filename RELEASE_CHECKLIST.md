@@ -1008,7 +1008,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       not built, since a payment provider's hosted checkout isn't
       something to reimplement in-app for a first slice; the screen says
       to manage your plan from the web app instead. See ADR 0037.)
-- [x] `flutter analyze` clean, 106 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 113 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1046,9 +1046,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `update_organization_member_role()`/`remove_organization_member()`
       RPCs; anyone can leave), and, for admins, a real invite-link flow
       (`create_organization_invitation()`) with revoke -- plain RLS-
-      scoped Postgrest/RPC, no Route Handler needed. Org-scoped
-      announcement authoring stays web-only, a named gap rather than
-      silently missing. See ADR 0041.
+      scoped Postgrest/RPC, no Route Handler needed. See ADR 0041.
 - [x] Instructor dashboard on mobile: for any instructor/team_owner/
       org_admin, real per-member graded results (skills proven/in
       progress, labs completed, quizzes passed, CTF solved,
@@ -1058,13 +1056,21 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       rather than the web's 8-column table (no room for that on a
       phone). Reachable from the Organizations screen once you're an
       instructor of an org. See ADR 0042.
-- [ ] Everything else on mobile: org-scoped announcement authoring on the
-      Organizations screen that does exist; every other admin/instructor
-      CMS flow has no mobile screen at all; nor does multi-file scan
-      upload, AI-enriched findings, or manual finding-status transitions
-      on the Scanner screen that does exist, nor checkout/upgrade/cancel
-      on the Billing screen that does exist, nor command-history recall
-      on the terminal screen that does exist. This phase is a real
+- [x] Org announcement authoring on mobile: for that same
+      instructor/team_owner/org_admin, a real
+      list/create/edit/publish-toggle/delete screen against the same
+      `announcements` table and `announcements_write` RLS the web CMS
+      uses -- plain RLS-scoped Postgrest, no Route Handler, no new RPC.
+      Spanish translation authoring (`announcement_translations`,
+      ADR 0038) stays web-only, a named gap rather than silently missing.
+      Closes ADR 0041's last named Organizations gap. See ADR 0043.
+- [ ] Everything else on mobile: every other admin/instructor CMS flow
+      has no mobile screen at all; nor does multi-file scan upload,
+      AI-enriched findings, or manual finding-status transitions on the
+      Scanner screen that does exist, nor checkout/upgrade/cancel on the
+      Billing screen that does exist, nor command-history recall on the
+      terminal screen that does exist, nor Spanish translation authoring
+      on the announcement screens that do exist. This phase is a real
       vertical slice, not the whole web app's feature set, and is named
       as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through

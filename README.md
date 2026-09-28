@@ -324,15 +324,17 @@ and
   An eleventh screen, Organizations, ports real membership/invitation
   management (`/orgs`, `/orgs/[orgId]`) — plain RLS-scoped Postgrest/RPC,
   no Route Handler needed unlike the three screens above — plus, for
-  instructors, a real instructor dashboard: every member's graded results
-  (skills proven/in progress, labs/quizzes/CTF/investigations) aggregated
-  via a ported, unit-tested `computeMemberStats()`, one card per member
-  rather than the web's wide table (see ADR 0041/0042). Org-scoped
-  announcement authoring stays web-only, a named gap rather than silently
-  missing.
-  `flutter analyze` clean, 106 tests passing, `flutter build web`
+  instructors, a real instructor dashboard (every member's graded results
+  — skills proven/in progress, labs/quizzes/CTF/investigations —
+  aggregated via a ported, unit-tested `computeMemberStats()`, one card
+  per member rather than the web's wide table, see ADR 0042) and real
+  announcement authoring (list/create/edit/publish-toggle/delete against
+  the same `announcements` table and RLS the web CMS uses, see ADR 0043).
+  Spanish translation authoring for announcements stays web-only, a named
+  gap rather than silently missing.
+  `flutter analyze` clean, 113 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0042.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0043.
 
 ## What's not built yet
 

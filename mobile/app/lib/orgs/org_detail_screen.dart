@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/env.dart';
 import 'instructor_dashboard_screen.dart';
+import 'org_announcements_screen.dart';
 import 'organization.dart';
 
 class OrgDetailData {
@@ -69,9 +70,8 @@ Future<OrgDetailData> fetchOrgDetail(SupabaseClient client, String organizationI
 /// Mirrors orgs/[orgId]/page.tsx: role badge, member roster (admins can
 /// change roles/remove members; anyone can leave), and, for admins, a real
 /// invite-link flow (create_organization_invitation RPC) and revoke list.
-/// The instructor dashboard (real member progress) and org announcement
-/// management are deliberately not built here -- both stay web-only, named
-/// gaps rather than silently missing. See ADR 0041.
+/// Instructors+ also get the real instructor dashboard and announcement
+/// authoring; see ADR 0041/0042/0043.
 class OrgDetailScreen extends StatefulWidget {
   const OrgDetailScreen({super.key, required this.organizationId});
 
@@ -283,12 +283,25 @@ class _OrgDetailScreenState extends State<OrgDetailScreen> {
                 ],
                 if (isInstructor) ...[
                   const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.insights_outlined),
-                    label: const Text('Open instructor dashboard'),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => InstructorDashboardScreen(organizationId: widget.organizationId)),
-                    ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.insights_outlined),
+                        label: const Text('Open instructor dashboard'),
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => InstructorDashboardScreen(organizationId: widget.organizationId)),
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.campaign_outlined),
+                        label: const Text('Announcements'),
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => OrgAnnouncementsScreen(organizationId: widget.organizationId)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 24),
