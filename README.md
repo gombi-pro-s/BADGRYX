@@ -299,8 +299,12 @@ and
   autosaved notes scratchpad, Exams with a real countdown timer and
   grading through `submit_quiz_attempt()`, and Capstones with a plain
   report submission and reviewer-notes history) against the same
-  Supabase project, via `supabase_flutter`. Terminal-backed labs show an
-  honest "not on mobile yet" banner rather than a fake terminal. An eighth
+  Supabase project, via `supabase_flutter`. Terminal-backed labs get a
+  real interactive terminal (`Open terminal` once a lab instance exists)
+  -- the same server-side interpreter and multi-host ssh/exit pivoting
+  `apps/web` uses, authenticated with a Bearer token; command-history
+  recall is web-only, a named gap rather than silently missing (see
+  ADR 0039/0040). An eighth
   screen, AI Mentor (general-chat modes only), streams the real
   `/api/mentor/chat` NDJSON response token-by-token, authenticated with a
   Bearer token against a new `requireApiUser()` Route Handler helper that
@@ -317,20 +321,21 @@ and
   RLS-scoped Postgrest (no Route Handler needed) — checkout/upgrade/cancel
   deliberately stay web-only, since a payment provider's hosted checkout
   isn't something to reimplement in-app for a first slice (see ADR 0037).
-  `flutter analyze` clean, 86 tests passing, `flutter build web`
+  `flutter analyze` clean, 89 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0037.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0040.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
-etc.), the mobile app's terminal/Cyber Range simulator and admin/instructor
-screens, multi-file scan upload/AI enrichment/manual finding-status
-transitions on the mobile Scanner screen, checkout/upgrade/cancel on the
-mobile Billing screen, a real Android/iOS build, and a real live/networked
-lab runtime beyond the virtual terminal/Cyber Range simulator).
+etc.), the mobile app's admin/instructor screens, command-history recall on
+the mobile terminal, multi-file scan upload/AI enrichment/manual
+finding-status transitions on the mobile Scanner screen, checkout/upgrade/
+cancel on the mobile Billing screen, a real Android/iOS build, and a real
+live/networked lab runtime beyond the virtual terminal/Cyber Range
+simulator).
 
 ## Local development
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'lab.dart';
+import 'terminal_screen.dart';
 
 /// Mirrors apps/web's lab-workspace.tsx: start guided/unguided (a plain
 /// lab_instances insert -- RLS scopes it to the caller's own user_id),
@@ -13,11 +14,13 @@ class LabWorkspace extends StatefulWidget {
     required this.labId,
     required this.hints,
     required this.initialInstance,
+    required this.hasTerminal,
   });
 
   final String labId;
   final List<LabHint> hints;
   final LabInstance? initialInstance;
+  final bool hasTerminal;
 
   @override
   State<LabWorkspace> createState() => _LabWorkspaceState();
@@ -143,18 +146,24 @@ class _LabWorkspaceState extends State<LabWorkspace> {
     }
 
     if (_correct == true || instance.status == 'stopped') {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-        ),
-        child: Text(
-          'Correct flag. Lab completed'
-          '${instance.guided ? " (guided)" : " (unguided — independent demonstration recorded)"}.',
-          style: TextStyle(color: Colors.green.shade800),
-        ),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.hasTerminal) _OpenTerminalButton(labInstanceId: instance.id),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              'Correct flag. Lab completed'
+              '${instance.guided ? " (guided)" : " (unguided — independent demonstration recorded)"}.',
+              style: TextStyle(color: Colors.green.shade800),
+            ),
+          ),
+        ],
       );
     }
 
@@ -163,6 +172,7 @@ class _LabWorkspaceState extends State<LabWorkspace> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (widget.hasTerminal) _OpenTerminalButton(labInstanceId: instance.id),
         if (instance.guided && sortedHints.isNotEmpty) ...[
           const Text('Hints', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
@@ -218,6 +228,26 @@ class _LabWorkspaceState extends State<LabWorkspace> {
           Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         ],
       ],
+    );
+  }
+}
+
+class _OpenTerminalButton extends StatelessWidget {
+  const _OpenTerminalButton({required this.labInstanceId});
+
+  final String labInstanceId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: OutlinedButton.icon(
+        icon: const Icon(Icons.terminal),
+        label: const Text('Open terminal'),
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => TerminalScreen(labInstanceId: labInstanceId)),
+        ),
+      ),
     );
   }
 }

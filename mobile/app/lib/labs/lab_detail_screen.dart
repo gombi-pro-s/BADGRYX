@@ -81,9 +81,10 @@ class _LabDetailScreenState extends State<LabDetailScreen> {
                     border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                   ),
                   child: const Text(
-                    'This lab has an interactive terminal environment on the web app. It is not '
-                    'available on mobile yet -- flag submission and scoring below are fully real '
-                    'and still recorded to your Skill Graph.',
+                    'This lab has a real interactive terminal environment -- start the lab below, '
+                    'then tap "Open terminal" to work through it. Command-history recall (up/down '
+                    'arrow) is web-only; everything else, including flag submission and scoring, is '
+                    'fully real and recorded to your Skill Graph.',
                     style: TextStyle(fontSize: 12),
                   ),
                 ),
@@ -104,7 +105,7 @@ class _LabDetailScreenState extends State<LabDetailScreen> {
                 ),
               ],
               const SizedBox(height: 24),
-              LabWorkspace(labId: lab.id, hints: hints, initialInstance: instance),
+              LabWorkspace(labId: lab.id, hints: hints, initialInstance: instance, hasTerminal: lab.hasTerminal),
             ],
           );
         },

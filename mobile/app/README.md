@@ -15,10 +15,14 @@ for what's built so far and what's honestly still ahead.
   - **Home**: `/dashboard`'s equivalent -- your real display name, your
     real active plan (or "Free"), and up to 5 real active announcements.
   - **Labs**: `/labs`'s equivalent -- published labs, start guided/
-    unguided, unlock hints, and a real flag submit through the same
-    `submit_lab_flag()` RPC the web app calls. Terminal-backed labs show
-    an honest banner -- the interactive terminal/Cyber Range simulator is
-    web-only for now, not silently hidden or faked.
+    unguided, unlock hints, a real flag submit through the same
+    `submit_lab_flag()` RPC the web app calls, and, for terminal-backed
+    labs, a real interactive terminal (`Open terminal` once a lab
+    instance exists) -- the exact same server-side interpreter and
+    multi-host ssh/exit pivoting `apps/web` uses, authenticated with a
+    Bearer token (see ADR 0039/0040). Command-history recall (up/down
+    arrow) is web-only -- a touch keyboard has no arrow keys to bind it
+    to -- named as a real, deliberate gap rather than silently missing.
   - **Skills**: `/skills`'s equivalent -- your own skill list with its
     real, per-user state, read live from `skills` and `user_skill_states`
     under the exact same RLS this repo's SQL tests already prove.
@@ -91,12 +95,13 @@ or silently using placeholder data -- this app has no functionality at
 all without a real backend.
 
 `API_BASE_URL` (the origin `apps/web` is deployed at) is different:
-**it's optional**. It's only needed for the two screens that call that
+**it's optional**. It's only needed for the three screens that call that
 deployment's Route Handlers directly rather than talking to Supabase --
-AI Mentor (`/api/mentor/chat`, see ADR 0033/0034) and the Security
-Scanner's scan-submission screen (`/api/scanner/scan`, see ADR 0035/0036).
+AI Mentor (`/api/mentor/chat`, see ADR 0033/0034), the Security Scanner's
+scan-submission screen (`/api/scanner/scan`, see ADR 0035/0036), and the
+interactive lab terminal (`/api/labs/{id}/terminal`, see ADR 0039/0040).
 Every other screen works exactly the same with or without it. Omit it and
-those two screens show a plain "not configured on this build" message
+those three screens show a plain "not configured on this build" message
 instead of their real UI -- this is the same "optional integration
 degrades gracefully, core functionality never blocked" pattern already
 used for Turnstile/billing

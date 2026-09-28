@@ -969,8 +969,12 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       Home/dashboard tab (display name, real active plan or "Free", up
       to 5 active announcements); Labs (published labs, start
       guided/unguided, unlock hints, a real flag submit through
-      `submit_lab_flag()` -- terminal-backed labs show an honest "not on
-      mobile yet" banner rather than a fake/hidden terminal); a skills
+      `submit_lab_flag()`, and, for terminal-backed labs, a real
+      interactive terminal via a Bearer-authenticated
+      `/api/labs/{id}/terminal` -- the same server-side interpreter and
+      multi-host ssh/exit pivoting `apps/web` uses; command-history
+      recall is web-only, named as a real gap rather than silently
+      missing. See ADR 0039/0040.); a skills
       list (`skills` + `user_skill_states`, the same tables/RLS `/skills`
       and its SQL tests already prove) with the identical 7-state label
       vocabulary as `components/skill-state-badge.tsx`; CTF challenges
@@ -1004,7 +1008,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       not built, since a payment provider's hosted checkout isn't
       something to reimplement in-app for a first slice; the screen says
       to manage your plan from the web app instead. See ADR 0037.)
-- [x] `flutter analyze` clean, 86 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 89 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1023,15 +1027,23 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       screen calls) -- the finding-enrichment route stays on
       `requireUser()` since no mobile screen calls it yet. See ADR 0035.
       Also wired into `/api/labs/[labInstanceId]/terminal` -- the lab
-      terminal command route -- ahead of a mobile terminal screen that
-      doesn't exist yet, the same order ADR 0033's Mentor auth landed
-      before ADR 0034's Mentor screen. See ADR 0039.
-- [ ] Everything else on mobile: the interactive lab terminal (the Route
-      Handler now accepts a mobile Bearer token, per above, but no mobile
-      screen calls it yet) and every admin/instructor flow -- neither has
-      a mobile screen yet; nor does multi-file scan upload, AI-enriched
+      terminal command route the mobile terminal screen calls. See
+      ADR 0039.
+- [x] Interactive lab terminal on mobile: `Open terminal` on a started,
+      terminal-backed lab instance pushes a real terminal screen that
+      POSTs each command to `/api/labs/{id}/terminal` with a Bearer token
+      -- the exact same server-side interpreter and multi-host ssh/exit
+      pivoting `apps/web`'s own `terminal.tsx` calls, no logic
+      re-implemented client-side. Command-history recall (up/down arrow)
+      is web-only -- a touch keyboard has no arrow keys to bind it to --
+      named as a real gap, not silently missing. Closes the last "not on
+      mobile yet" gap this app named for labs since ADR 0026. See
+      ADR 0040.
+- [ ] Everything else on mobile: every admin/instructor flow has no
+      mobile screen yet; nor does multi-file scan upload, AI-enriched
       findings, or manual finding-status transitions on the Scanner
       screen that does exist, nor checkout/upgrade/cancel on the Billing
+      screen that does exist, nor command-history recall on the terminal
       screen that does exist. This phase is a real vertical slice, not
       the whole web app's feature set, and is named as such rather than
       implied complete.
