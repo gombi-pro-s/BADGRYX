@@ -76,11 +76,15 @@ for what's built so far and what's honestly still ahead.
       (admins can change roles or remove members via the real
       `update_organization_member_role()`/`remove_organization_member()`
       RPCs; anyone can leave), and, for admins, a real invite-link flow
-      (`create_organization_invitation()`) with revoke. Plain RLS-scoped
-      Postgrest/RPC, no Route Handler needed. The instructor dashboard
-      (real per-member progress) and org-scoped announcement authoring
-      stay web-only -- both are substantial features of their own, not
-      silently missing. See ADR 0041.
+      (`create_organization_invitation()`) with revoke, and, for any
+      instructor/team_owner/org_admin, a real "Open instructor dashboard"
+      -- every member's real graded results (skills proven/in progress,
+      labs completed, quizzes passed, CTF solved, investigations passed),
+      one card per member rather than the web's wide table, straight from
+      the same six RLS-scoped queries the web page runs, no new RPC. Plain
+      RLS-scoped Postgrest/RPC throughout this whole screen, no Route
+      Handler needed. Org-scoped announcement authoring stays web-only --
+      a real CMS of its own, not silently missing. See ADR 0041/0042.
 - This is still a first vertical slice, not the whole web app. Every
   other admin/instructor flow does not have a mobile screen yet. Future
   pillars like these belong behind "More" too, not as new flat tabs.

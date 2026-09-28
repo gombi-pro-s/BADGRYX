@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/env.dart';
+import 'instructor_dashboard_screen.dart';
 import 'organization.dart';
 
 class OrgDetailData {
@@ -254,6 +255,7 @@ class _OrgDetailScreenState extends State<OrgDetailScreen> {
           final data = snapshot.data!;
           final myUserId = Supabase.instance.client.auth.currentUser!.id;
           final isAdmin = isOrgAdminRole(data.myRole);
+          final isInstructor = isOrgInstructorRole(data.myRole);
 
           return RefreshIndicator(
             onRefresh: _refresh,
@@ -278,6 +280,16 @@ class _OrgDetailScreenState extends State<OrgDetailScreen> {
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ],
+                if (isInstructor) ...[
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.insights_outlined),
+                    label: const Text('Open instructor dashboard'),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => InstructorDashboardScreen(organizationId: widget.organizationId)),
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 24),
                 Text('Members (${data.members.length})', style: Theme.of(context).textTheme.titleMedium),
