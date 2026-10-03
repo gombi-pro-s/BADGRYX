@@ -19,10 +19,18 @@ helper (already provider-agnostic `{url: string}` returns) and then
 JSON response and the exact same server-side call, with the exact same
 secret keys that must never leave the server, works for any caller.
 
-Canceling or otherwise managing an existing subscription is a separate,
-still-deferred piece: it is a smaller, less urgent action (nothing time-
-sensitive blocks on it, unlike getting a new user onto Pro) and stays on
-the web app for this phase, named below rather than silently missing.
+Canceling or otherwise managing an existing subscription is a separate
+question, and checking `settings/billing/actions.ts` for a parallel cancel
+action found none -- the web app never built one either.
+`RELEASE_CHECKLIST.md`'s "Recurring-subscription cancellation
+auto-downgrade" line (ADR covering the Flutterwave webhook fix) confirms
+the existing design: cancellation happens entirely on the payment
+provider's own side (their dashboard/customer portal), and this app only
+reacts to the resulting webhook -- the same "provider's own hosted,
+secure flow, never reimplemented in-app" reasoning ADR 0037 already gives
+checkout. So there is no web feature for mobile to defer to here; it is
+out of scope for both clients by the same design, not a gap to close
+later.
 
 ## Decision
 
@@ -61,5 +69,7 @@ that decides, same as every other Bearer-authed route in this app.
   ESLint, and a production build all stay clean.
 - `flutter analyze` stays clean; `flutter build web` succeeds both with
   and without `API_BASE_URL`.
-- Narrows ADR 0037's Billing gap to just canceling/managing an existing
-  subscription, named above rather than silently missing.
+- Closes the checkout half of ADR 0037's Billing gap. Canceling/managing
+  an existing subscription is corrected above from "web-only" to "out of
+  scope for this app entirely, by the same provider-hosted-flow design as
+  checkout" -- not a gap either client is missing.

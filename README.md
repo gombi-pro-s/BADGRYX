@@ -329,8 +329,10 @@ and
   app's own checkout actions and hands back that provider's hosted
   checkout URL, shown via a copy-link dialog rather than a WebView,
   since this app never touches card details either way (see
-  ADR 0037/0047) — canceling or managing an existing subscription stays
-  web-only. An eleventh screen, Organizations, ports real membership/invitation
+  ADR 0037/0047) — canceling or managing an existing subscription isn't
+  built on either client, by the same provider-hosted-flow design as
+  checkout (that's the provider's own dashboard/portal). An eleventh
+  screen, Organizations, ports real membership/invitation
   management (`/orgs`, `/orgs/[orgId]`) — plain RLS-scoped Postgrest/RPC,
   no Route Handler needed unlike the three screens above — plus, for
   instructors, a real instructor dashboard (every member's graded results

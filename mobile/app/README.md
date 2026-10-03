@@ -78,8 +78,9 @@ for what's built so far and what's honestly still ahead.
       the Organizations screen's invite link -- to open in a browser;
       this app never touches card details either way. See
       ADR 0037/0047. Canceling or otherwise managing an existing
-      subscription still happens on the web app -- named as a real,
-      deliberate scope boundary, not silently missing.
+      subscription isn't built on either client -- that's the payment
+      provider's own dashboard/customer portal, by the same provider-
+      hosted-flow design as checkout, not a gap in this app.
     - **Organizations**: `/orgs` and `/orgs/[orgId]`'s equivalent -- your
       real memberships, a "Create organization" flow, the member roster
       (admins can change roles or remove members via the real

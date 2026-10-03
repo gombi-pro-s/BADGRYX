@@ -1016,7 +1016,9 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       the web app's own checkout actions, hands back the hosted checkout
       URL via a copy-link dialog rather than a WebView, since this app
       never touches card details either way; canceling/managing an
-      existing subscription stays web-only. See ADR 0037/0047.)
+      existing subscription isn't built on either client -- same
+      provider-dashboard-self-service design as checkout itself. See
+      ADR 0037/0047.)
 - [x] `flutter analyze` clean, 121 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
@@ -1100,13 +1102,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       checkout URL as JSON instead of redirecting; "Upgrade with
       Stripe/Paystack/Flutterwave" buttons call it and show the URL via
       a copy-link dialog, the same pattern as the Organizations screen's
-      invite link, never a WebView. Narrows ADR 0037's Billing gap down
-      to just canceling/managing an existing subscription. See ADR 0047.
+      invite link, never a WebView. Closes the checkout half of ADR
+      0037's Billing gap; canceling/managing an existing subscription
+      isn't built on either client -- same provider-dashboard-self-
+      service design as checkout, not a gap. See ADR 0047.
 - [ ] Everything else on mobile: every other admin/instructor CMS flow
       has no mobile screen at all; nor does multi-file scan upload on the
-      Scanner screen that does exist, nor canceling/managing an existing
-      subscription on the Billing screen that does exist, nor
-      command-history recall on the terminal screen that does exist.
+      Scanner screen that does exist, nor command-history recall on the
+      terminal screen that does exist.
       This phase is a real vertical slice, not the whole web app's
       feature set, and is named as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
