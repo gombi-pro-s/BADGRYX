@@ -323,10 +323,14 @@ and
   upload needs a file picker this first slice doesn't build (see
   ADR 0036/0044/0045). A tenth screen,
   Billing, shows the user's real plan/status/entitlements via plain
-  RLS-scoped Postgrest (no Route Handler needed) — checkout/upgrade/cancel
-  deliberately stay web-only, since a payment provider's hosted checkout
-  isn't something to reimplement in-app for a first slice (see ADR 0037).
-  An eleventh screen, Organizations, ports real membership/invitation
+  RLS-scoped Postgrest (no Route Handler needed) and a real "Upgrade
+  with Stripe/Paystack/Flutterwave" flow — a Bearer-authed
+  `/api/billing/checkout` runs the exact same provider calls as the web
+  app's own checkout actions and hands back that provider's hosted
+  checkout URL, shown via a copy-link dialog rather than a WebView,
+  since this app never touches card details either way (see
+  ADR 0037/0047) — canceling or managing an existing subscription stays
+  web-only. An eleventh screen, Organizations, ports real membership/invitation
   management (`/orgs`, `/orgs/[orgId]`) — plain RLS-scoped Postgrest/RPC,
   no Route Handler needed unlike the three screens above — plus, for
   instructors, a real instructor dashboard (every member's graded results
@@ -337,9 +341,9 @@ and
   optional Spanish translation section using the same both-fields-or-
   neither rule as the web CMS, against the same `announcements`/
   `announcement_translations` tables and RLS, see ADR 0043/0046).
-  `flutter analyze` clean, 120 tests passing, `flutter build web`
+  `flutter analyze` clean, 121 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0046.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0047.
 
 ## What's not built yet
 

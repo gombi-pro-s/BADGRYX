@@ -884,7 +884,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       plus component tests proving the admin/org announcement forms'
       optional Spanish fields round-trip through `FormData` and clear
       correctly (ADR 0038))
-- [x] 32 e2e smoke tests (public pages, auth wall across all protected
+- [x] 33 e2e smoke tests (public pages, auth wall across all protected
       sections including `/scanner`/`/orgs`/`/capstones`/`/exams`/
       `/reports`, an invite link's `?next=` round-trip, login error
       handling, the MFA step-up page's own auth wall, the path-import
@@ -898,7 +898,8 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       with a bogus `Bearer` token where relevant) across every Bearer-
       auth-wired mobile-facing route: `/api/mentor/chat` (ADR 0033),
       `/api/scanner/scan` (ADR 0035), `/api/labs/{id}/terminal`
-      (ADR 0039), and `/api/scanner/findings/{id}/enrich` (ADR 0045))
+      (ADR 0039), `/api/scanner/findings/{id}/enrich` (ADR 0045), and
+      `/api/billing/checkout` (ADR 0047))
 - [x] Component-level test coverage for a representative slice of admin CMS
       forms (14 tests: `admin/announcements` create+edit, including the
       optional Spanish translation fields (ADR 0038), the org-scoped
@@ -1009,11 +1010,14 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       ADR 0036/0044/0045.),
       and Billing (real plan/status/entitlements from
       `subscriptions`/`plans`/`plan_entitlements`, plain RLS-scoped
-      Postgrest, no Route Handler -- checkout/upgrade/cancel deliberately
-      not built, since a payment provider's hosted checkout isn't
-      something to reimplement in-app for a first slice; the screen says
-      to manage your plan from the web app instead. See ADR 0037.)
-- [x] `flutter analyze` clean, 120 `flutter test`s passing, `flutter build
+      Postgrest, no Route Handler needed for any of that, plus a real
+      "Upgrade with Stripe/Paystack/Flutterwave" flow against a new
+      Bearer-authed `/api/billing/checkout` -- same provider calls as
+      the web app's own checkout actions, hands back the hosted checkout
+      URL via a copy-link dialog rather than a WebView, since this app
+      never touches card details either way; canceling/managing an
+      existing subscription stays web-only. See ADR 0037/0047.)
+- [x] `flutter analyze` clean, 121 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1034,7 +1038,9 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       the mobile Scanner's "Enrich with AI" button calls). See ADR 0045.
       Also wired into `/api/labs/[labInstanceId]/terminal` -- the lab
       terminal command route the mobile terminal screen calls. See
-      ADR 0039.
+      ADR 0039. Also wired into a new `/api/billing/checkout` (the
+      checkout-session route the mobile Billing screen's "Upgrade"
+      buttons call). See ADR 0047.
 - [x] Interactive lab terminal on mobile: `Open terminal` on a started,
       terminal-backed lab instance pushes a real terminal screen that
       POSTs each command to `/api/labs/{id}/terminal` with a Bearer token
@@ -1088,13 +1094,21 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       scan-detail screen calling it with the session's Bearer token,
       shown only when `AppEnv.isApiConfigured`. Narrows ADR 0036's
       Scanner gap down to just multi-file upload. See ADR 0045.
+- [x] Real checkout on the mobile Billing screen: a new Bearer-authed
+      `/api/billing/checkout` runs the exact same provider calls as the
+      web app's own `createXCheckoutAction()`s and returns the hosted
+      checkout URL as JSON instead of redirecting; "Upgrade with
+      Stripe/Paystack/Flutterwave" buttons call it and show the URL via
+      a copy-link dialog, the same pattern as the Organizations screen's
+      invite link, never a WebView. Narrows ADR 0037's Billing gap down
+      to just canceling/managing an existing subscription. See ADR 0047.
 - [ ] Everything else on mobile: every other admin/instructor CMS flow
       has no mobile screen at all; nor does multi-file scan upload on the
-      Scanner screen that does exist, nor checkout/upgrade/cancel on the
-      Billing screen that does exist, nor command-history recall on the
-      terminal screen that does exist. This phase is a real
-      vertical slice, not the whole web app's feature set, and is named
-      as such rather than implied complete.
+      Scanner screen that does exist, nor canceling/managing an existing
+      subscription on the Billing screen that does exist, nor
+      command-history recall on the terminal screen that does exist.
+      This phase is a real vertical slice, not the whole web app's
+      feature set, and is named as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

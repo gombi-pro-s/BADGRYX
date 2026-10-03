@@ -243,4 +243,14 @@ test.describe("mobile API auth", () => {
     const body = await response.json();
     expect(body).toEqual({ error: "Unauthorized" });
   });
+
+  test("an unauthenticated call to the billing checkout route gets a 401 JSON body, not a login redirect", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/billing/checkout", { data: { provider: "stripe" } });
+    expect(response.status()).toBe(401);
+    expect(response.headers()["content-type"]).toContain("application/json");
+    const body = await response.json();
+    expect(body).toEqual({ error: "Unauthorized" });
+  });
 });

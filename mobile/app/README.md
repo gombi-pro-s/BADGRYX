@@ -67,14 +67,19 @@ for what's built so far and what's honestly still ahead.
       scan" needs a file picker this first slice doesn't build, named as
       the one remaining Scanner gap rather than silently missing. See
       ADR 0036/0044/0045.
-    - **Billing**: `/settings/billing`'s read side -- your real plan,
+    - **Billing**: `/settings/billing`'s equivalent -- your real plan,
       subscription status, and every entitlement, straight from
       `subscriptions`/`plans`/`plan_entitlements` under the same RLS as
-      the web app, no Route Handler needed. Checkout/upgrade/cancel are
-      deliberately not built: a payment provider's hosted checkout page
-      isn't something to reimplement in-app for a first slice, so the
-      screen just says to manage your plan from the web app. See
-      ADR 0037.
+      the web app, no Route Handler needed for any of that, plus a real
+      "Upgrade with Stripe/Paystack/Flutterwave" flow: a Bearer-authed
+      POST to a new `/api/billing/checkout` (same provider calls as the
+      web app's own checkout actions) hands back that provider's hosted
+      checkout URL, shown in a copy-link dialog -- the same pattern as
+      the Organizations screen's invite link -- to open in a browser;
+      this app never touches card details either way. See
+      ADR 0037/0047. Canceling or otherwise managing an existing
+      subscription still happens on the web app -- named as a real,
+      deliberate scope boundary, not silently missing.
     - **Organizations**: `/orgs` and `/orgs/[orgId]`'s equivalent -- your
       real memberships, a "Create organization" flow, the member roster
       (admins can change roles or remove members via the real

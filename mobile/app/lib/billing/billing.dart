@@ -64,3 +64,8 @@ bool isProPlan(String? slug) => slug == 'pro';
 
 /// Mirrors apps/web's settings/billing/page.tsx: `e.key.replace(/_/g, " ")`.
 String formatEntitlementKey(String key) => key.replaceAll('_', ' ');
+
+/// Mirrors settings/billing/page.tsx's three UpgradeButton labels (minus
+/// the "Upgrade with " prefix, applied at the call site) -- the provider
+/// ids `/api/billing/checkout` accepts (see ADR 0047).
+const Map<String, String> checkoutProviderLabel = {'stripe': 'Stripe', 'paystack': 'Paystack', 'flutterwave': 'Flutterwave'};

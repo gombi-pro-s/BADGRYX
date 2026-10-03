@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/env.dart';
 import 'billing.dart';
 
 /// Mirrors apps/web's settings/billing/page.tsx queries exactly.
@@ -34,15 +39,17 @@ Future<(BillingSubscription?, BillingPlan?, List<PlanEntitlement>)> fetchBilling
   return (subscription, plan, entitlements);
 }
 
-/// Read-only: shows the user's real plan, subscription status, and
-/// entitlements (the same server-enforced get_entitlement() values
-/// apps/web's own billing page shows) -- exactly what a mobile user
-/// needs to know about their plan. Checkout itself is deliberately not
-/// built here: it needs a payment provider's own hosted, secure checkout
-/// page (Stripe/Paystack/Flutterwave), not something to reimplement or
-/// embed in a WebView for a first mobile slice. Upgrading or managing a
-/// subscription happens on the web app -- named as a real, deliberate
-/// scope boundary, not silently missing. See ADR 0037.
+/// Shows the user's real plan, subscription status, and entitlements
+/// (the same server-enforced get_entitlement() values apps/web's own
+/// billing page shows), plus a real "Upgrade to Pro" flow: a Bearer-
+/// authed POST to `/api/billing/checkout` (same provider calls as
+/// settings/billing/actions.ts, see ADR 0047) returns the payment
+/// provider's own hosted checkout URL, shown via a copy-link dialog --
+/// the same pattern as the Organizations screen's invite link -- rather
+/// than embedding a WebView, since this app never touches card details
+/// either way. Canceling or otherwise managing an existing subscription
+/// still happens on the web app -- named as a real, deliberate scope
+/// boundary, not silently missing. See ADR 0037/0047.
 class BillingScreen extends StatefulWidget {
   const BillingScreen({super.key});
 
@@ -52,6 +59,8 @@ class BillingScreen extends StatefulWidget {
 
 class _BillingScreenState extends State<BillingScreen> {
   late Future<(BillingSubscription?, BillingPlan?, List<PlanEntitlement>)> _future;
+  String? _checkingOutProvider;
+  String? _checkoutError;
 
   @override
   void initState() {
@@ -62,6 +71,61 @@ class _BillingScreenState extends State<BillingScreen> {
   Future<(BillingSubscription?, BillingPlan?, List<PlanEntitlement>)> _load() {
     final client = Supabase.instance.client;
     return fetchBilling(client, client.auth.currentUser!.id);
+  }
+
+  Future<void> _startCheckout(String provider) async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) {
+      setState(() => _checkoutError = 'Your session has expired. Please log in again.');
+      return;
+    }
+    setState(() {
+      _checkingOutProvider = provider;
+      _checkoutError = null;
+    });
+    try {
+      final response = await http.post(
+        Uri.parse('${AppEnv.apiBaseUrl}/api/billing/checkout'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ${session.accessToken}'},
+        body: jsonEncode({'provider': provider}),
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode != 200) {
+        throw Exception(body['error'] as String? ?? 'Checkout failed (${response.statusCode}).');
+      }
+      if (mounted) await _showCheckoutLinkDialog(body['url'] as String);
+    } catch (e) {
+      setState(() => _checkoutError = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _checkingOutProvider = null);
+    }
+  }
+
+  Future<void> _showCheckoutLinkDialog(String url) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Checkout link ready'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Open this link in your browser to pay -- card details go straight to your payment "
+              "provider's own secure page, never through this app. Your plan updates automatically once "
+              'the payment is confirmed.',
+              style: TextStyle(fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            SelectableText(url, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Clipboard.setData(ClipboardData(text: url)), child: const Text('Copy')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Done')),
+        ],
+      ),
+    );
   }
 
   @override
@@ -139,16 +203,45 @@ class _BillingScreenState extends State<BillingScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  isPro
-                      ? "Manage or cancel your subscription from the web app's Settings -> Billing page."
-                      : "Upgrade to Pro for more concurrent labs, a bigger daily AI Mentor allowance, cyber "
-                            "range access, team management, and advanced reports. Upgrading happens on the web "
-                            "app's Settings -> Billing page -- checkout runs through your payment provider's own "
-                            'secure page, not in this app.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                if (isPro) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    "Manage or cancel your subscription from the web app's Settings -> Billing page.",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ] else ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Upgrade to Pro for more concurrent labs, a bigger daily AI Mentor allowance, cyber range '
+                    'access, team management, and advanced reports. \$19/month.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  if (!AppEnv.isApiConfigured)
+                    const Text(
+                      "Checkout isn't configured on this build. Run with --dart-define=API_BASE_URL=... to "
+                      'enable it. See mobile/app/README.md.',
+                      style: TextStyle(fontSize: 12),
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: checkoutProviderLabel.entries.map((entry) {
+                        final provider = entry.key;
+                        return FilledButton(
+                          onPressed: _checkingOutProvider != null ? null : () => _startCheckout(provider),
+                          child: Text(
+                            _checkingOutProvider == provider ? 'Starting...' : 'Upgrade with ${entry.value}',
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  if (_checkoutError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(_checkoutError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  ],
+                ],
               ],
             );
           },

@@ -72,4 +72,11 @@ void main() {
       expect(formatEntitlementKey('seats'), 'seats');
     });
   });
+
+  test('checkoutProviderLabel covers exactly the three real payment providers', () {
+    expect(checkoutProviderLabel.keys.toSet(), {'stripe', 'paystack', 'flutterwave'});
+    for (final entry in checkoutProviderLabel.entries) {
+      expect(entry.value, isNot(entry.key), reason: '${entry.key} label should not be the raw provider id');
+    }
+  });
 }
