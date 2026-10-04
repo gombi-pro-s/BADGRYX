@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../mentor/mentor_screen.dart';
+import '../mentor/modes.dart';
 import 'lab.dart';
 import 'lab_workspace.dart';
 
@@ -64,7 +67,25 @@ class _LabDetailScreenState extends State<LabDetailScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(lab.title, style: Theme.of(context).textTheme.headlineSmall),
+              Row(
+                children: [
+                  Expanded(child: Text(lab.title, style: Theme.of(context).textTheme.headlineSmall)),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => MentorScreen(
+                          contextType: 'lab',
+                          contextId: lab.id,
+                          initialMode: MentorMode.hint,
+                          focusTitle: lab.title,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.psychology_outlined, size: 18),
+                    label: const Text('Mentor'),
+                  ),
+                ],
+              ),
               const SizedBox(height: 4),
               Text('${lab.category} · ${lab.difficulty} · ${lab.points} pts'),
               if (lab.description != null) ...[
@@ -83,7 +104,8 @@ class _LabDetailScreenState extends State<LabDetailScreen> {
                   child: const Text(
                     'This lab has a real interactive terminal environment -- start the lab below, '
                     'then tap "Open terminal" to work through it. Command-history recall (up/down '
-                    'arrow) is web-only; everything else, including flag submission and scoring, is '
+                    'arrow) works here too with a hardware or software keyboard that sends real '
+                    'arrow-key events; everything else, including flag submission and scoring, is '
                     'fully real and recorded to your Skill Graph.',
                     style: TextStyle(fontSize: 12),
                   ),

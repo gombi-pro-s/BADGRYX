@@ -15,10 +15,22 @@ class _ChatMessage {
   String content;
 }
 
-/// AI Mentor chat, scoped to general modes only (see modes.dart) -- the
-/// context-specific deep links apps/web offers from labs/investigations/
-/// findings/reports aren't reachable from mobile yet, same honest scope
-/// boundary as the terminal-backed labs' "not on mobile yet" banner.
+/// AI Mentor chat. `contextType`/`contextId` mirror `/mentor`'s own
+/// `?contextType=&contextId=` query params -- `/api/mentor/chat` already
+/// accepts both and `buildMentorContext()` already resolves the grounding
+/// data for every context type server-side, so reaching a context-specific
+/// mode from mobile needed no new Route Handler, only a caller that
+/// passes them through and a mode picker that offers the right pills
+/// (see `modesForContext()` in modes.dart). `focusTitle` is passed
+/// directly by the caller (it already loaded that lab/investigation/
+/// finding/report to render its own detail screen) rather than this
+/// screen re-fetching it the way `/mentor/page.tsx`'s `resolveFocusTitle()`
+/// does -- one fewer round trip, same displayed text. Opening this screen
+/// always starts a fresh conversation thread even when the web app would
+/// resume an existing one for the same context (`/mentor/page.tsx`'s own
+/// `existingConversation` lookup) -- a real, narrower gap than "no deep
+/// links at all", named here rather than fixed, since general-mode
+/// Mentor already had this same limitation. See ADR 0059.
 ///
 /// Streams `/api/mentor/chat` as NDJSON via `requireApiUser()`'s Bearer-
 /// token path (ADR 0033): the same route apps/web's own browser client
@@ -26,7 +38,16 @@ class _ChatMessage {
 /// a cookie. Decoding mirrors apps/web's lib/mentor/ndjson.ts exactly --
 /// see ndjson.dart.
 class MentorScreen extends StatefulWidget {
-  const MentorScreen({super.key});
+  const MentorScreen({super.key, this.contextType = 'general', this.contextId, this.initialMode, this.focusTitle});
+
+  /// Mirrors `MentorContextType` as a plain string (same convention as
+  /// this app's other database-enum fields, e.g. `reports/report.dart`'s
+  /// `kind`) -- `'general'`, `'lab'`, `'ctf'`, `'investigation'`,
+  /// `'finding'`, or `'report'`.
+  final String contextType;
+  final String? contextId;
+  final MentorMode? initialMode;
+  final String? focusTitle;
 
   @override
   State<MentorScreen> createState() => _MentorScreenState();
@@ -37,7 +58,7 @@ class _MentorScreenState extends State<MentorScreen> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  MentorMode _mode = MentorMode.explain;
+  late MentorMode _mode = widget.initialMode ?? defaultModeForContext(widget.contextType);
   String? _conversationId;
   ({int used, int limit})? _quota;
   bool _isSending = false;
@@ -89,7 +110,8 @@ class _MentorScreenState extends State<MentorScreen> {
         ..body = jsonEncode({
           'mode': _mode.apiValue,
           'message': text,
-          'contextType': 'general',
+          'contextType': widget.contextType,
+          if (widget.contextId != null) 'contextId': widget.contextId,
           if (_conversationId != null) 'conversationId': _conversationId,
         });
 
@@ -178,11 +200,19 @@ class _MentorScreenState extends State<MentorScreen> {
       ),
       body: Column(
         children: [
+          if (widget.focusTitle != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: Text(
+                'Focused on: ${widget.focusTitle}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Wrap(
               spacing: 8,
-              children: MentorMode.values.map((mode) {
+              children: modesForContext(widget.contextType).map((mode) {
                 return ChoiceChip(
                   label: Text(mode.label),
                   selected: _mode == mode,

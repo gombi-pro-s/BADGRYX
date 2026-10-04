@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 188 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 194 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1240,13 +1240,35 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       this new Route Handler share one implementation, never two. 36 e2e
       tests now (was 34); `tsc --noEmit`, ESLint, `npx vitest run` (316
       tests, unchanged), and `npm run build` all pass. See ADR 0058.
-- [ ] Everything else on mobile: every `/admin/*` pillar this app has
-      ever named as a gap is now closed; the only mobile gap left
-      anywhere is Mentor's context-specific deep links (lab/lesson/
-      finding/investigation/report -- mobile Mentor is still
-      general-modes-only, ADR 0034). This phase is a real vertical slice,
-      not the whole web app's feature set, and is named as such rather
-      than implied complete.
+- [x] Mentor context-specific deep links on mobile: `/api/mentor/chat`
+      and `buildMentorContext()` already supported `explain_finding`/
+      `guide_investigation`/`review_report`/`review_methodology` server-
+      side -- the gap was purely that `MentorScreen` hard-coded
+      `contextType: 'general'` and offered only a four-mode picker.
+      `MentorMode` extended to all eight real modes;
+      `defaultModeForContext()`/`extraModesForContext()`/
+      `modesForContext()` ported from `lib/mentor/modes.ts`; a "Mentor"
+      button added to the Lab detail, CTF challenge detail, and
+      Investigation detail screens, and to the Scanner's finding cards;
+      Reports' existing "Ask Mentor to review" button (ADR 0052) now
+      passes the report's real context and kind-based mode instead of
+      opening the general-mode screen with none. In passing, fixed a
+      stale in-app banner on the Lab detail screen still claiming
+      terminal command-history recall was "web-only" after ADR 0050
+      corrected that everywhere else. Named, not silently carried
+      forward: the `lesson` context has no mobile entry point because
+      there's no mobile learner-facing lesson/path viewer to attach one
+      to (a separate, larger gap than a missing deep link -- the admin
+      authoring screens exist, ADR 0055, but no reader), and reopening
+      any context's chat always starts a fresh conversation rather than
+      resuming the last one for that context, the same pre-existing
+      limitation general-mode Mentor already had. +6 `flutter test`s
+      (194 total, was 188). See ADR 0059.
+- [ ] Everything else on mobile: a learner-facing lesson/path viewer and
+      Mentor's `lesson` context deep link (blocked on the former) are the
+      only mobile gaps left anywhere. This phase is a real vertical
+      slice, not the whole web app's feature set, and is named as such
+      rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

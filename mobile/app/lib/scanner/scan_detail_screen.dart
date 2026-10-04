@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/env.dart';
+import '../mentor/mentor_screen.dart';
+import '../mentor/modes.dart';
 import 'scan.dart';
 
 /// Mirrors apps/web's /scanner/[scanId] page's queries: the scan itself,
@@ -295,25 +297,38 @@ class _FindingCardState extends State<_FindingCard> {
                   child: Text(_secureExample!, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
                 ),
               ],
-              if (nextStatuses.isNotEmpty || AppEnv.isApiConfigured) const Divider(height: 20),
-              if (nextStatuses.isNotEmpty || AppEnv.isApiConfigured)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    ...nextStatuses.map((next) {
-                      return OutlinedButton(
-                        onPressed: _transitioning != null ? null : () => _transition(next),
-                        child: Text(_transitioning == next ? 'Updating...' : statusActionLabel[next] ?? next),
-                      );
-                    }),
-                    if (AppEnv.isApiConfigured)
-                      FilledButton.tonal(
-                        onPressed: _enriching ? null : _enrich,
-                        child: Text(_enriching ? 'Enriching...' : 'Enrich with AI'),
+              const Divider(height: 20),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ...nextStatuses.map((next) {
+                    return OutlinedButton(
+                      onPressed: _transitioning != null ? null : () => _transition(next),
+                      child: Text(_transitioning == next ? 'Updating...' : statusActionLabel[next] ?? next),
+                    );
+                  }),
+                  if (AppEnv.isApiConfigured)
+                    FilledButton.tonal(
+                      onPressed: _enriching ? null : _enrich,
+                      child: Text(_enriching ? 'Enriching...' : 'Enrich with AI'),
+                    ),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => MentorScreen(
+                          contextType: 'finding',
+                          contextId: finding.id,
+                          initialMode: MentorMode.explainFinding,
+                          focusTitle: finding.title,
+                        ),
                       ),
-                  ],
-                ),
+                    ),
+                    icon: const Icon(Icons.psychology_outlined, size: 18),
+                    label: const Text('Ask Mentor'),
+                  ),
+                ],
+              ),
               if (_error != null) ...[
                 const SizedBox(height: 8),
                 Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),

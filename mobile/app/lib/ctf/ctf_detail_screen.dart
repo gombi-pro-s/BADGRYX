@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../mentor/mentor_screen.dart';
+import '../mentor/modes.dart';
 import 'ctf_challenge.dart';
 import 'flag_submit.dart';
 
@@ -56,7 +59,25 @@ class _CtfDetailScreenState extends State<CtfDetailScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(challenge.title, style: Theme.of(context).textTheme.headlineSmall),
+              Row(
+                children: [
+                  Expanded(child: Text(challenge.title, style: Theme.of(context).textTheme.headlineSmall)),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => MentorScreen(
+                          contextType: 'ctf',
+                          contextId: challenge.id,
+                          initialMode: MentorMode.hint,
+                          focusTitle: challenge.title,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.psychology_outlined, size: 18),
+                    label: const Text('Mentor'),
+                  ),
+                ],
+              ),
               const SizedBox(height: 4),
               Text('${challenge.category} · ${challenge.difficulty} · ${challenge.points} pts'),
               if (challenge.description != null) ...[

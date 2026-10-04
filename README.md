@@ -301,8 +301,8 @@ and
   submission and reviewer-notes history, and Reports — a real pentest-
   report/methodology-write-up pillar, reviewed by the AI Mentor only and
   separate from a capstone's reviewed submission (plain RLS-scoped
-  Postgrest CRUD, "Ask Mentor to review" opens the general-mode Mentor
-  screen rather than a true deep link yet, see ADR 0052)) against the same
+  Postgrest CRUD, "Ask Mentor to review" deep-links into `review_report`/
+  `review_methodology` for that report, see ADR 0052/0059)) against the same
   Supabase project, via `supabase_flutter`. Terminal-backed labs get a
   real interactive terminal (`Open terminal` once a lab instance exists)
   -- the same server-side interpreter and multi-host ssh/exit pivoting
@@ -312,13 +312,21 @@ and
   key events either way, which a `Focus` widget around the input field
   intercepts the same way `terminal.tsx` does (see ADR 0039/0040/0050).
   An eighth
-  screen, AI Mentor (general-chat modes only), streams the real
-  `/api/mentor/chat` NDJSON response token-by-token, authenticated with a
-  Bearer token against a new `requireApiUser()` Route Handler helper that
-  falls through to the existing cookie session for `apps/web`'s own
-  callers (see ADR 0033) — degrades to a plain "not configured" message
-  if the app is built without the optional `API_BASE_URL` value, the same
-  pattern already used for Turnstile/billing on web. A ninth screen, the
+  screen, AI Mentor, streams the real `/api/mentor/chat` NDJSON response
+  token-by-token, authenticated with a Bearer token against a new
+  `requireApiUser()` Route Handler helper that falls through to the
+  existing cookie session for `apps/web`'s own callers (see ADR 0033) —
+  degrades to a plain "not configured" message if the app is built
+  without the optional `API_BASE_URL` value, the same pattern already
+  used for Turnstile/billing on web. General-chat modes are reachable
+  from anywhere; Labs/CTF, Investigate, Scanner findings, and Reports
+  each now deep-link into their own context-specific mode too (hint/
+  guide_investigation/explain_finding/review_report-or-methodology) —
+  the same modes the Route Handler already supported server-side, just
+  unreachable from mobile's UI until now (see ADR 0059). The one
+  context still missing is `lesson`, since mobile has no learner-facing
+  lesson/path viewer at all, a separate and larger gap than a missing
+  Mentor link. A ninth screen, the
   Security Scanner, shares that same Bearer-auth path for its "New scan"
   screen — paste a single snippet, or pick one or more real files
   (`file_picker`, the only new dependency outside `http`/`supabase_flutter`)
@@ -393,17 +401,19 @@ and
   `importPathBundle()` orchestration the web Server Action calls (see
   ADR 0058) — every `/admin/*` pillar this app has ever named as a gap is
   now closed.
-  `flutter analyze` clean, 188 tests passing, `flutter build web`
+  `flutter analyze` clean, 194 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0058.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0059.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
-etc.), Mentor context-specific deep links on mobile (lab/
-lesson/finding/investigation/report), canceling/managing an existing
+etc.), a mobile learner-facing lesson/path viewer (the admin authoring
+screens exist, ADR 0055, but no reader -- this is also why the mobile
+Mentor's `lesson` context deep link, ADR 0059, has nowhere to attach
+yet), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients
 by design -- that's the payment provider's own dashboard/portal), a real
 Android/iOS build, and a real live/networked lab runtime beyond the

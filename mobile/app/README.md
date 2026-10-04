@@ -26,19 +26,25 @@ for what's built so far and what's honestly still ahead.
     its own (e.g. Hacker's Keyboard) sends real hardware key events
     either way, which a `Focus` widget around the input field
     intercepts the same way `terminal.tsx`'s own `onKeyDown` does. See
-    ADR 0050.
+    ADR 0050. A "Mentor" button next to the lab's title deep-links into
+    AI Mentor's own `hint` mode for this lab, same as `/labs/[labId]`'s
+    own Mentor link (see ADR 0059).
   - **Skills**: `/skills`'s equivalent -- your own skill list with its
     real, per-user state, read live from `skills` and `user_skill_states`
     under the exact same RLS this repo's SQL tests already prove.
   - **CTF**: `/ctf`'s equivalent -- published challenges
     (`ctf_challenges_public`, flag hash never exposed) and a real flag
     submit calling the same `submit_ctf_flag()` RPC the web app calls --
-    correct/incorrect is never decided client-side.
+    correct/incorrect is never decided client-side. A "Mentor" button on
+    a challenge's own detail screen deep-links into `hint` mode for that
+    challenge (ADR 0059).
   - **More**:
     - **Investigate**: `/investigate`'s equivalent -- real case evidence
       artifacts, a mixed multiple-choice/exact-text answer form graded
       server-side via `submit_investigation_answers()`, and a private,
-      debounced-autosave notes scratchpad (not even staff can read it).
+      debounced-autosave notes scratchpad (not even staff can read it). A
+      "Mentor" button deep-links into `guide_investigation` mode for this
+      investigation (ADR 0059).
     - **Exams**: `/exams`'s equivalent -- a real countdown timer, single/
       multi-choice answers, grading exclusively through
       `submit_quiz_attempt()`. Same honestly-documented limitation as the
@@ -50,14 +56,28 @@ for what's built so far and what's honestly still ahead.
       methodology write-up and ask the AI Mentor to critique it; separate
       from a capstone's reviewed submission and never affects your Skill
       Graph. Plain RLS-scoped Postgrest list/create/edit/delete, no Route
-      Handler needed. "Ask Mentor to review" opens the general-mode
-      Mentor screen rather than a true deep link into its
-      `review_report`/`review_methodology` modes -- narrows, rather than
-      closes, AI Mentor's own "no context deep links yet" gap below. See
-      ADR 0052.
-    - **AI Mentor**: `/mentor`'s equivalent, general-chat modes only
-      (Explain/Hint/Teach/Analyze a failure -- no lab/lesson/finding/
-      report deep links from mobile yet). Streams the exact same NDJSON
+      Handler needed. "Ask Mentor to review" deep-links into
+      `review_report`/`review_methodology` (whichever matches this
+      report's own kind, mirroring `[reportId]/page.tsx`'s own
+      `mentorMode` computation) -- closes the gap ADR 0052 named. See
+      ADR 0059.
+    - **AI Mentor**: `/mentor`'s equivalent. General-chat modes (Explain/
+      Hint/Teach/Analyze a failure) are reachable from anywhere via
+      "More," and five pillars now deep-link into their own
+      context-specific mode -- Labs/CTF (`hint`), Investigate
+      (`guide_investigation`), the Scanner's finding cards
+      (`explain_finding`), and Reports (`review_report`/
+      `review_methodology`) -- the same modes `/api/mentor/chat` and
+      `buildMentorContext()` already supported server-side; the gap was
+      only ever that this screen hard-coded `contextType: 'general'`
+      and offered a four-mode picker. The one deep link still missing is
+      `lesson`, because mobile has no learner-facing lesson/path viewer
+      at all yet (only the admin authoring screens from ADR 0055) -- a
+      real, separate, larger gap than a missing Mentor link, named here
+      rather than conflated with it. Reopening any context's chat always
+      starts a fresh conversation rather than resuming the last one for
+      that context, same pre-existing limitation general-mode Mentor
+      already had. See ADR 0059. Streams the exact same NDJSON
       `/api/mentor/chat` Route Handler `apps/web` calls, authenticated with
       an `Authorization: Bearer <session.accessToken>` header instead of a
       browser cookie (see ADR 0033); text streams into the reply bubble
@@ -77,9 +97,11 @@ for what's built so far and what's honestly still ahead.
       its evidence/explanation/impact/remediation, a status chip, real
       manual status-transition buttons
       (`transition_scan_finding_status()` RPC, plain RLS-scoped, no Route
-      Handler -- see ADR 0044), and a real "Enrich with AI" button calling
+      Handler -- see ADR 0044), a real "Enrich with AI" button calling
       the now Bearer-authed `/api/scanner/findings/{id}/enrich` (see
-      ADR 0045). No named gaps remain on this screen.
+      ADR 0045), and an "Ask Mentor" button deep-linking into
+      `explain_finding` mode for that finding (ADR 0059). No named gaps
+      remain on this screen.
     - **Billing**: `/settings/billing`'s equivalent -- your real plan,
       subscription status, and every entitlement, straight from
       `subscriptions`/`plans`/`plan_entitlements` under the same RLS as

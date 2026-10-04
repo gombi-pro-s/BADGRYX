@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../mentor/mentor_screen.dart';
+import '../mentor/modes.dart';
 import 'report.dart';
 
 /// Mirrors reports/page.tsx + [reportId]/page.tsx + actions.ts: a real
@@ -10,13 +11,10 @@ import 'report.dart';
 /// never affecting the Skill Graph. Plain RLS-scoped Postgrest
 /// list/create/edit/delete, no Route Handler needed.
 ///
-/// "Ask Mentor to review" opens the existing general-mode Mentor screen
-/// rather than deep-linking into `review_report`/`review_methodology`
-/// (`/mentor?contextType=report&contextId=...&mode=...` on web) -- mobile
-/// Mentor is still general-modes-only (ADR 0034's named gap), and this
-/// screen doesn't extend that; a user can still ask for an Explain/Hint/
-/// Teach/Analyze-a-failure style review, just not the report-specific
-/// lens yet. See ADR 0052.
+/// "Ask Mentor to review" deep-links into `review_report`/
+/// `review_methodology` (whichever matches this report's own `kind`,
+/// mirroring `[reportId]/page.tsx`'s own `mentorMode` computation),
+/// closing the gap ADR 0052 named -- see ADR 0059.
 Future<List<Report>> fetchReports(SupabaseClient client, String userId) async {
   final rows = await client
       .from('reports')
@@ -244,7 +242,14 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
                     icon: const Icon(Icons.smart_toy_outlined),
                     tooltip: 'Ask Mentor to review',
                     onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const MentorScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => MentorScreen(
+                          contextType: 'report',
+                          contextId: widget.reportId,
+                          initialMode: _kind == 'methodology' ? MentorMode.reviewMethodology : MentorMode.reviewReport,
+                          focusTitle: _titleController.text,
+                        ),
+                      ),
                     ),
                   ),
                   IconButton(icon: const Icon(Icons.delete_outline), tooltip: 'Delete', onPressed: _confirmDelete),

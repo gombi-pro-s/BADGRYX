@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../mentor/mentor_screen.dart';
+import '../mentor/modes.dart';
 import 'investigation.dart';
 import 'investigation_answers.dart';
 import 'notes_pad.dart';
@@ -74,7 +77,25 @@ class _InvestigationDetailScreenState extends State<InvestigationDetailScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(investigation.title, style: Theme.of(context).textTheme.headlineSmall),
+              Row(
+                children: [
+                  Expanded(child: Text(investigation.title, style: Theme.of(context).textTheme.headlineSmall)),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => MentorScreen(
+                          contextType: 'investigation',
+                          contextId: investigation.id,
+                          initialMode: MentorMode.guideInvestigation,
+                          focusTitle: investigation.title,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.psychology_outlined, size: 18),
+                    label: const Text('Mentor'),
+                  ),
+                ],
+              ),
               const SizedBox(height: 4),
               Text(
                 '${investigation.category} · ${investigation.difficulty} · '
