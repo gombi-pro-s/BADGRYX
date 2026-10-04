@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 180 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 185 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1194,8 +1194,26 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       RLS-scoped Postgrest CRUD on `learning_paths`/`modules`/`lessons`/
       `lesson_skills`, no Route Handler. Path import/export is a separate
       gap, not attempted here. See ADR 0055.
-- [ ] Everything else on mobile: every other `/admin/*` flow (labs, path
-      import/export) has no mobile screen at all; nor do Mentor's
+- [x] Admin Labs screen on mobile: create/edit (title/slug/category/
+      difficulty/minutes/points/description, publish toggle, inline
+      skill tagger for `lab_skills`), a hints manager (level 1-5, point
+      cost, add/remove against `lab_hints`), and a flags manager (label,
+      variant seed, a plaintext field hashed to lowercase hex SHA-256
+      on-device with the same `hashCtfFlag()` ADR 0053 built, add/remove
+      against `lab_flags`). Plain RLS-scoped Postgrest CRUD throughout,
+      no Route Handler. The terminal environment's spec JSON editor is
+      deliberately not ported: its web Server Action validates that JSON
+      against `lib/terminal/spec.ts`'s `environmentSpecSchema` before
+      saving ("a spec that saves is one that will actually work"), and
+      `lab_environments_spec_is_object` only checks the DB column is a
+      JSON object, nothing about its shape -- a plain Postgrest write
+      from mobile could save a spec that silently breaks a learner's
+      terminal, discovered only when they open it. That needs a Route
+      Handler reusing the same validation; named here as the real,
+      specific gap it is rather than risked. See ADR 0056.
+- [ ] Everything else on mobile: the admin Labs screen's terminal
+      environment spec editor and path import/export are the only two
+      remaining `/admin/*` gaps; nor do Mentor's
       context-specific deep links (lab/lesson/finding/investigation/
       report -- mobile Mentor is still general-modes-only,
       ADR 0034). This phase is a real vertical slice, not the whole web
