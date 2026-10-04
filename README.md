@@ -365,11 +365,16 @@ and
   submit (byte-identical to `apps/web`'s own server-side `hashFlag()`),
   publish toggles, an inline skill tagger on challenges, and a read-only
   challenge list on each event, all plain RLS-scoped Postgrest CRUD on
-  `is_staff()`-gated tables (see ADR 0053); every other `/admin/*` flow
-  (learning paths, labs, quizzes, path import/export) still has no mobile
-  screen. `flutter analyze` clean, 166 tests passing, `flutter build web`
-  succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0053.
+  `is_staff()`-gated tables (see ADR 0053); and Quizzes — create (no edit
+  form for a quiz's own fields, matching the web admin UI), a publish
+  toggle, an inline skill tagger, and a questions manager (single-choice
+  questions only, a growable choice list, the same "at least two choices,
+  at least one correct" validation as `questions-manager.tsx`, see ADR
+  0054); every other `/admin/*` flow (learning paths, labs, path
+  import/export) still has no mobile screen. `flutter analyze` clean, 174
+  tests passing, `flutter build web` succeeding both with and without
+  `API_BASE_URL` set, wired into CI. See
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0054.
 
 ## What's not built yet
 
@@ -377,7 +382,7 @@ See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
 etc.), every mobile `/admin/*` flow beyond Platform Announcements, Users,
-and CTF Challenges/Events (learning paths, labs, quizzes, path
+CTF Challenges/Events, and Quizzes (learning paths, labs, path
 import/export), Mentor context-specific deep links on mobile (lab/
 lesson/finding/investigation/report), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients

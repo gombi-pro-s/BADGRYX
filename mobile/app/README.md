@@ -136,8 +136,16 @@ for what's built so far and what's honestly still ahead.
       read-only list of the event's own challenges), both plain
       RLS-scoped Postgrest CRUD on `is_staff()`-gated tables, no Route
       Handler needed, no delete action either (same as the web admin UI
-      for both). See ADR 0053. Every other `/admin/*` flow (learning
-      paths, labs, quizzes, path import/export) has no mobile screen yet
+      for both). See ADR 0053. Also Quizzes -- create (no edit form for a
+      quiz's own fields, matching the web admin UI, which doesn't have one
+      either), a publish toggle, an inline skill tagger, and a questions
+      manager (existing questions with their choices and a Remove button,
+      plus an add-question form that only ever creates `single_choice`
+      questions with a growable choice list -- the same restriction
+      `questions-manager.tsx` has -- validated the same way it is: at
+      least two non-empty choices, at least one marked correct). See
+      ADR 0054. Every other `/admin/*` flow
+      (learning paths, labs, path import/export) has no mobile screen yet
       -- a real, deliberately broad gap, not silently missing.
 - This is still a first vertical slice, not the whole web app. Future
   admin pillars belong behind "Admin" too, the same way every other
