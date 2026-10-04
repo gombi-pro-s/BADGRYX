@@ -382,19 +382,27 @@ and
   same `environmentSpecSchema` TypeScript validation the web admin action
   runs also covers mobile-authored specs, rather than risking a
   mobile-side plain write silently shipping a broken terminal (see
-  ADR 0056/0057) — this closes every mobile `/admin/*` gap except path
-  import/export.
+  ADR 0056/0057) — and, closing the last named `/admin/*` gap, path
+  import/export: Export GETs a new Bearer-authed
+  `/api/admin/paths/{pathId}/export` (moved there from
+  `/admin/paths/{pathId}/export`, which the web app's own proxy would
+  otherwise redirect an unauthenticated mobile caller away from before
+  its Bearer check ever ran) and shows the bundle JSON in a
+  copy-to-clipboard dialog; Import POSTs to a new
+  `/api/admin/paths/import`, a JSON adapter around the exact same
+  `importPathBundle()` orchestration the web Server Action calls (see
+  ADR 0058) — every `/admin/*` pillar this app has ever named as a gap is
+  now closed.
   `flutter analyze` clean, 188 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0057.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0058.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
-etc.), path import/export (the only remaining mobile `/admin/*` gap),
-Mentor context-specific deep links on mobile (lab/
+etc.), Mentor context-specific deep links on mobile (lab/
 lesson/finding/investigation/report), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients
 by design -- that's the payment provider's own dashboard/portal), a real

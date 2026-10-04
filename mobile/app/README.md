@@ -167,8 +167,19 @@ for what's built so far and what's honestly still ahead.
       against `lib/terminal/spec.ts`'s `environmentSpecSchema` (the same
       schema `lib/terminal/execute.ts` parses it with) before upserting,
       so the two clients can never save a spec with different rules. See
-      ADR 0057. The only remaining `/admin/*` gap is path import/export --
-      real, deliberately named, not silently missing.
+      ADR 0057. And, closing the last named `/admin/*` gap, path
+      import/export: an "Export" button on a path's detail screen GETs a
+      new Bearer-authed `/api/admin/paths/{pathId}/export` (moved there
+      from `/admin/paths/{pathId}/export` -- that prefix is one of the
+      web app's proxy-level protected routes, which would otherwise
+      redirect an unauthenticated mobile caller to an HTML login page
+      before its own Bearer check ever ran) and shows the bundle JSON in
+      a copy-to-clipboard dialog; an "Import a path" button opens a
+      paste-JSON screen that POSTs to a new `/api/admin/paths/import`, a
+      JSON adapter around the exact same `importPathBundle()` orchestration
+      the web Server Action calls (never a second Dart implementation of
+      that multi-step insert-with-rollback logic). See ADR 0058. Every
+      `/admin/*` pillar this app has ever named as a gap is now closed.
 - This is still a first vertical slice, not the whole web app. Future
   admin pillars belong behind "Admin" too, the same way every other
   pillar here lives behind "More" rather than as a new flat tab.
@@ -198,9 +209,11 @@ AI Mentor (`/api/mentor/chat`, see ADR 0033/0034), the Security Scanner's
 scan-submission screen (`/api/scanner/scan`, see ADR 0035/0036), the
 interactive lab terminal (`/api/labs/{id}/terminal`, see ADR 0039/0040),
 the Billing screen's "Upgrade with..." checkout buttons
-(`/api/billing/checkout`, see ADR 0037/0047), and the admin Labs screen's
+(`/api/billing/checkout`, see ADR 0037/0047), the admin Labs screen's
 "Save environment" button (`/api/admin/labs/{labId}/environments`, see
-ADR 0057). Every other screen works exactly the same with or without it.
+ADR 0057), and the admin Learning Paths screen's Export/Import buttons
+(`/api/admin/paths/{pathId}/export` and `/api/admin/paths/import`, see
+ADR 0058). Every other screen works exactly the same with or without it.
 Omit it and each of those shows a plain "not configured on this build"
 message (or, for the Labs environment editor specifically, keeps
 view/delete working and only disables the save form) instead of its real

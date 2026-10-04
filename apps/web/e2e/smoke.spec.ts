@@ -265,4 +265,24 @@ test.describe("mobile API auth", () => {
     const body = await response.json();
     expect(body).toEqual({ error: "Unauthorized" });
   });
+
+  test("an unauthenticated call to the admin path export route gets a 401 JSON body, not a login redirect", async ({
+    request,
+  }) => {
+    const response = await request.get("/api/admin/paths/00000000-0000-0000-0000-000000000000/export");
+    expect(response.status()).toBe(401);
+    expect(response.headers()["content-type"]).toContain("application/json");
+    const body = await response.json();
+    expect(body).toEqual({ error: "Unauthorized" });
+  });
+
+  test("an unauthenticated call to the admin path import route gets a 401 JSON body, not a login redirect", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/admin/paths/import", { data: { bundle: "{}" } });
+    expect(response.status()).toBe(401);
+    expect(response.headers()["content-type"]).toContain("application/json");
+    const body = await response.json();
+    expect(body).toEqual({ error: "Unauthorized" });
+  });
 });

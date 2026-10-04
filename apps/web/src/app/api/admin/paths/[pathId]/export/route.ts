@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiUser } from "@/lib/auth/api";
 import { PATH_BUNDLE_FORMAT, type PathBundle } from "@/lib/content-io/path-bundle";
 import type { HintPolicy, QuestionType } from "@/types/database";
 
@@ -44,24 +42,47 @@ interface ExportedLesson {
 /**
  * Exports a learning path (path -> modules -> lessons -> quiz -> questions
  * -> choices, skill tags by slug) as a bundle importable by
- * /admin/paths/import. Labs and CTF challenges are intentionally excluded:
+ * /admin/paths/import (or, from mobile, POST /api/admin/paths/import --
+ * see ADR 0058). Labs and CTF challenges are intentionally excluded:
  * they have no real FK linking them to a path (only an informal shared-
  * skill-tag convention), and lab/CTF flags are stored only as a hash, so
  * "export" would either invent a path-membership convention this schema
  * doesn't have, or silently omit the one field (the flag) that makes the
  * exported content actually usable.
+ *
+ * Lives under `/api/admin/...` rather than its original
+ * `/admin/paths/[pathId]/export` -- moved here specifically because
+ * `/admin` is one of `lib/supabase/middleware.ts`'s `PROTECTED_PREFIXES`:
+ * that proxy redirects an unauthenticated *browser* request to `/login`
+ * before any Route Handler under it ever runs, using only the cookie
+ * session, with no knowledge of a Bearer header. A mobile caller with no
+ * cookie would always get redirected to an HTML login page instead of
+ * this route's own `requireApiUser()` ever getting a chance to return
+ * its 401 JSON. `/api/*` isn't in that prefix list, so this route (like
+ * every other mobile-facing Route Handler in this app) is reachable
+ * by Bearer token alone. The web admin UI's own "Export" link was
+ * updated to this new URL; a logged-in admin's browser still works via
+ * the same cookie session either way.
+ *
+ * Uses `requireApiUser()` rather than `requireAdmin()` so the mobile app
+ * can call this directly with a Bearer token, same as every other
+ * mobile-facing Route Handler in this app (see ADR 0033) -- RLS
+ * (`learning_paths_select_published_or_staff` etc.) is still the real
+ * boundary: a non-staff caller's read simply comes back empty for
+ * unpublished content, exactly as a direct Postgrest read would.
  */
-export async function GET(_request: Request, { params }: { params: Promise<{ pathId: string }> }) {
-  await requireAdmin();
+export async function GET(request: Request, { params }: { params: Promise<{ pathId: string }> }) {
+  const auth = await requireApiUser(request);
+  if ("unauthorized" in auth) return auth.unauthorized;
+  const { supabase } = auth;
   const { pathId } = await params;
-  const supabase = await createClient();
 
   const { data: path } = await supabase
     .from("learning_paths")
     .select("slug, title, description, cover_image_url, published")
     .eq("id", pathId)
     .single();
-  if (!path) notFound();
+  if (!path) return NextResponse.json({ error: "Learning path not found." }, { status: 404 });
 
   const { data: modules } = await supabase
     .from("modules")

@@ -12,11 +12,11 @@ import 'admin_users_screen.dart';
 /// when the More screen's isStaffRole() gate passed, so this app never
 /// needs to check staff standing a second time just to show this list.
 /// Platform Announcements, Users, CTF Challenges/Events, Quizzes,
-/// Learning Paths (paths/modules/lessons), and Labs (including the
-/// terminal environment spec editor, ADR 0057) are the admin CMS flows
-/// ported to mobile so far; the only remaining `/admin/*` gap is path
-/// import/export -- a real, named gap, not silently missing. See
-/// ADR 0049/0051/0053/0054/0055/0056/0057.
+/// Learning Paths (paths/modules/lessons, including import/export, ADR
+/// 0058), and Labs (including the terminal environment spec editor, ADR
+/// 0057) are the admin CMS flows ported to mobile so far -- every
+/// `/admin/*` pillar this app named as a gap is now closed. See
+/// ADR 0049/0051/0053/0054/0055/0056/0057/0058.
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
 
@@ -83,7 +83,7 @@ class AdminScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.terminal_outlined),
             title: const Text('Labs'),
-            subtitle: const Text('Create labs, manage hints and flags'),
+            subtitle: const Text('Create labs, manage hints, flags, and terminal environments'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const AdminLabsScreen()),

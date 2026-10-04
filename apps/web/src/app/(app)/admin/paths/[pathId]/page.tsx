@@ -26,7 +26,7 @@ export default async function AdminPathDetailPage({
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-foreground">{path.title}</h2>
         <div className="flex items-center gap-4">
-          <a href={`/admin/paths/${path.id}/export`} className="text-sm text-foreground-muted hover:underline">
+          <a href={`/api/admin/paths/${path.id}/export`} className="text-sm text-foreground-muted hover:underline">
             Export
           </a>
           <PublishToggle

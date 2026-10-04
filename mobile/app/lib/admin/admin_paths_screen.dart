@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/env.dart';
 import 'admin_path.dart';
 
 /// Mirrors `admin/paths/page.tsx` + `[pathId]/page.tsx` +
@@ -11,9 +16,21 @@ import 'admin_path.dart';
 /// `20260921000009_content_model_rls.sql`), no Route Handler needed, same
 /// shape as every other admin CMS screen on mobile. `order_index` is left
 /// at its DB default (0) on every insert here, same as the web admin UI,
-/// which has no reordering control either. Path import/export (the JSON
-/// bundle flow at `/admin/paths/import` and `/admin/paths/[pathId]/export`)
-/// is a separate, still-unbuilt gap -- not attempted here. See ADR 0055.
+/// which has no reordering control either.
+///
+/// Path import/export (ADR 0058) is Bearer-authed, unlike everything else
+/// on this screen: export (`GET /api/admin/paths/{pathId}/export`, moved
+/// there from its original `/admin/paths/{pathId}/export` specifically
+/// because `/admin` is one of the web app's proxy-level protected
+/// prefixes, which would otherwise redirect an unauthenticated mobile
+/// caller to an HTML login page before its own Bearer check ever ran) and
+/// import (`POST /api/admin/paths/import`, a JSON adapter around the same
+/// `importPathBundle()` the web Server Action calls, since a Server
+/// Action itself isn't callable by a non-Next HTTP client). Shown only
+/// when `AppEnv.isApiConfigured`. Export shows the bundle JSON in a
+/// copy-to-clipboard dialog rather than saving a file -- no new
+/// file-storage dependency, same reasoning as the invite-link dialog
+/// elsewhere in this app.
 Future<List<AdminLearningPath>> fetchAdminPaths(SupabaseClient client) async {
   final rows = await client
       .from('learning_paths')
@@ -56,10 +73,18 @@ class _AdminPathsScreenState extends State<AdminPathsScreen> {
     if (changed == true) await _refresh();
   }
 
+  Future<void> _openImport() async {
+    final imported = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => const AdminImportPathScreen()));
+    if (imported == true) await _refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Learning Paths')),
+      appBar: AppBar(
+        title: const Text('Learning Paths'),
+        actions: [TextButton(onPressed: _openImport, child: const Text('Import a path'))],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openCreate,
         tooltip: 'New path',
@@ -213,6 +238,7 @@ class _AdminPathDetailScreenState extends State<AdminPathDetailScreen> {
   bool _published = false;
   bool _saving = false;
   bool _creatingModule = false;
+  bool _exporting = false;
   String? _error;
   String? _moduleError;
   List<AdminModuleSummary> _modules = const [];
@@ -365,6 +391,58 @@ class _AdminPathDetailScreenState extends State<AdminPathDetailScreen> {
     }
   }
 
+  /// GETs `/api/admin/paths/{pathId}/export` with the session's Bearer
+  /// token and shows the returned bundle JSON in a copy-to-clipboard
+  /// dialog, same pattern as the Organizations screen's invite link --
+  /// no file-storage dependency, see the class doc comment.
+  Future<void> _exportPath() async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) {
+      setState(() => _error = 'Your session has expired. Please log in again.');
+      return;
+    }
+    setState(() {
+      _exporting = true;
+      _error = null;
+    });
+    try {
+      final response = await http.get(
+        Uri.parse('${AppEnv.apiBaseUrl}/api/admin/paths/${widget.pathId}/export'),
+        headers: {'Authorization': 'Bearer ${session.accessToken}'},
+      );
+      if (response.statusCode != 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        throw Exception(body['error'] as String? ?? 'Export failed (${response.statusCode}).');
+      }
+      setState(() => _exporting = false);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Exported bundle'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Text(response.body, style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Clipboard.setData(ClipboardData(text: response.body)),
+              child: const Text('Copy to clipboard'),
+            ),
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+          ],
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _error = e.toString().replaceFirst('Exception: ', '');
+        _exporting = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -374,7 +452,17 @@ class _AdminPathDetailScreenState extends State<AdminPathDetailScreen> {
         Navigator.of(context).pop(_changed);
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Path details')),
+        appBar: AppBar(
+          title: const Text('Path details'),
+          actions: AppEnv.isApiConfigured
+              ? [
+                  TextButton(
+                    onPressed: _exporting ? null : _exportPath,
+                    child: Text(_exporting ? 'Exporting...' : 'Export', style: const TextStyle(color: Colors.white)),
+                  ),
+                ]
+              : null,
+        ),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : ListView(
@@ -977,6 +1065,125 @@ class _AdminLessonDetailScreenState extends State<AdminLessonDetailScreen> {
                 ],
               ),
       ),
+    );
+  }
+}
+
+/// Mirrors `admin/paths/import/page.tsx` + `import-form.tsx`: paste the
+/// bundle JSON and import it as a brand-new path. Never merges into or
+/// overwrites an existing one; if any step fails server-side, nothing is
+/// left behind (the whole import is rolled back there -- see
+/// `importPathBundle()`).
+class AdminImportPathScreen extends StatefulWidget {
+  const AdminImportPathScreen({super.key});
+
+  @override
+  State<AdminImportPathScreen> createState() => _AdminImportPathScreenState();
+}
+
+class _AdminImportPathScreenState extends State<AdminImportPathScreen> {
+  final _bundleController = TextEditingController();
+  bool _importing = false;
+  String? _error;
+  String? _importedSlug;
+  List<String> _warnings = const [];
+
+  Future<void> _import() async {
+    final bundle = _bundleController.text.trim();
+    if (bundle.isEmpty) {
+      setState(() => _error = 'Paste or choose a bundle JSON file first.');
+      return;
+    }
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) {
+      setState(() => _error = 'Your session has expired. Please log in again.');
+      return;
+    }
+    setState(() {
+      _importing = true;
+      _error = null;
+    });
+    try {
+      final response = await http.post(
+        Uri.parse('${AppEnv.apiBaseUrl}/api/admin/paths/import'),
+        headers: {'Authorization': 'Bearer ${session.accessToken}', 'Content-Type': 'application/json'},
+        body: jsonEncode({'bundle': bundle}),
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode != 200) {
+        throw Exception(body['error'] as String? ?? 'Import failed (${response.statusCode}).');
+      }
+      setState(() {
+        _importing = false;
+        _importedSlug = body['importedSlug'] as String;
+        _warnings = (body['warnings'] as List).cast<String>();
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString().replaceFirst('Exception: ', '');
+        _importing = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_importedSlug != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Import a learning path')),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Imported "$_importedSlug" successfully.', style: Theme.of(context).textTheme.titleMedium),
+              if (_warnings.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                ..._warnings.map((w) => Text('• $w')),
+              ],
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Back to paths'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text('Import a learning path')),
+      body: !AppEnv.isApiConfigured
+          ? const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Not configured on this build (needs API_BASE_URL).'),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'Paste a bundle exported from another path (the "Export" button on a path\'s detail '
+                  'screen). This always creates a new path -- it never merges into or overwrites an '
+                  'existing one. If any step fails, nothing is left behind: the whole import is rolled back.',
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _bundleController,
+                  maxLines: 14,
+                  decoration: const InputDecoration(labelText: 'Bundle JSON', alignLabelWithHint: true),
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ],
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: _importing ? null : _import,
+                  child: Text(_importing ? 'Importing...' : 'Import path'),
+                ),
+              ],
+            ),
     );
   }
 }

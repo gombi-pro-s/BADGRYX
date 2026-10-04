@@ -1219,13 +1219,34 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       two clients can never save a spec under different rules; RLS is
       still the real authorization boundary underneath it, same as a
       direct write would get. 34 e2e tests now (was 33). See ADR 0057.
-- [ ] Everything else on mobile: path import/export is the only
-      remaining `/admin/*` gap; nor do Mentor's
-      context-specific deep links (lab/lesson/finding/investigation/
-      report -- mobile Mentor is still general-modes-only,
-      ADR 0034). This phase is a real vertical slice, not the whole web
-      app's feature set, and is named as such rather than implied
-      complete.
+- [x] Path import/export on mobile, closing the last named `/admin/*`
+      gap: an "Export" button on a path's detail screen GETs a new
+      Bearer-authed `/api/admin/paths/{pathId}/export` (moved there from
+      its original `/admin/paths/{pathId}/export` after the new e2e test
+      for it caught a real bug -- `/admin` is one of the web app's
+      proxy-level protected prefixes, which redirects an unauthenticated
+      *browser* request to `/login` using only the cookie session, before
+      any Route Handler under it runs, with no knowledge of a Bearer
+      header; a mobile caller would always have been redirected to an
+      HTML login page instead of ever reaching this route's own
+      `requireApiUser()` 401) and shows the bundle JSON in a
+      copy-to-clipboard dialog, same pattern as the Organizations
+      screen's invite link. An "Import a path" button opens a paste-JSON
+      screen that POSTs to a new `/api/admin/paths/import`, a JSON
+      adapter around `importPathBundle()` -- the exact multi-step
+      insert-with-rollback orchestration extracted out of
+      `importPathBundleAction` into
+      `lib/content-io/import-path-bundle.ts` so the web Server Action and
+      this new Route Handler share one implementation, never two. 36 e2e
+      tests now (was 34); `tsc --noEmit`, ESLint, `npx vitest run` (316
+      tests, unchanged), and `npm run build` all pass. See ADR 0058.
+- [ ] Everything else on mobile: every `/admin/*` pillar this app has
+      ever named as a gap is now closed; the only mobile gap left
+      anywhere is Mentor's context-specific deep links (lab/lesson/
+      finding/investigation/report -- mobile Mentor is still
+      general-modes-only, ADR 0034). This phase is a real vertical slice,
+      not the whole web app's feature set, and is named as such rather
+      than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned
