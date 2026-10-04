@@ -25,12 +25,15 @@ class _ChatMessage {
 /// directly by the caller (it already loaded that lab/investigation/
 /// finding/report to render its own detail screen) rather than this
 /// screen re-fetching it the way `/mentor/page.tsx`'s `resolveFocusTitle()`
-/// does -- one fewer round trip, same displayed text. Opening this screen
-/// always starts a fresh conversation thread even when the web app would
-/// resume an existing one for the same context (`/mentor/page.tsx`'s own
-/// `existingConversation` lookup) -- a real, narrower gap than "no deep
-/// links at all", named here rather than fixed, since general-mode
-/// Mentor already had this same limitation. See ADR 0059.
+/// does -- one fewer round trip, same displayed text. On open, mirrors
+/// `/mentor/page.tsx`'s own `existingConversation` lookup: the most
+/// recently updated `mentor_conversations` row for this user+context,
+/// and that conversation's own `mentor_messages`, loaded directly via
+/// Postgrest under the same `*_own` RLS as web (no Route Handler --
+/// `/api/mentor/chat`'s own POST never upserts by context, it only
+/// reuses a conversation when the caller already passes its id back,
+/// same as web's `MentorChat` component does once mounted). See ADR
+/// 0059/0061.
 ///
 /// Streams `/api/mentor/chat` as NDJSON via `requireApiUser()`'s Bearer-
 /// token path (ADR 0033): the same route apps/web's own browser client
@@ -62,7 +65,63 @@ class _MentorScreenState extends State<MentorScreen> {
   String? _conversationId;
   ({int used, int limit})? _quota;
   bool _isSending = false;
+  bool _loadingHistory = true;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingConversation();
+  }
+
+  /// Mirrors `/mentor/page.tsx`'s own `existingConversation` lookup
+  /// exactly: most-recently-updated `mentor_conversations` row for this
+  /// user+context, then that conversation's `mentor_messages` in
+  /// creation order. A failure here (e.g. no session yet) just leaves
+  /// the screen starting fresh, same as web silently getting `null`
+  /// back from a `.maybeSingle()` that found nothing.
+  Future<void> _loadExistingConversation() async {
+    try {
+      final client = Supabase.instance.client;
+      final userId = client.auth.currentUser!.id;
+      var query = client
+          .from('mentor_conversations')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('context_type', widget.contextType);
+      final existing = await (widget.contextId != null
+              ? query.eq('context_id', widget.contextId as Object)
+              : query.isFilter('context_id', null))
+          .order('updated_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      if (existing == null) return;
+
+      final conversationId = existing['id'] as String;
+      final messageRows = await client
+          .from('mentor_messages')
+          .select('role, content')
+          .eq('conversation_id', conversationId)
+          .order('created_at');
+      if (!mounted) return;
+      setState(() {
+        _conversationId = conversationId;
+        _messages.addAll(
+          (messageRows as List).map(
+            (row) => _ChatMessage(
+              role: (row as Map<String, dynamic>)['role'] as String,
+              content: row['content'] as String,
+            ),
+          ),
+        );
+      });
+      _scrollToBottom();
+    } catch (_) {
+      // Starting fresh is always a safe fallback.
+    } finally {
+      if (mounted) setState(() => _loadingHistory = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -227,7 +286,9 @@ class _MentorScreenState extends State<MentorScreen> {
               child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ),
           Expanded(
-            child: _messages.isEmpty
+            child: _loadingHistory
+                ? const Center(child: CircularProgressIndicator())
+                : _messages.isEmpty
                 ? const Center(
                     child: Padding(
                       padding: EdgeInsets.all(24),

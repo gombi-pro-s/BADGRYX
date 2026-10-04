@@ -86,10 +86,15 @@ for what's built so far and what's honestly still ahead.
       supported server-side; the gap was only ever that this screen
       hard-coded `contextType: 'general'` and offered a four-mode
       picker. No named Mentor context remains missing a deep link.
-      Reopening any context's chat always starts a fresh conversation
-      rather than resuming the last one for that context, same
-      pre-existing limitation general-mode Mentor already had. See ADR
-      0059/0060. Streams the exact same NDJSON
+      Opening any context's chat also resumes its own most-recently-
+      updated conversation (a direct port of `/mentor/page.tsx`'s own
+      `existingConversation` lookup against `mentor_conversations`/
+      `mentor_messages`, plain RLS-scoped Postgrest reads, no Route
+      Handler) rather than always starting fresh -- `/api/mentor/chat`
+      itself never upserts by context, it only reuses a conversation the
+      caller already has the id for, exactly as web's own client does
+      once that initial lookup has run. No named Mentor gap remains on
+      mobile. See ADR 0059/0060/0061. Streams the exact same NDJSON
       `/api/mentor/chat` Route Handler `apps/web` calls, authenticated with
       an `Authorization: Bearer <session.accessToken>` header instead of a
       browser cookie (see ADR 0033); text streams into the reply bubble

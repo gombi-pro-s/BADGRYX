@@ -1286,11 +1286,27 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `flutter test`s (200 total, was 194); `flutter analyze` clean;
       `flutter build web` succeeds both with and without `API_BASE_URL`.
       See ADR 0060.
-- [ ] Everything else on mobile: Mentor's conversation-resume-on-reopen
-      (a pre-existing limitation on every context, not introduced here)
-      is the only named mobile Mentor gap left. This phase is a real
-      vertical slice, not the whole web app's feature set, and is named
-      as such rather than implied complete.
+- [x] Mentor conversation resume on mobile: checked whether "resume" is
+      real backend behavior before accepting it as a permanent web/
+      mobile divergence -- it isn't. `/api/mentor/chat` never upserts a
+      conversation by context (a POST with no `conversationId` always
+      inserts a new `mentor_conversations` row; there's no unique
+      constraint on `(user_id, context_type, context_id)` either),
+      so "resume" is purely `/mentor/page.tsx`'s own page-load lookup
+      (most-recently-updated conversation for this user+context, then
+      its `mentor_messages` in order) handed to the chat component as
+      props. Ported that exact lookup into `MentorScreen.initState()`
+      against the same `*_own`-RLS-scoped `mentor_conversations`/
+      `mentor_messages` tables, no Route Handler. No new `flutter
+      test`s (a stateful-widget lifecycle method against live
+      Postgrest, same untestable-without-mocking shape `_send()`
+      already had) -- 200 total, unchanged; `flutter analyze` clean;
+      `flutter build web` succeeds both configs. No named Mentor gap
+      remains anywhere on mobile. See ADR 0061.
+- [ ] Everything else on mobile: no named mobile-vs-web gap remains
+      anywhere in this app's feature set. This phase is a real vertical
+      slice, not the whole web app's feature set, and is named as such
+      rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

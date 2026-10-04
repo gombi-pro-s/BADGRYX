@@ -324,8 +324,10 @@ and
   context-specific mode too (hint/guide_investigation/explain_finding/
   review_report-or-methodology/teach) — the same modes the Route Handler
   already supported server-side, just unreachable from mobile's UI until
-  now (see ADR 0059/0060). No named Mentor context remains missing a
-  deep link. A ninth screen, the
+  now (see ADR 0059/0060). Opening any context also resumes its own
+  most-recently-updated conversation, mirroring `/mentor/page.tsx`'s own
+  lookup, instead of always starting fresh (see ADR 0061). No named
+  Mentor gap remains on mobile. A ninth screen, the
   Security Scanner, shares that same Bearer-auth path for its "New scan"
   screen — paste a single snippet, or pick one or more real files
   (`file_picker`, the only new dependency outside `http`/`supabase_flutter`)
@@ -406,7 +408,7 @@ and
   mobile Mentor coverage too.
   `flutter analyze` clean, 200 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0060.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0061.
 
 ## What's not built yet
 
