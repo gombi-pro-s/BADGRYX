@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 151 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 156 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1148,9 +1148,22 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `isStaffRole()` gate. Optimistic toggle with revert on failure,
       same as `role-toggle.tsx`; can never revoke your own admin role.
       See ADR 0051.
+- [x] Reports screen on mobile: list/create/edit/delete for the
+      pentest-report/methodology-write-up pillar -- plain RLS-scoped
+      Postgrest CRUD on `reports`, no Route Handler needed. Corrects an
+      earlier mislabel in this file ("report moderation") -- Reports has
+      no reviewer role at all; it's reviewed by the AI Mentor only and
+      had simply never been ported, unlike the Scanner/Billing/
+      Organizations gaps closed earlier. "Ask Mentor to review" opens
+      the general-mode Mentor screen rather than a true deep link into
+      `review_report`/`review_methodology` -- narrows ADR 0034's Mentor
+      deep-link gap to specifically include `report`, not a new gap.
+      See ADR 0052.
 - [ ] Everything else on mobile: every other `/admin/*` flow (learning
       paths, labs, quizzes, CTF challenges, CTF events, path
-      import/export, report moderation) has no mobile screen at all.
+      import/export) has no mobile screen at all; nor do Mentor's
+      context-specific deep links (lab/lesson/finding/investigation/
+      report -- mobile Mentor is still general-modes-only, ADR 0034).
       This phase is a real vertical slice, not the whole web app's
       feature set, and is named as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through

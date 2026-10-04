@@ -297,8 +297,12 @@ and
   `submit_ctf_flag()` RPC the web app calls, and — behind More —
   Investigate with real graded mixed-question-type answers and a private
   autosaved notes scratchpad, Exams with a real countdown timer and
-  grading through `submit_quiz_attempt()`, and Capstones with a plain
-  report submission and reviewer-notes history) against the same
+  grading through `submit_quiz_attempt()`, Capstones with a plain report
+  submission and reviewer-notes history, and Reports — a real pentest-
+  report/methodology-write-up pillar, reviewed by the AI Mentor only and
+  separate from a capstone's reviewed submission (plain RLS-scoped
+  Postgrest CRUD, "Ask Mentor to review" opens the general-mode Mentor
+  screen rather than a true deep link yet, see ADR 0052)) against the same
   Supabase project, via `supabase_flutter`. Terminal-backed labs get a
   real interactive terminal (`Open terminal` once a lab instance exists)
   -- the same server-side interpreter and multi-host ssh/exit pivoting
@@ -357,9 +361,9 @@ and
   `grant_platform_role()`/`revoke_platform_role()`, each already audit-
   logging and re-checking `is_admin()` itself server-side (see
   ADR 0051); every other `/admin/*` flow still has no mobile screen.
-  `flutter analyze` clean, 151 tests passing, `flutter build web`
+  `flutter analyze` clean, 156 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0051.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0052.
 
 ## What's not built yet
 
@@ -368,7 +372,8 @@ tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
 etc.), every mobile `/admin/*` flow beyond Platform Announcements and Users
 (learning paths, labs, quizzes, CTF challenges, CTF events, path
-import/export, report moderation), canceling/managing an existing
+import/export), Mentor context-specific deep links on mobile (lab/
+lesson/finding/investigation/report), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients
 by design -- that's the payment provider's own dashboard/portal), a real
 Android/iOS build, and a real live/networked lab runtime beyond the

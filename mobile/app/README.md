@@ -46,9 +46,18 @@ for what's built so far and what's honestly still ahead.
     - **Capstones**: `/capstones`'s equivalent -- skill/lab tag chips,
       submission history with reviewer notes, and a plain report
       submission (a direct `capstone_submissions` insert, no RPC).
+    - **Reports**: `/reports`'s equivalent -- write a pentest report or
+      methodology write-up and ask the AI Mentor to critique it; separate
+      from a capstone's reviewed submission and never affects your Skill
+      Graph. Plain RLS-scoped Postgrest list/create/edit/delete, no Route
+      Handler needed. "Ask Mentor to review" opens the general-mode
+      Mentor screen rather than a true deep link into its
+      `review_report`/`review_methodology` modes -- narrows, rather than
+      closes, AI Mentor's own "no context deep links yet" gap below. See
+      ADR 0052.
     - **AI Mentor**: `/mentor`'s equivalent, general-chat modes only
-      (Explain/Hint/Teach/Analyze a failure -- no lab/lesson/finding deep
-      links from mobile yet). Streams the exact same NDJSON
+      (Explain/Hint/Teach/Analyze a failure -- no lab/lesson/finding/
+      report deep links from mobile yet). Streams the exact same NDJSON
       `/api/mentor/chat` Route Handler `apps/web` calls, authenticated with
       an `Authorization: Bearer <session.accessToken>` header instead of a
       browser cookie (see ADR 0033); text streams into the reply bubble
@@ -119,8 +128,8 @@ for what's built so far and what's honestly still ahead.
       re-checking `is_admin()` itself server-side; you can never revoke
       your own admin role). See ADR 0051. Every other `/admin/*` flow
       (learning paths, labs, quizzes, CTF challenges, CTF events, path
-      import/export, report moderation) has no mobile screen yet -- a
-      real, deliberately broad gap, not silently missing.
+      import/export) has no mobile screen yet -- a real, deliberately
+      broad gap, not silently missing.
 - This is still a first vertical slice, not the whole web app. Future
   admin pillars belong behind "Admin" too, the same way every other
   pillar here lives behind "More" rather than as a new flat tab.
