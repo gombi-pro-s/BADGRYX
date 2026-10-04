@@ -370,11 +370,15 @@ and
   toggle, an inline skill tagger, and a questions manager (single-choice
   questions only, a growable choice list, the same "at least two choices,
   at least one correct" validation as `questions-manager.tsx`, see ADR
-  0054); every other `/admin/*` flow (learning paths, labs, path
-  import/export) still has no mobile screen. `flutter analyze` clean, 174
-  tests passing, `flutter build web` succeeding both with and without
-  `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0054.
+  0054); and Learning Paths — create/edit a path, create modules under it
+  (no module edit form, matching the web), create/edit lessons under a
+  module with an inline skill tagger for `lesson_skills`, and
+  `order_index` left at its schema default everywhere, same as the web,
+  which has no reordering control either (see ADR 0055); every other
+  `/admin/*` flow (labs, path import/export) still has no mobile screen.
+  `flutter analyze` clean, 180 tests passing, `flutter build web`
+  succeeding both with and without `API_BASE_URL` set, wired into CI. See
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0055.
 
 ## What's not built yet
 
@@ -382,7 +386,7 @@ See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
 etc.), every mobile `/admin/*` flow beyond Platform Announcements, Users,
-CTF Challenges/Events, and Quizzes (learning paths, labs, path
+CTF Challenges/Events, Quizzes, and Learning Paths (labs, path
 import/export), Mentor context-specific deep links on mobile (lab/
 lesson/finding/investigation/report), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients

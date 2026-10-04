@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 174 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 180 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1182,10 +1182,22 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       correct. Plain RLS-scoped Postgrest CRUD on `quizzes`/
       `quiz_questions`/`quiz_choices`/`quiz_skills`, no Route Handler.
       See ADR 0054.
-- [ ] Everything else on mobile: every other `/admin/*` flow (learning
-      paths, labs, path import/export) has no mobile screen at all; nor
-      do Mentor's context-specific deep links (lab/lesson/finding/
-      investigation/report -- mobile Mentor is still general-modes-only,
+- [x] Admin Learning Paths screen on mobile: create/edit a path (title/
+      slug/description, publish toggle), create modules under it (no
+      module edit form -- the web admin UI doesn't have one either, only
+      a publish toggle and its own lessons), and create/edit lessons
+      under a module (title/slug/summary/content/estimated minutes,
+      publish toggle, and an inline skill tagger for `lesson_skills`
+      with the same "feeds the Skill Graph" note the web page shows).
+      `order_index` stays at its schema default (0) on every insert, same
+      as the web, which has no reordering control anywhere either. Plain
+      RLS-scoped Postgrest CRUD on `learning_paths`/`modules`/`lessons`/
+      `lesson_skills`, no Route Handler. Path import/export is a separate
+      gap, not attempted here. See ADR 0055.
+- [ ] Everything else on mobile: every other `/admin/*` flow (labs, path
+      import/export) has no mobile screen at all; nor do Mentor's
+      context-specific deep links (lab/lesson/finding/investigation/
+      report -- mobile Mentor is still general-modes-only,
       ADR 0034). This phase is a real vertical slice, not the whole web
       app's feature set, and is named as such rather than implied
       complete.

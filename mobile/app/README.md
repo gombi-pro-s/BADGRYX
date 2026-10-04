@@ -115,7 +115,7 @@ for what's built so far and what's honestly still ahead.
       Handler needed anywhere in Organizations.
     - **Admin**: shown only when `user_roles` says the signed-in user is
       staff (admin or moderator, mirroring `is_staff()` -- see ADR 0049),
-      the first staff-only mobile screen. Today it holds two real flows:
+      the first staff-only mobile screen. Today it holds five real flows:
       Platform Announcements (the same list/create/edit/publish-toggle/
       delete/Spanish-translation screen as Organizations' own
       announcements, scoped to `organization_id IS NULL` instead of one
@@ -144,9 +144,17 @@ for what's built so far and what's honestly still ahead.
       questions with a growable choice list -- the same restriction
       `questions-manager.tsx` has -- validated the same way it is: at
       least two non-empty choices, at least one marked correct). See
-      ADR 0054. Every other `/admin/*` flow
-      (learning paths, labs, path import/export) has no mobile screen yet
-      -- a real, deliberately broad gap, not silently missing.
+      ADR 0054. Also Learning Paths -- create/edit a path (title/slug/
+      description, publish toggle), create modules under it (no module
+      edit form, matching the web admin UI, which doesn't have one either
+      -- only a publish toggle and its own lessons), and create/edit
+      lessons under a module (title/slug/summary/content/estimated
+      minutes, publish toggle, and an inline skill tagger for
+      `lesson_skills`). `order_index` stays at its schema default on
+      every insert here too, same as the web, which has no reordering
+      control anywhere. See ADR 0055. Every other `/admin/*` flow (labs,
+      path import/export) has no mobile screen yet -- a real,
+      deliberately broad gap, not silently missing.
 - This is still a first vertical slice, not the whole web app. Future
   admin pillars belong behind "Admin" too, the same way every other
   pillar here lives behind "More" rather than as a new flat tab.

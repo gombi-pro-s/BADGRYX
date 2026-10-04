@@ -3,17 +3,18 @@ import 'package:flutter/material.dart';
 import 'admin_announcements_screen.dart';
 import 'admin_ctf_challenges_screen.dart';
 import 'admin_ctf_events_screen.dart';
+import 'admin_paths_screen.dart';
 import 'admin_quizzes_screen.dart';
 import 'admin_users_screen.dart';
 
 /// The mobile landing page for `/admin`'s own sidebar -- reachable only
 /// when the More screen's isStaffRole() gate passed, so this app never
 /// needs to check staff standing a second time just to show this list.
-/// Platform Announcements, Users, CTF Challenges/Events, and Quizzes are
-/// the admin CMS flows ported to mobile so far; every other `/admin/*`
-/// section (learning paths, labs, path import/export) has no mobile
-/// screen yet -- a real, deliberately broad remaining gap, not silently
-/// missing. See ADR 0049/0051/0053/0054.
+/// Platform Announcements, Users, CTF Challenges/Events, Quizzes, and
+/// Learning Paths (paths/modules/lessons) are the admin CMS flows ported
+/// to mobile so far; every other `/admin/*` section (labs, path
+/// import/export) has no mobile screen yet -- a real, deliberately broad
+/// remaining gap, not silently missing. See ADR 0049/0051/0053/0054/0055.
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
 
@@ -66,6 +67,15 @@ class AdminScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const AdminQuizzesScreen()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.menu_book_outlined),
+            title: const Text('Learning Paths'),
+            subtitle: const Text('Author paths, modules, and lessons'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AdminPathsScreen()),
             ),
           ),
         ],
