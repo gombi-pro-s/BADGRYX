@@ -157,16 +157,17 @@ for what's built so far and what's honestly still ahead.
       toggle, inline skill tagger), a hints manager (level 1-5, point
       cost, add/remove), and a flags manager (label, variant seed, a
       plaintext field hashed to lowercase hex SHA-256 on-device with the
-      same `hashCtfFlag()` ADR 0053 built, add/remove). The one piece of
-      this admin page *not* ported is the terminal environment's spec
-      JSON editor -- its web Server Action validates that JSON against
-      `lib/terminal/spec.ts`'s `environmentSpecSchema` before saving, and
-      the database itself only checks `spec` is a JSON object, nothing
-      about its shape, so a plain Postgrest write from mobile could save
-      a spec that silently breaks a learner's terminal; that needs a
-      Route Handler reusing the same validation, real work named here as
-      a gap rather than risked. See ADR 0056. The only two `/admin/*`
-      gaps left are that environment editor and path import/export --
+      same `hashCtfFlag()` ADR 0053 built, add/remove), and, closing the
+      one gap ADR 0056 named, a terminal environment editor: existing
+      environments list/load-into-editor/remove via plain Postgrest
+      (`lab_environments_staff_only` is staff-read too, not just
+      staff-write), and a variant-seed-plus-JSON-spec form whose "Save
+      environment" button POSTs to a new Bearer-authed
+      `/api/admin/labs/{labId}/environments` -- it re-validates the spec
+      against `lib/terminal/spec.ts`'s `environmentSpecSchema` (the same
+      schema `lib/terminal/execute.ts` parses it with) before upserting,
+      so the two clients can never save a spec with different rules. See
+      ADR 0057. The only remaining `/admin/*` gap is path import/export --
       real, deliberately named, not silently missing.
 - This is still a first vertical slice, not the whole web app. Future
   admin pillars belong behind "Admin" too, the same way every other
@@ -191,16 +192,20 @@ or silently using placeholder data -- this app has no functionality at
 all without a real backend.
 
 `API_BASE_URL` (the origin `apps/web` is deployed at) is different:
-**it's optional**. It's only needed for the three screens that call that
+**it's optional**. It's only needed for the screens that call that
 deployment's Route Handlers directly rather than talking to Supabase --
 AI Mentor (`/api/mentor/chat`, see ADR 0033/0034), the Security Scanner's
-scan-submission screen (`/api/scanner/scan`, see ADR 0035/0036), and the
-interactive lab terminal (`/api/labs/{id}/terminal`, see ADR 0039/0040).
-Every other screen works exactly the same with or without it. Omit it and
-those three screens show a plain "not configured on this build" message
-instead of their real UI -- this is the same "optional integration
-degrades gracefully, core functionality never blocked" pattern already
-used for Turnstile/billing
+scan-submission screen (`/api/scanner/scan`, see ADR 0035/0036), the
+interactive lab terminal (`/api/labs/{id}/terminal`, see ADR 0039/0040),
+the Billing screen's "Upgrade with..." checkout buttons
+(`/api/billing/checkout`, see ADR 0037/0047), and the admin Labs screen's
+"Save environment" button (`/api/admin/labs/{labId}/environments`, see
+ADR 0057). Every other screen works exactly the same with or without it.
+Omit it and each of those shows a plain "not configured on this build"
+message (or, for the Labs environment editor specifically, keeps
+view/delete working and only disables the save form) instead of its real
+UI -- this is the same "optional integration degrades gracefully, core
+functionality never blocked" pattern already used for Turnstile/billing
 providers on the web app, not a crash or fake data.
 
 ## Verifying this app in a sandbox with no Android/iOS toolchain

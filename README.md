@@ -375,24 +375,25 @@ and
   module with an inline skill tagger for `lesson_skills`, and
   `order_index` left at its schema default everywhere, same as the web,
   which has no reordering control either (see ADR 0055); and Labs —
-  create/edit, publish toggle, a skill tagger, a hints manager, and a
-  flags manager (flags hashed on-device the same way CTF Challenges'
-  are) — minus the terminal environment's spec JSON editor, which needs a
-  Route Handler to reuse the web's own `environmentSpecSchema` validation
-  rather than risk a mobile-side plain write silently shipping a broken
-  terminal (see ADR 0056); the only two `/admin/*` gaps left are that
-  environment editor and path import/export.
-  `flutter analyze` clean, 185 tests passing, `flutter build web`
+  create/edit, publish toggle, a skill tagger, a hints manager, a flags
+  manager (flags hashed on-device the same way CTF Challenges' are), and
+  a terminal environment editor whose "Save environment" button calls a
+  new Bearer-authed `/api/admin/labs/{labId}/environments` so the exact
+  same `environmentSpecSchema` TypeScript validation the web admin action
+  runs also covers mobile-authored specs, rather than risking a
+  mobile-side plain write silently shipping a broken terminal (see
+  ADR 0056/0057) — this closes every mobile `/admin/*` gap except path
+  import/export.
+  `flutter analyze` clean, 188 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0056.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0057.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
-etc.), the mobile admin Labs screen's terminal environment spec editor and
-path import/export (the only two remaining mobile `/admin/*` gaps),
+etc.), path import/export (the only remaining mobile `/admin/*` gap),
 Mentor context-specific deep links on mobile (lab/
 lesson/finding/investigation/report), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients

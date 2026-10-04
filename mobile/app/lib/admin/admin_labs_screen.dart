@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/env.dart';
 import 'admin_ctf.dart' show ctfCategories, ctfDifficulties, hashCtfFlag;
 import 'admin_lab.dart';
 
@@ -14,17 +18,18 @@ import 'admin_lab.dart';
 /// hashed with the same `hashCtfFlag()` (lowercase hex SHA-256) for the
 /// same reason ADR 0053 hashes CTF flags on-device.
 ///
-/// `environment-manager.tsx` (the terminal environment's spec JSON editor)
-/// is deliberately not ported here: the web admin action validates that
-/// JSON against `lib/terminal/spec.ts`'s `environmentSpecSchema` before
-/// ever saving it -- "a spec that saves is one that will actually work" --
-/// and the database itself only checks that `spec` is a JSON object, not
-/// the full schema (`lab_environments_spec_is_object`, see
-/// `20260922000005_lab_terminal.sql`). A plain Postgrest upsert from
-/// mobile would skip that validation entirely, letting an admin save a
-/// spec that silently breaks a learner's terminal. That needs a Route
-/// Handler reusing the same TS validation, which is real, separate work
-/// -- named here rather than attempted unsafely. See ADR 0056.
+/// `environment-manager.tsx` (the terminal environment's spec JSON
+/// editor) ported in ADR 0057: listing/loading/removing an environment
+/// stays plain Postgrest (`lab_environments_staff_only` is `FOR ALL`, so
+/// read needs no more authorization than write does), but *saving* goes
+/// through the new Bearer-authed `/api/admin/labs/{labId}/environments`
+/// Route Handler, which validates the submitted JSON against
+/// `lib/terminal/spec.ts`'s `environmentSpecSchema` -- the same schema
+/// `lib/terminal/execute.ts` parses it with -- before the upsert, since
+/// the database itself only checks `spec` is a JSON object
+/// (`lab_environments_spec_is_object`), nothing about its shape. Shown
+/// only when `AppEnv.isApiConfigured`, same as every other screen that
+/// calls a Route Handler directly. See ADR 0056/0057.
 Future<List<AdminLab>> fetchAdminLabs(SupabaseClient client) async {
   final rows = await client
       .from('labs')
@@ -286,6 +291,12 @@ class _AdminLabDetailScreenState extends State<AdminLabDetailScreen> {
   bool _addingFlag = false;
   String? _flagError;
 
+  final _envVariantSeedController = TextEditingController(text: '0');
+  final _envSpecController = TextEditingController(text: placeholderEnvironmentSpecJson);
+  List<AdminLabEnvironment> _environments = const [];
+  bool _savingEnvironment = false;
+  String? _environmentError;
+
   @override
   void initState() {
     super.initState();
@@ -305,6 +316,11 @@ class _AdminLabDetailScreenState extends State<AdminLabDetailScreen> {
       final labSkillRows = await client.from('lab_skills').select('skill_id').eq('lab_id', widget.labId);
       final hintRows = await client.from('lab_hints').select('id, level, content, point_cost').eq('lab_id', widget.labId);
       final flagRows = await client.from('lab_flags').select('id, label, variant_seed').eq('lab_id', widget.labId);
+      final environmentRows = await client
+          .from('lab_environments')
+          .select('id, variant_seed, spec')
+          .eq('lab_id', widget.labId)
+          .order('variant_seed');
       _titleController.text = lab.title;
       _slugController.text = lab.slug;
       _descriptionController.text = lab.description ?? '';
@@ -320,6 +336,9 @@ class _AdminLabDetailScreenState extends State<AdminLabDetailScreen> {
         _selectedSkillIds = (labSkillRows as List).map((r) => r['skill_id'] as String).toSet();
         _hints = hints;
         _flags = (flagRows as List).map((row) => AdminLabFlag.fromRow(row as Map<String, dynamic>)).toList();
+        _environments = (environmentRows as List)
+            .map((row) => AdminLabEnvironment.fromRow(row as Map<String, dynamic>))
+            .toList();
         _loading = false;
       });
     } catch (e) {
@@ -537,6 +556,77 @@ class _AdminLabDetailScreenState extends State<AdminLabDetailScreen> {
       await _reloadFlags(client);
     } catch (e) {
       setState(() => _error = 'Could not remove this flag.');
+    }
+  }
+
+  Future<void> _reloadEnvironments(SupabaseClient client) async {
+    final rows = await client
+        .from('lab_environments')
+        .select('id, variant_seed, spec')
+        .eq('lab_id', widget.labId)
+        .order('variant_seed');
+    setState(() {
+      _environments = (rows as List).map((row) => AdminLabEnvironment.fromRow(row as Map<String, dynamic>)).toList();
+    });
+  }
+
+  void _loadEnvironmentIntoEditor(AdminLabEnvironment environment) {
+    setState(() => _envSpecController.text = prettyPrintJson(environment.spec));
+  }
+
+  /// POSTs to the new `/api/admin/labs/{labId}/environments` Route
+  /// Handler (ADR 0057) rather than a plain Postgrest upsert -- it's the
+  /// only write in this whole screen that needs server-side validation
+  /// beyond RLS (see the class doc comment for why).
+  Future<void> _saveEnvironment() async {
+    final variantSeed = int.tryParse(_envVariantSeedController.text.trim());
+    final specJson = _envSpecController.text.trim();
+    if (variantSeed == null || variantSeed < 0 || variantSeed > 9999) {
+      setState(() => _environmentError = 'Variant seed must be between 0 and 9999.');
+      return;
+    }
+    if (specJson.isEmpty) {
+      setState(() => _environmentError = 'Spec JSON is required.');
+      return;
+    }
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) {
+      setState(() => _environmentError = 'Your session has expired. Please log in again.');
+      return;
+    }
+    setState(() {
+      _savingEnvironment = true;
+      _environmentError = null;
+    });
+    try {
+      final response = await http.post(
+        Uri.parse('${AppEnv.apiBaseUrl}/api/admin/labs/${widget.labId}/environments'),
+        headers: {'Authorization': 'Bearer ${session.accessToken}', 'Content-Type': 'application/json'},
+        body: jsonEncode({'variant_seed': variantSeed, 'spec_json': specJson}),
+      );
+      if (response.statusCode != 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        throw Exception(body['error'] as String? ?? 'Save failed (${response.statusCode}).');
+      }
+      _changed = true;
+      await _reloadEnvironments(Supabase.instance.client);
+      setState(() => _savingEnvironment = false);
+    } catch (e) {
+      setState(() {
+        _environmentError = e.toString().replaceFirst('Exception: ', '');
+        _savingEnvironment = false;
+      });
+    }
+  }
+
+  Future<void> _removeEnvironment(String environmentId) async {
+    final client = Supabase.instance.client;
+    try {
+      await client.from('lab_environments').delete().eq('id', environmentId);
+      _changed = true;
+      await _reloadEnvironments(client);
+    } catch (e) {
+      setState(() => _error = 'Could not remove this environment.');
     }
   }
 
@@ -779,20 +869,95 @@ class _AdminLabDetailScreenState extends State<AdminLabDetailScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Terminal environment authoring (the spec JSON editor) isn\'t on mobile yet -- it needs '
-                      'server-side schema validation this app doesn\'t have a Route Handler for. Use '
-                      'apps/web\'s own admin page for this lab to add or change its terminal environment.',
+                  const SizedBox(height: 24),
+                  Text('Terminal environment', style: Theme.of(context).textTheme.titleSmall),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4, bottom: 8),
+                    child: Text(
+                      "The spec is never sent to a learner's browser directly -- only the output of a "
+                      'command they run against it. Saving here validates against the exact schema the '
+                      'terminal execution engine parses, so a spec that saves is one that will actually work.',
                       style: TextStyle(fontSize: 12),
                     ),
                   ),
+                  if (!AppEnv.isApiConfigured)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'Not configured on this build (needs API_BASE_URL) -- environments can still be '
+                        'viewed and removed below, just not saved from this app.',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  if (_environments.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'No terminal environment yet -- this lab has no interactive terminal until one is saved.',
+                      ),
+                    )
+                  else
+                    ..._environments.map(
+                      (env) => Card(
+                        child: ListTile(
+                          title: Text('Variant ${env.variantSeed}'),
+                          trailing: Wrap(
+                            spacing: 4,
+                            children: [
+                              TextButton(
+                                onPressed: () => _loadEnvironmentIntoEditor(env),
+                                child: const Text('Load into editor'),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => _removeEnvironment(env.id),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (AppEnv.isApiConfigured)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 120,
+                            child: TextField(
+                              controller: _envVariantSeedController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(labelText: 'Variant seed'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _envSpecController,
+                            maxLines: 14,
+                            decoration: const InputDecoration(labelText: 'Environment spec (JSON)', alignLabelWithHint: true),
+                            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                          ),
+                          if (_environmentError != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                _environmentError!,
+                                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                              ),
+                            ),
+                          const SizedBox(height: 8),
+                          FilledButton(
+                            onPressed: _savingEnvironment ? null : _saveEnvironment,
+                            child: Text(_savingEnvironment ? 'Saving...' : 'Save environment'),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
       ),

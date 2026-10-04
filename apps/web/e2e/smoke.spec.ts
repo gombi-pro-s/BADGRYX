@@ -253,4 +253,16 @@ test.describe("mobile API auth", () => {
     const body = await response.json();
     expect(body).toEqual({ error: "Unauthorized" });
   });
+
+  test("an unauthenticated call to the admin lab environment save route gets a 401 JSON body, not a login redirect", async ({
+    request,
+  }) => {
+    const response = await request.post("/api/admin/labs/00000000-0000-0000-0000-000000000000/environments", {
+      data: { variant_seed: 0, spec_json: "{}" },
+    });
+    expect(response.status()).toBe(401);
+    expect(response.headers()["content-type"]).toContain("application/json");
+    const body = await response.json();
+    expect(body).toEqual({ error: "Unauthorized" });
+  });
 });

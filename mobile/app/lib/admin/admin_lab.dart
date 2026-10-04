@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 final RegExp _slugPattern = RegExp(r'^[a-z0-9-]{3,64}$');
 
 /// Mirrors `admin/labs/actions.ts`'s `labSchema` slug rule -- the same
@@ -71,3 +73,50 @@ class AdminLabFlag {
     return AdminLabFlag(id: row['id'] as String, label: row['label'] as String, variantSeed: row['variant_seed'] as int);
   }
 }
+
+/// Mirrors `environment-manager.tsx`'s own `Environment` shape -- `spec`
+/// is read directly here (the staff-only `lab_environments` RLS policy
+/// already covers list/read/delete, same as every table in this app; only
+/// the *save* needs the new `/api/admin/labs/{labId}/environments` Route
+/// Handler, for its server-side `environmentSpecSchema` validation, see
+/// ADR 0057).
+class AdminLabEnvironment {
+  AdminLabEnvironment({required this.id, required this.variantSeed, required this.spec});
+
+  final String id;
+  final int variantSeed;
+  final Map<String, dynamic> spec;
+
+  factory AdminLabEnvironment.fromRow(Map<String, dynamic> row) {
+    return AdminLabEnvironment(
+      id: row['id'] as String,
+      variantSeed: row['variant_seed'] as int,
+      spec: row['spec'] as Map<String, dynamic>,
+    );
+  }
+}
+
+/// Mirrors `environment-manager.tsx`'s `JSON.stringify(spec, null, 2)` --
+/// used both for the "Load into editor" button and for pretty-printing
+/// the placeholder spec below.
+String prettyPrintJson(Object? value) => const JsonEncoder.withIndent('  ').convert(value);
+
+/// The exact same `PLACEHOLDER_SPEC` `environment-manager.tsx` seeds its
+/// JSON editor with -- including the Cyber Range extension fields, left
+/// empty for a single-host lab.
+final String placeholderEnvironmentSpecJson = prettyPrintJson({
+  'hostname': 'webserver01',
+  'initial_cwd': '/home/user',
+  'initial_user': 'user',
+  'users': ['user', 'root'],
+  'sudo_rules': [
+    {'user': 'user', 'allowed': ['cat']},
+  ],
+  'filesystem': {
+    '/home/user': {'type': 'dir', 'owner': 'user', 'perms': 'rwxr-xr-x'},
+    '/home/user/notes.txt': {'type': 'file', 'owner': 'user', 'perms': 'rw-r--r--', 'content': '...'},
+    '/root/flag.txt': {'type': 'file', 'owner': 'root', 'perms': 'rw-------', 'content': 'ICOREPEN{...}'},
+  },
+  'reachable_hosts': [],
+  'hosts': {},
+});

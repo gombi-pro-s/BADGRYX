@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 185 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 188 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1042,7 +1042,11 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       terminal command route the mobile terminal screen calls. See
       ADR 0039. Also wired into a new `/api/billing/checkout` (the
       checkout-session route the mobile Billing screen's "Upgrade"
-      buttons call). See ADR 0047.
+      buttons call). See ADR 0047. Also wired into a new
+      `/api/admin/labs/[labId]/environments` (validates a submitted
+      terminal environment spec against `environmentSpecSchema` before
+      the admin Labs screen's "Save environment" button upserts it). See
+      ADR 0057.
 - [x] Interactive lab terminal on mobile: `Open terminal` on a started,
       terminal-backed lab instance pushes a real terminal screen that
       POSTs each command to `/api/labs/{id}/terminal` with a Bearer token
@@ -1201,19 +1205,22 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       variant seed, a plaintext field hashed to lowercase hex SHA-256
       on-device with the same `hashCtfFlag()` ADR 0053 built, add/remove
       against `lab_flags`). Plain RLS-scoped Postgrest CRUD throughout,
-      no Route Handler. The terminal environment's spec JSON editor is
-      deliberately not ported: its web Server Action validates that JSON
-      against `lib/terminal/spec.ts`'s `environmentSpecSchema` before
-      saving ("a spec that saves is one that will actually work"), and
-      `lab_environments_spec_is_object` only checks the DB column is a
-      JSON object, nothing about its shape -- a plain Postgrest write
-      from mobile could save a spec that silently breaks a learner's
-      terminal, discovered only when they open it. That needs a Route
-      Handler reusing the same validation; named here as the real,
-      specific gap it is rather than risked. See ADR 0056.
-- [ ] Everything else on mobile: the admin Labs screen's terminal
-      environment spec editor and path import/export are the only two
-      remaining `/admin/*` gaps; nor do Mentor's
+      no Route Handler for the lab's own fields/skills/hints/flags. See
+      ADR 0056.
+- [x] Terminal environment editor on mobile, closing ADR 0056's named
+      gap: existing environments list/load-into-editor/remove via plain
+      Postgrest (`lab_environments_staff_only` is staff-read too, not
+      just staff-write), and a variant-seed-plus-JSON-spec form whose
+      "Save environment" button calls the new
+      `/api/admin/labs/[labId]/environments` Route Handler instead of
+      writing directly -- it re-validates the spec against
+      `lib/terminal/spec.ts`'s `environmentSpecSchema` (the same schema
+      `lib/terminal/execute.ts` parses it with) before upserting, so the
+      two clients can never save a spec under different rules; RLS is
+      still the real authorization boundary underneath it, same as a
+      direct write would get. 34 e2e tests now (was 33). See ADR 0057.
+- [ ] Everything else on mobile: path import/export is the only
+      remaining `/admin/*` gap; nor do Mentor's
       context-specific deep links (lab/lesson/finding/investigation/
       report -- mobile Mentor is still general-modes-only,
       ADR 0034). This phase is a real vertical slice, not the whole web

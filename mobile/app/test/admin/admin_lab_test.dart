@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:icorepen/admin/admin_lab.dart';
 
@@ -45,6 +47,35 @@ void main() {
       final flag = AdminLabFlag.fromRow({'id': 'f1', 'label': 'flag', 'variant_seed': 0});
       expect(flag.label, 'flag');
       expect(flag.variantSeed, 0);
+    });
+  });
+
+  group('AdminLabEnvironment.fromRow', () {
+    test('parses a real lab_environments row shape', () {
+      final env = AdminLabEnvironment.fromRow({
+        'id': 'e1',
+        'variant_seed': 0,
+        'spec': {'hostname': 'webserver01'},
+      });
+      expect(env.variantSeed, 0);
+      expect(env.spec['hostname'], 'webserver01');
+    });
+  });
+
+  group('prettyPrintJson', () {
+    test('indents nested JSON with two spaces, matching JSON.stringify(v, null, 2)', () {
+      expect(prettyPrintJson({'a': 1}), '{\n  "a": 1\n}');
+    });
+  });
+
+  group('placeholderEnvironmentSpecJson', () {
+    test('is valid JSON containing the expected placeholder fields', () {
+      final decoded = jsonDecode(placeholderEnvironmentSpecJson) as Map<String, dynamic>;
+      expect(decoded['hostname'], 'webserver01');
+      expect(decoded['initial_user'], 'user');
+      expect(decoded['filesystem'], isA<Map<String, dynamic>>());
+      expect(decoded['hosts'], <String, dynamic>{});
+      expect(decoded['reachable_hosts'], <dynamic>[]);
     });
   });
 }
