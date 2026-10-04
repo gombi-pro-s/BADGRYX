@@ -45,6 +45,20 @@ for what's built so far and what's honestly still ahead.
       debounced-autosave notes scratchpad (not even staff can read it). A
       "Mentor" button deep-links into `guide_investigation` mode for this
       investigation (ADR 0059).
+    - **Learn**: `/learn`'s equivalent -- published paths grouped by
+      module, each lesson row showing "Read" once `lesson_progress`
+      records it or its estimated minutes otherwise, and a lesson viewer
+      with a "Mentor" button that finally gives the `lesson` context deep
+      link (ADR 0059) somewhere to attach. Lesson content renders as
+      plain text, not rendered Markdown -- no markdown-rendering package
+      exists anywhere in this app yet, and every other `*_markdown` field
+      (announcements, reports, the admin lesson editor) is shown the same
+      way, so this stays consistent rather than introducing the app's
+      first one. A linked, published quiz embeds right on the lesson
+      screen and grades through the real `submit_quiz_attempt()` RPC,
+      same single-choice-only-even-for-`multi_choice` limitation
+      `quiz-attempt.tsx` has on web. Plain RLS-scoped Postgrest/RPC, no
+      Route Handler. See ADR 0060.
     - **Exams**: `/exams`'s equivalent -- a real countdown timer, single/
       multi-choice answers, grading exclusively through
       `submit_quiz_attempt()`. Same honestly-documented limitation as the
@@ -63,21 +77,19 @@ for what's built so far and what's honestly still ahead.
       ADR 0059.
     - **AI Mentor**: `/mentor`'s equivalent. General-chat modes (Explain/
       Hint/Teach/Analyze a failure) are reachable from anywhere via
-      "More," and five pillars now deep-link into their own
+      "More," and six pillars now deep-link into their own
       context-specific mode -- Labs/CTF (`hint`), Investigate
       (`guide_investigation`), the Scanner's finding cards
-      (`explain_finding`), and Reports (`review_report`/
-      `review_methodology`) -- the same modes `/api/mentor/chat` and
-      `buildMentorContext()` already supported server-side; the gap was
-      only ever that this screen hard-coded `contextType: 'general'`
-      and offered a four-mode picker. The one deep link still missing is
-      `lesson`, because mobile has no learner-facing lesson/path viewer
-      at all yet (only the admin authoring screens from ADR 0055) -- a
-      real, separate, larger gap than a missing Mentor link, named here
-      rather than conflated with it. Reopening any context's chat always
-      starts a fresh conversation rather than resuming the last one for
-      that context, same pre-existing limitation general-mode Mentor
-      already had. See ADR 0059. Streams the exact same NDJSON
+      (`explain_finding`), Reports (`review_report`/
+      `review_methodology`), and Learn's lesson viewer (`teach`) -- the
+      same modes `/api/mentor/chat` and `buildMentorContext()` already
+      supported server-side; the gap was only ever that this screen
+      hard-coded `contextType: 'general'` and offered a four-mode
+      picker. No named Mentor context remains missing a deep link.
+      Reopening any context's chat always starts a fresh conversation
+      rather than resuming the last one for that context, same
+      pre-existing limitation general-mode Mentor already had. See ADR
+      0059/0060. Streams the exact same NDJSON
       `/api/mentor/chat` Route Handler `apps/web` calls, authenticated with
       an `Authorization: Bearer <session.accessToken>` header instead of a
       browser cookie (see ADR 0033); text streams into the reply bubble

@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 194 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 200 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1256,19 +1256,41 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       stale in-app banner on the Lab detail screen still claiming
       terminal command-history recall was "web-only" after ADR 0050
       corrected that everywhere else. Named, not silently carried
-      forward: the `lesson` context has no mobile entry point because
-      there's no mobile learner-facing lesson/path viewer to attach one
-      to (a separate, larger gap than a missing deep link -- the admin
-      authoring screens exist, ADR 0055, but no reader), and reopening
-      any context's chat always starts a fresh conversation rather than
+      forward: the `lesson` context had no mobile entry point yet
+      because there was no mobile learner-facing lesson/path viewer to
+      attach one to (closed next, see below), and reopening any
+      context's chat always starts a fresh conversation rather than
       resuming the last one for that context, the same pre-existing
       limitation general-mode Mentor already had. +6 `flutter test`s
       (194 total, was 188). See ADR 0059.
-- [ ] Everything else on mobile: a learner-facing lesson/path viewer and
-      Mentor's `lesson` context deep link (blocked on the former) are the
-      only mobile gaps left anywhere. This phase is a real vertical
-      slice, not the whole web app's feature set, and is named as such
-      rather than implied complete.
+- [x] Learner-facing Learning Paths viewer on mobile: a new "Learn" entry
+      in "More" lists published paths, then modules grouped with their
+      published lessons (a "Read" tag once `lesson_progress.completed_at`
+      is set for that lesson, else its estimated minutes), then a lesson
+      viewer that upserts `lesson_progress` on open (mirroring
+      `mark-read.tsx`'s own "once per mount" guard -- `lesson_progress_own`
+      RLS is the real enforcement either way), shows the lesson's
+      `content_markdown` as plain text (no markdown-rendering package
+      exists anywhere in this app yet -- every other `*_markdown` field,
+      including the learner-facing dashboard's own announcements, renders
+      the same way, so this stays consistent rather than introducing the
+      app's first one), and, when a published quiz is linked via
+      `quizzes.lesson_id`, embeds it right there, grading through the
+      real `submit_quiz_attempt()` RPC -- same single-choice-only-even-
+      for-`multi_choice` limitation and same no-`order_index`-sort of its
+      questions `quiz-attempt.tsx` has on web, not a mobile gap. A
+      "Mentor" button on the lesson viewer finally gives ADR 0059's
+      `lesson` context deep link somewhere to attach -- no named Mentor
+      context remains missing a deep link anywhere on mobile. Plain
+      RLS-scoped Postgrest/RPC throughout, no Route Handler. +6
+      `flutter test`s (200 total, was 194); `flutter analyze` clean;
+      `flutter build web` succeeds both with and without `API_BASE_URL`.
+      See ADR 0060.
+- [ ] Everything else on mobile: Mentor's conversation-resume-on-reopen
+      (a pre-existing limitation on every context, not introduced here)
+      is the only named mobile Mentor gap left. This phase is a real
+      vertical slice, not the whole web app's feature set, and is named
+      as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

@@ -7,6 +7,7 @@ import '../billing/billing_screen.dart';
 import '../capstones/capstones_list_screen.dart';
 import '../exams/exams_list_screen.dart';
 import '../investigations/investigations_list_screen.dart';
+import '../learn/learn_screen.dart';
 import '../mentor/mentor_screen.dart';
 import '../orgs/orgs_list_screen.dart';
 import '../reports/reports_screen.dart';
@@ -41,6 +42,7 @@ class MoreScreen extends StatefulWidget {
 class _MoreScreenState extends State<MoreScreen> {
   static final List<_MoreItem> _baseItems = [
     _MoreItem(Icons.search_outlined, 'Investigate', (_) => const InvestigationsListScreen()),
+    _MoreItem(Icons.menu_book_outlined, 'Learn', (_) => const LearnPathsListScreen()),
     _MoreItem(Icons.timer_outlined, 'Exams', (_) => const ExamsListScreen()),
     _MoreItem(Icons.school_outlined, 'Capstones', (_) => const CapstonesListScreen()),
     _MoreItem(Icons.description_outlined, 'Reports', (_) => const ReportsListScreen()),

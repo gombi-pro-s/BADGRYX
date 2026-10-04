@@ -319,14 +319,13 @@ and
   degrades to a plain "not configured" message if the app is built
   without the optional `API_BASE_URL` value, the same pattern already
   used for Turnstile/billing on web. General-chat modes are reachable
-  from anywhere; Labs/CTF, Investigate, Scanner findings, and Reports
-  each now deep-link into their own context-specific mode too (hint/
-  guide_investigation/explain_finding/review_report-or-methodology) —
-  the same modes the Route Handler already supported server-side, just
-  unreachable from mobile's UI until now (see ADR 0059). The one
-  context still missing is `lesson`, since mobile has no learner-facing
-  lesson/path viewer at all, a separate and larger gap than a missing
-  Mentor link. A ninth screen, the
+  from anywhere; Labs/CTF, Investigate, Scanner findings, Reports, and
+  now Learn's lesson viewer each deep-link into their own
+  context-specific mode too (hint/guide_investigation/explain_finding/
+  review_report-or-methodology/teach) — the same modes the Route Handler
+  already supported server-side, just unreachable from mobile's UI until
+  now (see ADR 0059/0060). No named Mentor context remains missing a
+  deep link. A ninth screen, the
   Security Scanner, shares that same Bearer-auth path for its "New scan"
   screen — paste a single snippet, or pick one or more real files
   (`file_picker`, the only new dependency outside `http`/`supabase_flutter`)
@@ -400,20 +399,21 @@ and
   `/api/admin/paths/import`, a JSON adapter around the exact same
   `importPathBundle()` orchestration the web Server Action calls (see
   ADR 0058) — every `/admin/*` pillar this app has ever named as a gap is
-  now closed.
-  `flutter analyze` clean, 194 tests passing, `flutter build web`
+  now closed. A learner-facing Learn screen (published paths/modules/
+  lessons, read tracking, an embedded quiz, and a "Mentor" button that
+  finally gives the `lesson` Mentor context deep link, ADR 0059,
+  somewhere to attach — see ADR 0060) closes the last named gap in the
+  mobile Mentor coverage too.
+  `flutter analyze` clean, 200 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0059.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0060.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
-etc.), a mobile learner-facing lesson/path viewer (the admin authoring
-screens exist, ADR 0055, but no reader -- this is also why the mobile
-Mentor's `lesson` context deep link, ADR 0059, has nowhere to attach
-yet), canceling/managing an existing
+etc.), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients
 by design -- that's the payment provider's own dashboard/portal), a real
 Android/iOS build, and a real live/networked lab runtime beyond the
