@@ -106,15 +106,21 @@ for what's built so far and what's honestly still ahead.
       Handler needed anywhere in Organizations.
     - **Admin**: shown only when `user_roles` says the signed-in user is
       staff (admin or moderator, mirroring `is_staff()` -- see ADR 0049),
-      the first staff-only mobile screen. Today it holds one real flow,
-      Platform Announcements: the same list/create/edit/publish-toggle/
+      the first staff-only mobile screen. Today it holds two real flows:
+      Platform Announcements (the same list/create/edit/publish-toggle/
       delete/Spanish-translation screen as Organizations' own
       announcements, scoped to `organization_id IS NULL` instead of one
       org, with the same `log_audit_event()` call on publish/unpublish
-      the web admin action itself makes. Every other `/admin/*` flow
-      (learning paths, labs, quizzes, CTF challenges, users, CTF events,
-      path import/export, report moderation) has no mobile screen yet --
-      a real, deliberately broad gap, not silently missing.
+      the web admin action itself makes), and Users -- search any user
+      by email/username/display name
+      (`admin_search_users()`) and grant/revoke their instructor/
+      moderator/admin roles (`grant_platform_role()`/
+      `revoke_platform_role()`, each already audit-logging and
+      re-checking `is_admin()` itself server-side; you can never revoke
+      your own admin role). See ADR 0051. Every other `/admin/*` flow
+      (learning paths, labs, quizzes, CTF challenges, CTF events, path
+      import/export, report moderation) has no mobile screen yet -- a
+      real, deliberately broad gap, not silently missing.
 - This is still a first vertical slice, not the whole web app. Future
   admin pillars belong behind "Admin" too, the same way every other
   pillar here lives behind "More" rather than as a new flat tab.

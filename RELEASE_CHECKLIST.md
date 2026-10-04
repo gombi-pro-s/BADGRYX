@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 141 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 151 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1139,8 +1139,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       the earlier "impossible on a touch keyboard" framing (ADR 0040,
       this file, both READMEs) as wrong -- real for the subset of users
       with such an input method. See ADR 0050.
+- [x] Admin Users (role management) screen on mobile: search any user
+      (`admin_search_users()`) and grant/revoke their instructor/
+      moderator/admin roles (`grant_platform_role()`/
+      `revoke_platform_role()`), each already audit-logging and
+      re-checking `is_admin()` itself server-side -- no new client-side
+      authorization logic needed beyond the Admin section's existing
+      `isStaffRole()` gate. Optimistic toggle with revert on failure,
+      same as `role-toggle.tsx`; can never revoke your own admin role.
+      See ADR 0051.
 - [ ] Everything else on mobile: every other `/admin/*` flow (learning
-      paths, labs, quizzes, CTF challenges, users, CTF events, path
+      paths, labs, quizzes, CTF challenges, CTF events, path
       import/export, report moderation) has no mobile screen at all.
       This phase is a real vertical slice, not the whole web app's
       feature set, and is named as such rather than implied complete.

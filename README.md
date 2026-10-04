@@ -349,22 +349,25 @@ and
   `announcement_translations` tables and RLS, see ADR 0043/0046). A
   twelfth screen, Admin, is the first staff-only mobile surface — shown
   only when `user_roles` says the signed-in user is admin/moderator
-  (mirroring `is_staff()`) — holding one real flow so far, Platform
+  (mirroring `is_staff()`) — holding two real flows so far: Platform
   Announcements, the `organization_id IS NULL` twin of Organizations'
   own announcement screen plus the same `log_audit_event()` call its web
-  action makes (see ADR 0049); every other `/admin/*` flow still has no
-  mobile screen.
-  `flutter analyze` clean, 141 tests passing, `flutter build web`
+  action makes (see ADR 0049), and Users — search any user and grant/
+  revoke their instructor/moderator/admin roles via
+  `grant_platform_role()`/`revoke_platform_role()`, each already audit-
+  logging and re-checking `is_admin()` itself server-side (see
+  ADR 0051); every other `/admin/*` flow still has no mobile screen.
+  `flutter analyze` clean, 151 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0050.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0051.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
-etc.), every mobile `/admin/*` flow beyond Platform Announcements
-(learning paths, labs, quizzes, CTF challenges, users, CTF events, path
+etc.), every mobile `/admin/*` flow beyond Platform Announcements and Users
+(learning paths, labs, quizzes, CTF challenges, CTF events, path
 import/export, report moderation), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients
 by design -- that's the payment provider's own dashboard/portal), a real
