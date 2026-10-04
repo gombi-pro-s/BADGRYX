@@ -302,9 +302,12 @@ and
   Supabase project, via `supabase_flutter`. Terminal-backed labs get a
   real interactive terminal (`Open terminal` once a lab instance exists)
   -- the same server-side interpreter and multi-host ssh/exit pivoting
-  `apps/web` uses, authenticated with a Bearer token; command-history
-  recall is web-only, a named gap rather than silently missing (see
-  ADR 0039/0040). An eighth
+  `apps/web` uses, authenticated with a Bearer token, plus real command-
+  history recall (up/down arrow) — the on-screen keyboard has no arrow
+  keys, but a hardware or arrow-key-capable software keyboard sends real
+  key events either way, which a `Focus` widget around the input field
+  intercepts the same way `terminal.tsx` does (see ADR 0039/0040/0050).
+  An eighth
   screen, AI Mentor (general-chat modes only), streams the real
   `/api/mentor/chat` NDJSON response token-by-token, authenticated with a
   Bearer token against a new `requireApiUser()` Route Handler helper that
@@ -351,21 +354,22 @@ and
   own announcement screen plus the same `log_audit_event()` call its web
   action makes (see ADR 0049); every other `/admin/*` flow still has no
   mobile screen.
-  `flutter analyze` clean, 130 tests passing, `flutter build web`
+  `flutter analyze` clean, 141 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0049.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0050.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
-etc.), the mobile app's admin/instructor screens, command-history recall on
-the mobile terminal, multi-file scan upload/AI enrichment/manual
-finding-status transitions on the mobile Scanner screen, checkout/upgrade/
-cancel on the mobile Billing screen, a real Android/iOS build, and a real
-live/networked lab runtime beyond the virtual terminal/Cyber Range
-simulator).
+etc.), every mobile `/admin/*` flow beyond Platform Announcements
+(learning paths, labs, quizzes, CTF challenges, users, CTF events, path
+import/export, report moderation), canceling/managing an existing
+subscription on the mobile Billing screen (out of scope for both clients
+by design -- that's the payment provider's own dashboard/portal), a real
+Android/iOS build, and a real live/networked lab runtime beyond the
+virtual terminal/Cyber Range simulator).
 
 ## Local development
 

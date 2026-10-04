@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 130 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 141 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1048,11 +1048,12 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       POSTs each command to `/api/labs/{id}/terminal` with a Bearer token
       -- the exact same server-side interpreter and multi-host ssh/exit
       pivoting `apps/web`'s own `terminal.tsx` calls, no logic
-      re-implemented client-side. Command-history recall (up/down arrow)
-      is web-only -- a touch keyboard has no arrow keys to bind it to --
-      named as a real gap, not silently missing. Closes the last "not on
-      mobile yet" gap this app named for labs since ADR 0026. See
-      ADR 0040.
+      re-implemented client-side. Closes the last "not on mobile yet" gap
+      this app named for labs since ADR 0026. See ADR 0040. (Command-
+      history recall, originally scoped out here as impossible on a
+      touch keyboard, was corrected and built for real in ADR 0050 below
+      -- a hardware/arrow-key-capable keyboard sends real key events the
+      on-screen keyboard just doesn't have.)
 - [x] Organizations on mobile: real memberships, a "Create organization"
       flow (a plain insert -- the existing `handle_new_organization`
       trigger makes the creator its `team_owner`), the member roster
@@ -1126,14 +1127,23 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       pure helpers, plus the `log_audit_event()` RPC call on publish/
       unpublish the web admin action itself makes (the org-scoped
       action and screen don't make that call). See ADR 0049.
+- [x] Command-history recall (up/down arrow) on the mobile terminal: a
+      `Focus` wrapping the input field intercepts real hardware
+      ArrowUp/ArrowDown key events (a Bluetooth/USB keyboard, or a
+      software keyboard app that draws its own, e.g. Hacker's Keyboard
+      -- the stock on-screen keyboard alone has none) before `TextField`'s
+      own default shortcuts can -- verified for real with
+      `tester.sendKeyEvent()`, not just inferred. Pure
+      `recallTerminalHistory()` ports `terminal.tsx`'s own logic exactly,
+      including its ArrowDown-while-idle-clears-input quirk. Retracts
+      the earlier "impossible on a touch keyboard" framing (ADR 0040,
+      this file, both READMEs) as wrong -- real for the subset of users
+      with such an input method. See ADR 0050.
 - [ ] Everything else on mobile: every other `/admin/*` flow (learning
       paths, labs, quizzes, CTF challenges, users, CTF events, path
-      import/export, report moderation) has no mobile screen at all;
-      nor does command-history recall on the terminal screen that does
-      exist (impossible on a touch keyboard with no arrow keys, named
-      rather than silently missing). This phase is a real vertical
-      slice, not the whole web app's feature set, and is named as such
-      rather than implied complete.
+      import/export, report moderation) has no mobile screen at all.
+      This phase is a real vertical slice, not the whole web app's
+      feature set, and is named as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

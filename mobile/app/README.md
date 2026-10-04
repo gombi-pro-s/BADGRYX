@@ -20,9 +20,13 @@ for what's built so far and what's honestly still ahead.
     labs, a real interactive terminal (`Open terminal` once a lab
     instance exists) -- the exact same server-side interpreter and
     multi-host ssh/exit pivoting `apps/web` uses, authenticated with a
-    Bearer token (see ADR 0039/0040). Command-history recall (up/down
-    arrow) is web-only -- a touch keyboard has no arrow keys to bind it
-    to -- named as a real, deliberate gap rather than silently missing.
+    Bearer token (see ADR 0039/0040). Real command-history recall
+    (up/down arrow) too: the stock on-screen keyboard has no arrow keys,
+    but a Bluetooth/USB keyboard or a software keyboard app that draws
+    its own (e.g. Hacker's Keyboard) sends real hardware key events
+    either way, which a `Focus` widget around the input field
+    intercepts the same way `terminal.tsx`'s own `onKeyDown` does. See
+    ADR 0050.
   - **Skills**: `/skills`'s equivalent -- your own skill list with its
     real, per-user state, read live from `skills` and `user_skill_states`
     under the exact same RLS this repo's SQL tests already prove.

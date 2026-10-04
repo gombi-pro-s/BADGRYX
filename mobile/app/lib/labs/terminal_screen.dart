@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -15,9 +16,12 @@ import 'terminal.dart';
 /// server-side -- this screen is a thin request/render client, exactly
 /// like terminal.tsx itself. See ADR 0040.
 ///
-/// Command-history recall (up/down arrow) is deliberately not built --
-/// a touch keyboard has no arrow keys to bind it to, so it wouldn't be
-/// the same feature terminal.tsx offers, not a missing port of it.
+/// Command-history recall (up/down arrow) is real: the on-screen software
+/// keyboard has no arrow keys, but a Bluetooth/USB keyboard or a
+/// soft-keyboard app that provides them (e.g. Hacker's Keyboard) sends
+/// real hardware key events either way, which a `Focus` widget around
+/// the input field intercepts the exact same way terminal.tsx's own
+/// `onKeyDown` does. See ADR 0050.
 class TerminalScreen extends StatefulWidget {
   const TerminalScreen({super.key, required this.labInstanceId});
 
@@ -37,6 +41,9 @@ class _TerminalScreenState extends State<TerminalScreen> {
   String? _cwd;
   bool _pending = false;
   String? _error;
+  int? _historyIndex;
+
+  List<String> get _commandHistory => _transcript.map((e) => e.command).toList();
 
   @override
   void initState() {
@@ -100,7 +107,10 @@ class _TerminalScreenState extends State<TerminalScreen> {
     if (command.isEmpty || _pending) return;
 
     if (command == 'clear') {
-      setState(() => _transcript.clear());
+      setState(() {
+        _transcript.clear();
+        _historyIndex = null;
+      });
       _inputController.clear();
       return;
     }
@@ -108,6 +118,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
     setState(() {
       _pending = true;
       _error = null;
+      _historyIndex = null;
     });
     _inputController.clear();
 
@@ -125,6 +136,29 @@ class _TerminalScreenState extends State<TerminalScreen> {
     } finally {
       if (mounted) setState(() => _pending = false);
     }
+  }
+
+  void _recallHistory(int direction) {
+    final step = recallTerminalHistory(commandHistory: _commandHistory, historyIndex: _historyIndex, direction: direction);
+    if (step.input == null) return;
+    setState(() {
+      _historyIndex = step.historyIndex;
+      _inputController.text = step.input!;
+      _inputController.selection = TextSelection.collapsed(offset: step.input!.length);
+    });
+  }
+
+  KeyEventResult _handleInputKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      _recallHistory(-1);
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      _recallHistory(1);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -207,14 +241,17 @@ class _TerminalScreenState extends State<TerminalScreen> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextField(
-                      controller: _inputController,
-                      enabled: connected && !_pending,
-                      style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 12),
-                      decoration: const InputDecoration(border: InputBorder.none, isDense: true),
-                      autocorrect: false,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _runCommand(),
+                    child: Focus(
+                      onKeyEvent: _handleInputKey,
+                      child: TextField(
+                        controller: _inputController,
+                        enabled: connected && !_pending,
+                        style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 12),
+                        decoration: const InputDecoration(border: InputBorder.none, isDense: true),
+                        autocorrect: false,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _runCommand(),
+                      ),
                     ),
                   ),
                 ],
