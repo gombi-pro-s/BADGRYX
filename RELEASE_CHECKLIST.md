@@ -998,16 +998,16 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       configured" message if the optional `API_BASE_URL` build value is
       unset, same pattern as web's Turnstile/billing. See ADR 0034.), and
       the Security Scanner (past scans + a combined posture summary, a
-      "New scan" screen that pastes code and submits it via the same
-      Bearer-token path to `/api/scanner/scan`, and a scan-detail screen
-      with severity-coded findings, real manual status-transition
+      "New scan" screen that pastes a single snippet or picks one or
+      more real files (`file_picker`, the one new dependency outside
+      `http`/`supabase_flutter` -- see ADR 0048) and submits via the
+      same Bearer-token path to `/api/scanner/scan`, and a scan-detail
+      screen with severity-coded findings, real manual status-transition
       buttons (`transition_scan_finding_status()` RPC, plain RLS-scoped,
       no Route Handler -- see ADR 0044), and a real "Enrich with AI"
       button against the now Bearer-authed
-      `/api/scanner/findings/{id}/enrich` -- pasted-snippet scans only,
-      since multi-file upload needs a file picker this first slice
-      doesn't build, a named gap rather than silently missing. See
-      ADR 0036/0044/0045.),
+      `/api/scanner/findings/{id}/enrich` -- no named gaps remain on
+      this screen. See ADR 0036/0044/0045/0048.),
       and Billing (real plan/status/entitlements from
       `subscriptions`/`plans`/`plan_entitlements`, plain RLS-scoped
       Postgrest, no Route Handler needed for any of that, plus a real
@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 121 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 125 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1096,6 +1096,17 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       scan-detail screen calling it with the session's Bearer token,
       shown only when `AppEnv.isApiConfigured`. Narrows ADR 0036's
       Scanner gap down to just multi-file upload. See ADR 0045.
+- [x] Multi-file upload on the mobile Scanner's "New scan" screen: a
+      "Choose files" button (`file_picker: ^8.1.7`, the one new
+      dependency outside `http`/`supabase_flutter`, since there's no
+      SDK-only way to open a real file/browser picker) reads one or more
+      real files as text and submits them as `targetType:
+      "uploaded_files"` -- a shape `/api/scanner/scan`'s requestSchema
+      already accepted, so this was purely a mobile UI gap, not a server
+      change. Pure `buildScanRequestBody()` decides pasted-snippet vs
+      uploaded-files shape, unit-tested without needing a real picker.
+      Closes ADR 0036's last named Scanner gap -- no gaps remain on that
+      screen. See ADR 0048.
 - [x] Real checkout on the mobile Billing screen: a new Bearer-authed
       `/api/billing/checkout` runs the exact same provider calls as the
       web app's own `createXCheckoutAction()`s and returns the hosted
@@ -1107,9 +1118,9 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       isn't built on either client -- same provider-dashboard-self-
       service design as checkout, not a gap. See ADR 0047.
 - [ ] Everything else on mobile: every other admin/instructor CMS flow
-      has no mobile screen at all; nor does multi-file scan upload on the
-      Scanner screen that does exist, nor command-history recall on the
-      terminal screen that does exist.
+      has no mobile screen at all; nor does command-history recall on
+      the terminal screen that does exist (impossible on a touch
+      keyboard with no arrow keys, named rather than silently missing).
       This phase is a real vertical slice, not the whole web app's
       feature set, and is named as such rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through

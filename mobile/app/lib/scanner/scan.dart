@@ -153,6 +153,39 @@ const Map<String, String> statusActionLabel = {
   'wont_fix': "Mark won't fix",
 };
 
+/// One file picked for a multi-file scan -- filename plus its decoded text
+/// content, ready to drop straight into the same `files` array shape
+/// `/api/scanner/scan` already accepts for `uploaded_files` (see ADR 0048).
+class ScanUploadFile {
+  ScanUploadFile({required this.filename, required this.content});
+
+  final String filename;
+  final String content;
+}
+
+/// Mirrors /api/scanner/scan's requestSchema: one or more real picked
+/// files means `targetType: 'uploaded_files'`; none means the single
+/// paste-box fields are the scan's one file, `targetType:
+/// 'pasted_snippet'` -- exactly the two target types the route accepts.
+Map<String, dynamic> buildScanRequestBody({
+  String? title,
+  required List<ScanUploadFile> pickedFiles,
+  required String pastedFilename,
+  required String pastedCode,
+}) {
+  final usingPickedFiles = pickedFiles.isNotEmpty;
+  final files = usingPickedFiles
+      ? pickedFiles.map((f) => {'filename': f.filename, 'content': f.content}).toList()
+      : [
+          {'filename': pastedFilename, 'content': pastedCode},
+        ];
+  return {
+    if (title != null && title.isNotEmpty) 'title': title,
+    'targetType': usingPickedFiles ? 'uploaded_files' : 'pasted_snippet',
+    'files': files,
+  };
+}
+
 /// Mirrors components/finding-status-badge.tsx's STATUS_META labels exactly.
 const Map<String, String> findingStatusLabel = {
   'discovered': 'Discovered',

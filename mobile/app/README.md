@@ -54,19 +54,19 @@ for what's built so far and what's honestly still ahead.
       on this build" message if it's absent, rather than blocking the rest
       of the app.
     - **Security Scanner**: `/scanner`'s equivalent -- past scans plus a
-      combined posture summary, a "New scan" screen that pastes code and
-      submits it through the same `Authorization: Bearer` path as the
-      Mentor to `/api/scanner/scan` (see ADR 0033/0035), and a scan-detail
+      combined posture summary, a "New scan" screen that either pastes a
+      single snippet or picks one or more real files (`file_picker`, the
+      one new dependency outside `http`/`supabase_flutter`, since there's
+      no SDK-only way to open a real file picker) and submits whichever
+      through the same `Authorization: Bearer` path as the Mentor to
+      `/api/scanner/scan` (see ADR 0033/0035/0048), and a scan-detail
       screen showing each finding (severity-coded, most-severe-first) with
       its evidence/explanation/impact/remediation, a status chip, real
       manual status-transition buttons
       (`transition_scan_finding_status()` RPC, plain RLS-scoped, no Route
       Handler -- see ADR 0044), and a real "Enrich with AI" button calling
       the now Bearer-authed `/api/scanner/findings/{id}/enrich` (see
-      ADR 0045). Pasted-snippet scans only -- multi-file upload on "New
-      scan" needs a file picker this first slice doesn't build, named as
-      the one remaining Scanner gap rather than silently missing. See
-      ADR 0036/0044/0045.
+      ADR 0045). No named gaps remain on this screen.
     - **Billing**: `/settings/billing`'s equivalent -- your real plan,
       subscription status, and every entitlement, straight from
       `subscriptions`/`plans`/`plan_entitlements` under the same RLS as

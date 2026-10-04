@@ -149,4 +149,53 @@ void main() {
       expect(legalStatusTransitions['verified_fixed'], contains('remediation_required'));
     });
   });
+
+  group('buildScanRequestBody', () {
+    test('uses pasted_snippet with the one pasted file when no files are picked', () {
+      final body = buildScanRequestBody(pickedFiles: [], pastedFilename: 'snippet.js', pastedCode: 'const x = 1;');
+      expect(body['targetType'], 'pasted_snippet');
+      expect(body['files'], [
+        {'filename': 'snippet.js', 'content': 'const x = 1;'},
+      ]);
+      expect(body.containsKey('title'), isFalse);
+    });
+
+    test('uses uploaded_files with every picked file when one or more are picked', () {
+      final body = buildScanRequestBody(
+        pickedFiles: [
+          ScanUploadFile(filename: 'a.js', content: 'const a = 1;'),
+          ScanUploadFile(filename: 'b.py', content: 'b = 2'),
+        ],
+        pastedFilename: 'snippet.js',
+        pastedCode: 'ignored because files were picked',
+      );
+      expect(body['targetType'], 'uploaded_files');
+      expect(body['files'], [
+        {'filename': 'a.js', 'content': 'const a = 1;'},
+        {'filename': 'b.py', 'content': 'b = 2'},
+      ]);
+    });
+
+    test('includes a non-empty title', () {
+      final body = buildScanRequestBody(
+        title: 'My scan',
+        pickedFiles: [],
+        pastedFilename: 'snippet.js',
+        pastedCode: 'const x = 1;',
+      );
+      expect(body['title'], 'My scan');
+    });
+
+    test('omits an empty or null title', () {
+      final withEmpty = buildScanRequestBody(
+        title: '',
+        pickedFiles: [],
+        pastedFilename: 'snippet.js',
+        pastedCode: 'const x = 1;',
+      );
+      final withNull = buildScanRequestBody(pickedFiles: [], pastedFilename: 'snippet.js', pastedCode: 'const x = 1;');
+      expect(withEmpty.containsKey('title'), isFalse);
+      expect(withNull.containsKey('title'), isFalse);
+    });
+  });
 }

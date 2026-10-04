@@ -46,6 +46,12 @@ dependencies:
   # reasoning as supabase_flutter's own inclusion.
   http: ^1.5.0
 
+  # Native/browser file selection for the Security Scanner's multi-file
+  # upload (ADR 0048) -- there is no Flutter-SDK-only way to open a real
+  # file picker, same "genuinely needed, no reasonable alternative"
+  # reasoning as http's own inclusion above.
+  file_picker: ^8.1.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
