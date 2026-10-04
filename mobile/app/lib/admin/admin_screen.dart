@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 
 import 'admin_announcements_screen.dart';
+import 'admin_ctf_challenges_screen.dart';
+import 'admin_ctf_events_screen.dart';
 import 'admin_users_screen.dart';
 
 /// The mobile landing page for `/admin`'s own sidebar -- reachable only
 /// when the More screen's isStaffRole() gate passed, so this app never
 /// needs to check staff standing a second time just to show this list.
-/// Platform Announcements and Users are the admin CMS flows ported to
-/// mobile so far; every other `/admin/*` section (learning paths, labs,
-/// quizzes, CTF challenges, CTF events, path import/export, report
-/// moderation) has no mobile screen yet -- a real, deliberately broad
-/// remaining gap, not silently missing. See ADR 0049/0051.
+/// Platform Announcements, Users, and CTF Challenges/Events are the admin
+/// CMS flows ported to mobile so far; every other `/admin/*` section
+/// (learning paths, labs, quizzes, path import/export) has no mobile
+/// screen yet -- a real, deliberately broad remaining gap, not silently
+/// missing. See ADR 0049/0051/0053.
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
 
@@ -36,6 +38,24 @@ class AdminScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const AdminUsersScreen()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.flag_outlined),
+            title: const Text('CTF Challenges'),
+            subtitle: const Text('Create and edit challenges, hash flags, tag skills'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AdminCtfChallengesScreen()),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.emoji_events_outlined),
+            title: const Text('CTF Events'),
+            subtitle: const Text('Group challenges under a timed event'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AdminCtfEventsScreen()),
             ),
           ),
         ],

@@ -52,6 +52,16 @@ dependencies:
   # reasoning as http's own inclusion above.
   file_picker: ^8.1.7
 
+  # Already a transitive dependency (via supabase_flutter); declared
+  # directly now that the admin CTF Challenges screen calls it itself to
+  # hash a new flag as lowercase hex SHA-256 before it ever reaches
+  # Postgrest -- the exact same digest apps/web's hashFlag() computes
+  # server-side. See ADR 0053 for why hashing here, on the device the
+  # staff admin already typed the plaintext into, doesn't weaken the
+  # "plaintext never stored, never logged" guarantee that comment
+  # describes.
+  crypto: ^3.0.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

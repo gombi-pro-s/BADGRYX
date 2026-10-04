@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 156 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 166 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1159,13 +1159,25 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `review_report`/`review_methodology` -- narrows ADR 0034's Mentor
       deep-link gap to specifically include `report`, not a new gap.
       See ADR 0052.
+- [x] Admin CTF Challenges + CTF Events screens on mobile: create/edit for
+      both, plain RLS-scoped Postgrest CRUD on their `is_staff()`-gated
+      tables, no Route Handler and no new backend surface at all. A new
+      flag is hashed to lowercase hex SHA-256 on-device with
+      `package:crypto` (now a direct dependency, previously transitive
+      only) the moment it's submitted -- byte-identical to `apps/web`'s
+      own server-side `hashFlag()`, verified against two known digests --
+      never stored or shown as plaintext again. Challenges get publish
+      toggles, an inline skill tagger (`ctf_challenge_skills`), and an
+      event dropdown; events get publish toggles, optional start/end
+      times, and a read-only list of their own challenges. No delete
+      action on either, matching the web admin UI. See ADR 0053.
 - [ ] Everything else on mobile: every other `/admin/*` flow (learning
-      paths, labs, quizzes, CTF challenges, CTF events, path
-      import/export) has no mobile screen at all; nor do Mentor's
-      context-specific deep links (lab/lesson/finding/investigation/
-      report -- mobile Mentor is still general-modes-only, ADR 0034).
-      This phase is a real vertical slice, not the whole web app's
-      feature set, and is named as such rather than implied complete.
+      paths, labs, quizzes, path import/export) has no mobile screen at
+      all; nor do Mentor's context-specific deep links (lab/lesson/
+      finding/investigation/report -- mobile Mentor is still
+      general-modes-only, ADR 0034). This phase is a real vertical slice,
+      not the whole web app's feature set, and is named as such rather
+      than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

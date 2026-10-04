@@ -360,18 +360,24 @@ and
   revoke their instructor/moderator/admin roles via
   `grant_platform_role()`/`revoke_platform_role()`, each already audit-
   logging and re-checking `is_admin()` itself server-side (see
-  ADR 0051); every other `/admin/*` flow still has no mobile screen.
-  `flutter analyze` clean, 156 tests passing, `flutter build web`
+  ADR 0051); and CTF Challenges/Events — create/edit, a flag field hashed
+  to lowercase hex SHA-256 on-device with `package:crypto` the moment you
+  submit (byte-identical to `apps/web`'s own server-side `hashFlag()`),
+  publish toggles, an inline skill tagger on challenges, and a read-only
+  challenge list on each event, all plain RLS-scoped Postgrest CRUD on
+  `is_staff()`-gated tables (see ADR 0053); every other `/admin/*` flow
+  (learning paths, labs, quizzes, path import/export) still has no mobile
+  screen. `flutter analyze` clean, 166 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0052.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0053.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (dynamic CTF scoring, content translations for
 other user-authored content types beyond announcements (paths, lessons,
-etc.), every mobile `/admin/*` flow beyond Platform Announcements and Users
-(learning paths, labs, quizzes, CTF challenges, CTF events, path
+etc.), every mobile `/admin/*` flow beyond Platform Announcements, Users,
+and CTF Challenges/Events (learning paths, labs, quizzes, path
 import/export), Mentor context-specific deep links on mobile (lab/
 lesson/finding/investigation/report), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients

@@ -126,10 +126,19 @@ for what's built so far and what's honestly still ahead.
       moderator/admin roles (`grant_platform_role()`/
       `revoke_platform_role()`, each already audit-logging and
       re-checking `is_admin()` itself server-side; you can never revoke
-      your own admin role). See ADR 0051. Every other `/admin/*` flow
-      (learning paths, labs, quizzes, CTF challenges, CTF events, path
-      import/export) has no mobile screen yet -- a real, deliberately
-      broad gap, not silently missing.
+      your own admin role). See ADR 0051. Also CTF Challenges (create/
+      edit, category/difficulty/event/points, a flag field hashed to
+      lowercase hex SHA-256 on-device with `package:crypto` the moment you
+      submit -- byte-identical to `apps/web`'s own server-side
+      `hashFlag()`, never stored or shown as plaintext again -- publish
+      toggle, and an inline skill tagger) and CTF Events (create/edit,
+      scoring type, optional start/end times, publish toggle, and a
+      read-only list of the event's own challenges), both plain
+      RLS-scoped Postgrest CRUD on `is_staff()`-gated tables, no Route
+      Handler needed, no delete action either (same as the web admin UI
+      for both). See ADR 0053. Every other `/admin/*` flow (learning
+      paths, labs, quizzes, path import/export) has no mobile screen yet
+      -- a real, deliberately broad gap, not silently missing.
 - This is still a first vertical slice, not the whole web app. Future
   admin pillars belong behind "Admin" too, the same way every other
   pillar here lives behind "More" rather than as a new flat tab.
