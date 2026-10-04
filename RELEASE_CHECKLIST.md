@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 125 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 130 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1117,12 +1117,23 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       0037's Billing gap; canceling/managing an existing subscription
       isn't built on either client -- same provider-dashboard-self-
       service design as checkout, not a gap. See ADR 0047.
-- [ ] Everything else on mobile: every other admin/instructor CMS flow
-      has no mobile screen at all; nor does command-history recall on
-      the terminal screen that does exist (impossible on a touch
-      keyboard with no arrow keys, named rather than silently missing).
-      This phase is a real vertical slice, not the whole web app's
-      feature set, and is named as such rather than implied complete.
+- [x] First staff Admin screen on mobile: `lib/auth/roles.dart`'s
+      `fetchUserRoles()`/`isStaffRole()` mirror `is_staff()` (admin or
+      moderator) to gate a new "Admin" entry in the More screen; today
+      it holds one real flow, Platform Announcements -- the
+      `organization_id IS NULL` twin of the Organizations screen's own
+      announcement CRUD, reusing the same `OrgAnnouncement` model and
+      pure helpers, plus the `log_audit_event()` RPC call on publish/
+      unpublish the web admin action itself makes (the org-scoped
+      action and screen don't make that call). See ADR 0049.
+- [ ] Everything else on mobile: every other `/admin/*` flow (learning
+      paths, labs, quizzes, CTF challenges, users, CTF events, path
+      import/export, report moderation) has no mobile screen at all;
+      nor does command-history recall on the terminal screen that does
+      exist (impossible on a touch keyboard with no arrow keys, named
+      rather than silently missing). This phase is a real vertical
+      slice, not the whole web app's feature set, and is named as such
+      rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

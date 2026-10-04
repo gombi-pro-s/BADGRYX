@@ -343,10 +343,17 @@ and
   announcement authoring (list/create/edit/publish-toggle/delete, plus an
   optional Spanish translation section using the same both-fields-or-
   neither rule as the web CMS, against the same `announcements`/
-  `announcement_translations` tables and RLS, see ADR 0043/0046).
-  `flutter analyze` clean, 125 tests passing, `flutter build web`
+  `announcement_translations` tables and RLS, see ADR 0043/0046). A
+  twelfth screen, Admin, is the first staff-only mobile surface — shown
+  only when `user_roles` says the signed-in user is admin/moderator
+  (mirroring `is_staff()`) — holding one real flow so far, Platform
+  Announcements, the `organization_id IS NULL` twin of Organizations'
+  own announcement screen plus the same `log_audit_event()` call its web
+  action makes (see ADR 0049); every other `/admin/*` flow still has no
+  mobile screen.
+  `flutter analyze` clean, 130 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0048.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0049.
 
 ## What's not built yet
 

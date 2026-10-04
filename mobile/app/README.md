@@ -100,9 +100,20 @@ for what's built so far and what's honestly still ahead.
       the web CMS) on the create/edit form (ADR 0043/0046). Plain
       RLS-scoped Postgrest/RPC throughout this whole screen, no Route
       Handler needed anywhere in Organizations.
-- This is still a first vertical slice, not the whole web app. Every
-  other admin/instructor flow does not have a mobile screen yet. Future
-  pillars like these belong behind "More" too, not as new flat tabs.
+    - **Admin**: shown only when `user_roles` says the signed-in user is
+      staff (admin or moderator, mirroring `is_staff()` -- see ADR 0049),
+      the first staff-only mobile screen. Today it holds one real flow,
+      Platform Announcements: the same list/create/edit/publish-toggle/
+      delete/Spanish-translation screen as Organizations' own
+      announcements, scoped to `organization_id IS NULL` instead of one
+      org, with the same `log_audit_event()` call on publish/unpublish
+      the web admin action itself makes. Every other `/admin/*` flow
+      (learning paths, labs, quizzes, CTF challenges, users, CTF events,
+      path import/export, report moderation) has no mobile screen yet --
+      a real, deliberately broad gap, not silently missing.
+- This is still a first vertical slice, not the whole web app. Future
+  admin pillars belong behind "Admin" too, the same way every other
+  pillar here lives behind "More" rather than as a new flat tab.
 
 ## Configuration
 
