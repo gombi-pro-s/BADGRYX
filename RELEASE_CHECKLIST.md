@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 202 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 213 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1341,19 +1341,32 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       undocumented mobile gap named below rather than folded in here: no
       learner-facing CTF Events/leaderboard screen exists on mobile at
       all. See ADR 0062.
-- [ ] A learner-facing CTF Events/leaderboard screen on mobile: web's
-      whole Arena/mission UI (event grouping, live/upcoming/ended
-      badges, countdown, `ctf_event_leaderboard()`; ADR 0021) has no
-      mobile counterpart -- mobile's `/ctf` equivalent has only ever been
-      the flat `ctf_challenges_public` list (`ctf_list_screen.dart`),
-      with `ctf_events` read nowhere outside the admin screens. Found
-      while auditing dynamic scoring's mobile parity (above), not
-      previously named anywhere in this file.
-- [ ] Everything else on mobile: beyond the CTF Events/leaderboard gap
-      just named, no further mobile-vs-web gap remains anywhere in this
-      app's feature set. This phase is a real vertical slice, not the
-      whole web app's feature set, and is named as such rather than
-      implied complete.
+- [x] A learner-facing CTF Events/leaderboard screen on mobile: closes
+      the gap named while auditing dynamic scoring's mobile parity
+      (above) -- mobile's `/ctf` equivalent had only ever been the flat
+      `ctf_challenges_public` list, with `ctf_events` read nowhere
+      outside the admin screens. New `lib/ctf/ctf_event.dart`: a direct
+      port of `lib/ctf/event-status.ts`'s `ctfEventStatus()` and
+      `event-status-banner.tsx`'s `formatDuration()` (including its one
+      real quirk -- once a duration is a day or more, seconds never show
+      again, and minutes don't either if the hour component is exactly
+      zero -- preserved, not "fixed"), plus `CtfEventSummary`/
+      `CtfEventDetail`/`CtfLeaderboardEntry`. `ctf_list_screen.dart`
+      rewritten to fetch published events alongside challenges, grouping
+      independent challenges (`event_id IS NULL`) separately, same split
+      `/ctf/page.tsx` has. New `ctf_event_detail_screen.dart`: the
+      event's own challenges, the real `ctf_event_leaderboard()`
+      aggregate with the signed-in user's own row highlighted, and a
+      ticking status banner (a private `_EventStatusBanner` widget with
+      its own 1s `Timer.periodic`, same component split as web's). Plain
+      RLS-scoped Postgrest/RPC throughout, no Route Handler. +11
+      `flutter test`s (213 total, was 202); `flutter analyze` clean;
+      `flutter build web` succeeds both configs. No named mobile-vs-web
+      gap remains anywhere in this app's CTF coverage. See ADR 0063.
+- [ ] Everything else on mobile: no named mobile-vs-web gap remains
+      anywhere in this app's feature set. This phase is a real vertical
+      slice, not the whole web app's feature set, and is named as such
+      rather than implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

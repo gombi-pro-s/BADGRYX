@@ -413,22 +413,20 @@ and
   finally gives the `lesson` Mentor context deep link, ADR 0059,
   somewhere to attach — see ADR 0060) closes the last named gap in the
   mobile Mentor coverage too.
-  `flutter analyze` clean, 202 tests passing, `flutter build web`
+  `flutter analyze` clean, 213 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0062.
-  Auditing Mentor coverage for this phase surfaced a real, previously
-  undocumented mobile gap of its own: mobile's `/ctf` equivalent is only
-  ever the flat challenge list, with no event grouping, countdown, or
-  leaderboard screen anywhere -- web's whole Arena/mission UI (ADR 0021)
-  has no mobile counterpart. Named here rather than silently carried
-  forward; see `RELEASE_CHECKLIST.md`.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0063.
+  Auditing Mentor/scoring coverage surfaced a real mobile gap this phase
+  closed too: mobile's `/ctf` equivalent is no longer only the flat
+  challenge list -- published events now group above it with a real
+  live/upcoming/ended badge, a ticking countdown, and
+  `ctf_event_leaderboard()`'s own cross-user aggregate, mirroring web's
+  Arena/mission UI (ADR 0021) in full. See ADR 0063.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
-tracked list of what remains (a mobile CTF Events/leaderboard screen --
-web's Arena/mission UI, ADR 0021, has no mobile counterpart -- content
-translations for
+tracked list of what remains (content translations for
 other user-authored content types beyond announcements (paths, lessons,
 etc.), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients

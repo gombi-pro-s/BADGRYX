@@ -40,11 +40,17 @@ for what's built so far and what's honestly still ahead.
     dynamic-scoring event's challenge the two can differ as more
     competitors solve it, and this screen displays exactly what
     `submit_ctf_flag()` would actually award right now, both calling the
-    same `ctf_challenge_current_points()` (see ADR 0062). This is still
-    only the flat challenge list, though -- web's whole Arena/mission UI
-    (event grouping, live/upcoming/ended badges, countdown, leaderboard;
-    ADR 0021) has no mobile counterpart at all, a real gap named here
-    rather than silently carried forward. A "Mentor" button on
+    same `ctf_challenge_current_points()` (see ADR 0062). Published
+    events now group above independent challenges, each with a real
+    live/upcoming/ended chip (`ctfEventStatus()`, a direct port of
+    `lib/ctf/event-status.ts`); tapping one opens an event detail screen
+    with a ticking "Starts in"/"Live -- ends in"/"Ended" banner (the
+    same `formatDuration()` web's `event-status-banner.tsx` uses,
+    including its one real quirk around how long durations drop
+    seconds/minutes -- not "fixed" here), the event's own challenges,
+    and `ctf_event_leaderboard()`'s real cross-user aggregate with the
+    signed-in user's own row highlighted -- closing the gap this file
+    used to name here. See ADR 0063. A "Mentor" button on
     a challenge's own detail screen deep-links into `hint` mode for that
     challenge (ADR 0059).
   - **More**:

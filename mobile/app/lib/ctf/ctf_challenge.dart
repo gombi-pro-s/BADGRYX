@@ -7,6 +7,7 @@ class CtfChallenge {
     required this.difficulty,
     required this.points,
     required this.currentPoints,
+    required this.eventId,
   });
 
   final String id;
@@ -15,6 +16,10 @@ class CtfChallenge {
   final String category;
   final String difficulty;
   final int points;
+
+  /// Null for an independent challenge -- mirrors `/ctf/page.tsx`'s own
+  /// `independentChallenges = challenges.filter((c) => !c.event_id)`.
+  final String? eventId;
 
   /// What solving this challenge RIGHT NOW would award -- equals [points]
   /// for a static-scoring event or an independent challenge, decays
@@ -33,6 +38,7 @@ class CtfChallenge {
       difficulty: row['difficulty'] as String,
       points: row['points'] as int,
       currentPoints: row['current_points'] as int,
+      eventId: row['event_id'] as String?,
     );
   }
 }
