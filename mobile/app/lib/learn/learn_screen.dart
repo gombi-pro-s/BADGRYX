@@ -380,14 +380,20 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                             const SizedBox(height: 12),
                             for (final question in quiz.questions) ...[
                               Text(question.questionText),
-                              ...question.choices.map(
-                                (choice) => RadioListTile<String>(
-                                  value: choice.choiceId,
-                                  groupValue: _answers[question.questionId],
-                                  title: Text(choice.choiceText),
-                                  dense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                  onChanged: (value) => setState(() => _answers[question.questionId] = value!),
+                              RadioGroup<String>(
+                                groupValue: _answers[question.questionId],
+                                onChanged: (value) => setState(() => _answers[question.questionId] = value!),
+                                child: Column(
+                                  children: question.choices
+                                      .map(
+                                        (choice) => RadioListTile<String>(
+                                          value: choice.choiceId,
+                                          title: Text(choice.choiceText),
+                                          dense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                      )
+                                      .toList(),
                                 ),
                               ),
                               const SizedBox(height: 8),

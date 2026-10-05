@@ -839,8 +839,35 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] All of the above verified passing locally before every commit
 - [x] Pushed to GitHub — Claude GitHub App access was granted mid-session
       (previously blocked; see git history for the resolution)
-- [ ] Actually observed green on a real GitHub Actions run (verify by
-      checking the Actions tab on the repository)
+- [ ] Actually observed green on a real GitHub Actions run: it wasn't,
+      for several pushes, and local verification alone had missed it --
+      this item stayed unchecked specifically so it would get checked
+      for real rather than assumed, not flipped until the push carrying
+      this fix is actually confirmed green. Checking the Actions tab (now
+      possible with this session's GitHub access) surfaced two genuine
+      CI-only failures neither local run had caught:
+      1. `flutter analyze` exits 1 on ANY issue, including the two
+         `deprecated_member_use` infos `learn_screen.dart` (ADR 0060)
+         had carried since that phase -- I'd read "2 issues found" as
+         harmless because they were info-severity, but never actually
+         checked the process exit code locally, which is exactly what
+         CI's workflow step checks. Fixed by wrapping that screen's
+         quiz-choice `RadioListTile`s in a `RadioGroup` ancestor, the
+         same non-deprecated pattern `exam_attempt.dart` already used
+         (verified: `flutter analyze` now prints "No issues found!" and
+         exits 0).
+      2. `gitleaks/gitleaks-action@v2` now refuses to run on an
+         organization-owned repo without a paid `GITLEAKS_LICENSE`
+         secret -- it exited before scanning anything, on every push.
+         Replaced with the open-source `gitleaks` CLI (still MIT-licensed;
+         only the hosted Action wrapper added the license gate) installed
+         and run directly, pinned to v8.30.1, no new secret needed.
+         Verified by building that exact version from source in this
+         sandbox and running `gitleaks detect --source . --redact
+         --no-banner` against the real repo history: exit 0, no leaks.
+      Every other CI job (Lint & Typecheck, Unit Tests, DB Migrations &
+      RLS Regression Tests, Build (Next.js), E2E Smoke Tests) was already
+      genuinely green on every one of those pushes -- only these two.
 - [ ] Deploy job (no hosting target connected yet — see `MANUAL_SETUP.md` §5)
 
 ## Testing
