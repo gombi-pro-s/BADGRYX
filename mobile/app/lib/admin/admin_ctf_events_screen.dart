@@ -316,9 +316,10 @@ class _AdminCtfEventFormScreenState extends State<AdminCtfEventFormScreen> {
                   const Padding(
                     padding: EdgeInsets.only(top: 4),
                     child: Text(
-                      'Dynamic scoring (points decaying as more competitors solve a challenge) is not '
-                      'implemented yet -- picking it stores the intent but challenges still score at their '
-                      'fixed points.',
+                      'Dynamic scoring decays each challenge in this event from its Points down to its own '
+                      'Min points floor (set per challenge, defaulting to half of Points) over its first 10 '
+                      'solves. Each solver\'s own score is frozen at whatever the value was the moment they '
+                      'solved it.',
                       style: TextStyle(fontSize: 12),
                     ),
                   ),

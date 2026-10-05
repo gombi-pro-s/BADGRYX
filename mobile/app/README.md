@@ -35,7 +35,16 @@ for what's built so far and what's honestly still ahead.
   - **CTF**: `/ctf`'s equivalent -- published challenges
     (`ctf_challenges_public`, flag hash never exposed) and a real flag
     submit calling the same `submit_ctf_flag()` RPC the web app calls --
-    correct/incorrect is never decided client-side. A "Mentor" button on
+    correct/incorrect is never decided client-side. Shows each
+    challenge's `current_points`, not its static `points` -- for a
+    dynamic-scoring event's challenge the two can differ as more
+    competitors solve it, and this screen displays exactly what
+    `submit_ctf_flag()` would actually award right now, both calling the
+    same `ctf_challenge_current_points()` (see ADR 0062). This is still
+    only the flat challenge list, though -- web's whole Arena/mission UI
+    (event grouping, live/upcoming/ended badges, countdown, leaderboard;
+    ADR 0021) has no mobile counterpart at all, a real gap named here
+    rather than silently carried forward. A "Mentor" button on
     a challenge's own detail screen deep-links into `hint` mode for that
     challenge (ADR 0059).
   - **More**:
@@ -166,12 +175,17 @@ for what's built so far and what's honestly still ahead.
       `revoke_platform_role()`, each already audit-logging and
       re-checking `is_admin()` itself server-side; you can never revoke
       your own admin role). See ADR 0051. Also CTF Challenges (create/
-      edit, category/difficulty/event/points, a flag field hashed to
+      edit, category/difficulty/event/points, an optional Min points
+      floor for dynamic-scoring events (defaults to half of Points when
+      left blank, validated `<= Points`, see ADR 0062), a flag field
+      hashed to
       lowercase hex SHA-256 on-device with `package:crypto` the moment you
       submit -- byte-identical to `apps/web`'s own server-side
       `hashFlag()`, never stored or shown as plaintext again -- publish
       toggle, and an inline skill tagger) and CTF Events (create/edit,
-      scoring type, optional start/end times, publish toggle, and a
+      scoring type -- the Dynamic option's own help text now explains the
+      real decay-to-a-floor behavior ADR 0062 built, not "not implemented
+      yet" -- optional start/end times, publish toggle, and a
       read-only list of the event's own challenges), both plain
       RLS-scoped Postgrest CRUD on `is_staff()`-gated tables, no Route
       Handler needed, no delete action either (same as the web admin UI

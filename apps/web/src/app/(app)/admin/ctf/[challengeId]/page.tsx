@@ -16,7 +16,7 @@ export default async function AdminChallengeDetailPage({
   const [{ data: challenge }, { data: allSkills }, { data: challengeSkills }, { data: events }] = await Promise.all([
     supabase
       .from("ctf_challenges")
-      .select("id, slug, title, description, category, difficulty, points, published, event_id")
+      .select("id, slug, title, description, category, difficulty, points, min_points, published, event_id")
       .eq("id", challengeId)
       .single(),
     supabase.from("skills").select("id, name").order("name"),
@@ -47,6 +47,7 @@ export default async function AdminChallengeDetailPage({
             category: challenge.category,
             difficulty: challenge.difficulty,
             points: challenge.points,
+            min_points: challenge.min_points,
             event_id: challenge.event_id,
           }}
           events={events ?? []}

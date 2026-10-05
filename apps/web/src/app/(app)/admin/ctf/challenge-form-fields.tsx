@@ -27,6 +27,7 @@ interface Initial {
   category?: LabCategory;
   difficulty?: DifficultyLevel;
   points?: number;
+  min_points?: number | null;
   event_id?: string | null;
 }
 
@@ -87,6 +88,15 @@ export function ChallengeFormFields({
           <Label htmlFor="points">Points</Label>
           <Input id="points" name="points" type="number" min={0} max={10000} defaultValue={initial.points ?? 100} required />
         </div>
+      </div>
+      <div>
+        <Label htmlFor="min_points">Min points (dynamic scoring floor, optional)</Label>
+        <Input id="min_points" name="min_points" type="number" min={0} max={10000} defaultValue={initial.min_points ?? ""} />
+        <p className="mt-1.5 text-xs text-foreground-subtle">
+          Only used when this challenge belongs to a dynamic-scoring event (see the event&apos;s own Scoring field) --
+          the value this challenge decays toward as more competitors solve it. Leave blank to default to half of
+          Points. Ignored for a static-scoring event or an independent challenge with no event.
+        </p>
       </div>
       <div>
         <Label htmlFor="description">Description</Label>

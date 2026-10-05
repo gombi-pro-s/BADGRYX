@@ -63,6 +63,23 @@ void main() {
       expect(challenge.id, 'c1');
       expect(challenge.eventId, 'e1');
       expect(challenge.published, true);
+      expect(challenge.minPoints, isNull);
+    });
+
+    test('parses a real min_points value when the row has one', () {
+      final challenge = AdminCtfChallenge.fromRow({
+        'id': 'c2',
+        'slug': 'web-sqli-2',
+        'title': 'SQLi 102',
+        'description': null,
+        'category': 'web',
+        'difficulty': 'medium',
+        'points': 200,
+        'min_points': 50,
+        'published': false,
+        'event_id': null,
+      });
+      expect(challenge.minPoints, 50);
     });
   });
 

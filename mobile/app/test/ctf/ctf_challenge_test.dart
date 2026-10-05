@@ -11,6 +11,7 @@ void main() {
         'category': 'web',
         'difficulty': 'easy',
         'points': 100,
+        'current_points': 100,
       });
       expect(challenge.id, 'abc-123');
       expect(challenge.title, 'SQL Injection: Login Bypass');
@@ -18,6 +19,7 @@ void main() {
       expect(challenge.category, 'web');
       expect(challenge.difficulty, 'easy');
       expect(challenge.points, 100);
+      expect(challenge.currentPoints, 100);
     });
 
     test('a null description is preserved as null, not coerced to empty string', () {
@@ -28,8 +30,23 @@ void main() {
         'category': 'web',
         'difficulty': 'easy',
         'points': 50,
+        'current_points': 50,
       });
       expect(challenge.description, isNull);
+    });
+
+    test('current_points below points reflects a decayed dynamic-scoring value', () {
+      final challenge = CtfChallenge.fromRow({
+        'id': 'abc-123',
+        'title': 'Decaying',
+        'description': null,
+        'category': 'web',
+        'difficulty': 'easy',
+        'points': 200,
+        'current_points': 150,
+      });
+      expect(challenge.currentPoints, 150);
+      expect(challenge.currentPoints, lessThan(challenge.points));
     });
   });
 

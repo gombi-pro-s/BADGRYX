@@ -110,7 +110,14 @@ and
   status banner and a real leaderboard — `ctf_event_leaderboard()`, a
   `SECURITY DEFINER` function that returns only the cross-user aggregate
   (never which challenges a rival solved), ranked by points with a
-  real earliest-solve tie-break. See ADR 0021.
+  real earliest-solve tie-break. See ADR 0021. An event's `scoring_type`
+  can be `dynamic`: each challenge then decays linearly from its Points
+  down to its own floor over its first 10 solves, computed by the same
+  `ctf_challenge_current_points()` both the learner-facing display and
+  `submit_ctf_flag()` itself call, so the two can never disagree; each
+  solver's own score is frozen at whatever the value was the moment they
+  solved it, same as `ctf_event_leaderboard()` already assumed. See ADR
+  0062.
 - **Learner UI**: `/learn`, `/labs`, `/ctf` — real markdown lessons with
   embedded live quizzes, guided/unguided lab attempts with hint unlocking,
   and CTF flag submission, all backed by live queries/RPCs.
@@ -406,14 +413,22 @@ and
   finally gives the `lesson` Mentor context deep link, ADR 0059,
   somewhere to attach — see ADR 0060) closes the last named gap in the
   mobile Mentor coverage too.
-  `flutter analyze` clean, 200 tests passing, `flutter build web`
+  `flutter analyze` clean, 202 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0061.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0062.
+  Auditing Mentor coverage for this phase surfaced a real, previously
+  undocumented mobile gap of its own: mobile's `/ctf` equivalent is only
+  ever the flat challenge list, with no event grouping, countdown, or
+  leaderboard screen anywhere -- web's whole Arena/mission UI (ADR 0021)
+  has no mobile counterpart. Named here rather than silently carried
+  forward; see `RELEASE_CHECKLIST.md`.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
-tracked list of what remains (dynamic CTF scoring, content translations for
+tracked list of what remains (a mobile CTF Events/leaderboard screen --
+web's Arena/mission UI, ADR 0021, has no mobile counterpart -- content
+translations for
 other user-authored content types beyond announcements (paths, lessons,
 etc.), canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients

@@ -11,7 +11,7 @@ import 'admin_ctf.dart';
 Future<List<AdminCtfChallenge>> fetchAdminCtfChallenges(SupabaseClient client) async {
   final rows = await client
       .from('ctf_challenges')
-      .select('id, slug, title, description, category, difficulty, points, published, event_id')
+      .select('id, slug, title, description, category, difficulty, points, min_points, published, event_id')
       .order('title');
   return (rows as List).map((row) => AdminCtfChallenge.fromRow(row as Map<String, dynamic>)).toList();
 }
@@ -123,6 +123,7 @@ class _AdminCtfChallengeFormScreenState extends State<AdminCtfChallengeFormScree
   final _slugController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _pointsController = TextEditingController(text: '100');
+  final _minPointsController = TextEditingController();
   final _plaintextController = TextEditingController();
   String _category = 'web';
   String _difficulty = 'easy';
@@ -153,7 +154,7 @@ class _AdminCtfChallengeFormScreenState extends State<AdminCtfChallengeFormScree
       if (_isEditing) {
         final row = await client
             .from('ctf_challenges')
-            .select('id, slug, title, description, category, difficulty, points, published, event_id')
+            .select('id, slug, title, description, category, difficulty, points, min_points, published, event_id')
             .eq('id', widget.challengeId!)
             .single();
         final challenge = AdminCtfChallenge.fromRow(row);
@@ -166,6 +167,7 @@ class _AdminCtfChallengeFormScreenState extends State<AdminCtfChallengeFormScree
         _slugController.text = challenge.slug;
         _descriptionController.text = challenge.description ?? '';
         _pointsController.text = challenge.points.toString();
+        _minPointsController.text = challenge.minPoints?.toString() ?? '';
         setState(() {
           _category = challenge.category;
           _difficulty = challenge.difficulty;
@@ -207,6 +209,19 @@ class _AdminCtfChallengeFormScreenState extends State<AdminCtfChallengeFormScree
       setState(() => _error = 'Points must be between 0 and 10000.');
       return;
     }
+    final minPointsText = _minPointsController.text.trim();
+    int? minPoints;
+    if (minPointsText.isNotEmpty) {
+      minPoints = int.tryParse(minPointsText);
+      if (minPoints == null || minPoints < 0 || minPoints > 10000) {
+        setState(() => _error = 'Min points must be between 0 and 10000.');
+        return;
+      }
+      if (minPoints > points) {
+        setState(() => _error = "Min points can't be greater than Points.");
+        return;
+      }
+    }
     if (!_isEditing && plaintext.length < 4) {
       setState(() => _error = 'Flag must be at least 4 characters.');
       return;
@@ -227,6 +242,7 @@ class _AdminCtfChallengeFormScreenState extends State<AdminCtfChallengeFormScree
       'category': _category,
       'difficulty': _difficulty,
       'points': points,
+      'min_points': minPoints,
       'event_id': _eventId,
     };
     if (!_isEditing || plaintext.isNotEmpty) {
@@ -360,6 +376,15 @@ class _AdminCtfChallengeFormScreenState extends State<AdminCtfChallengeFormScree
                     controller: _pointsController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(labelText: 'Points'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _minPointsController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Min points (dynamic scoring floor, optional)',
+                      helperText: 'Only used for a dynamic-scoring event. Leave blank to default to half of Points.',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(

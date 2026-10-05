@@ -43,7 +43,9 @@ export function EditEventForm({ eventId, initial }: { eventId: string; initial: 
           <option value="dynamic">Dynamic</option>
         </select>
         <p className="mt-1.5 text-xs text-foreground-subtle">
-          Dynamic scoring is not implemented yet -- challenges still score at their fixed points either way.
+          Dynamic scoring decays each challenge in this event from its Points down to its own Min points floor
+          (set per challenge, defaulting to half of Points) over its first 10 solves. Each solver&apos;s own score is
+          frozen at whatever the value was the moment they solved it.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

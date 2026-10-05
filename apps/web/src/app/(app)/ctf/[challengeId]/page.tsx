@@ -15,7 +15,7 @@ export default async function CtfChallengePage({
 
   const { data: challenge } = await supabase
     .from("ctf_challenges_public")
-    .select("id, title, description, category, difficulty, points")
+    .select("id, title, description, category, difficulty, points, current_points")
     .eq("id", challengeId)
     .eq("published", true)
     .single();
@@ -47,7 +47,12 @@ export default async function CtfChallengePage({
         <span>&middot;</span>
         <span>{challenge.difficulty}</span>
         <span>&middot;</span>
-        <span>{challenge.points} pts</span>
+        <span>
+          {challenge.current_points} pts
+          {challenge.current_points < challenge.points && (
+            <span className="text-foreground-subtle"> (started at {challenge.points}, decaying)</span>
+          )}
+        </span>
       </div>
       <div className="mb-4 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-foreground">{challenge.title}</h1>

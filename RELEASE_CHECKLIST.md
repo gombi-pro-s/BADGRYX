@@ -501,10 +501,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       leaderboard (`ctf_event_leaderboard()`, a `SECURITY DEFINER`
       function returning only the cross-user aggregate -- never which
       challenges a rival solved -- ranked by points desc, ties broken by
-      earliest last-solve). `ctf_scoring_type='dynamic'` remains inert
-      (disclosed in the admin UI itself, not silently ignored) -- decaying
-      scoring is a separate feature touching a grading function and
-      deserves its own design pass. See ADR 0021.
+      earliest last-solve). `ctf_scoring_type='dynamic'` remained inert at
+      this point (disclosed in the admin UI itself, not silently ignored)
+      -- decaying scoring was a separate feature touching a grading
+      function and got its own design pass later; see ADR 0021/0062.
 - [x] Capstone submission/review UI: `review_capstone_submission()` is now
       the only way a submission's status changes (the blanket staff UPDATE
       RLS policy was dropped, mirroring the scanner finding lifecycle in
@@ -1019,7 +1019,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 200 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 202 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1303,10 +1303,57 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       already had) -- 200 total, unchanged; `flutter analyze` clean;
       `flutter build web` succeeds both configs. No named Mentor gap
       remains anywhere on mobile. See ADR 0061.
-- [ ] Everything else on mobile: no named mobile-vs-web gap remains
-      anywhere in this app's feature set. This phase is a real vertical
-      slice, not the whole web app's feature set, and is named as such
-      rather than implied complete.
+- [x] Dynamic CTF scoring: `ctf_scoring_type='dynamic'` had been inert
+      since the Arena/mission UI phase (above) -- picking it on an event
+      stored the intent but `submit_ctf_flag()` always awarded the flat
+      `points` value regardless. Checked `ctf_event_leaderboard()` first:
+      it already sums each solve's own frozen `points_awarded`, the
+      correct CTFd-style contract, so only the one place still computing
+      a flat value needed to change. New `ctf_challenges.min_points`
+      column (decay floor, NULL defaults to half of `points`) and new
+      `ctf_challenge_current_points()` function -- independent challenges
+      and static-scoring events always return the flat `points`; a
+      dynamic-scoring event's challenge decays linearly from `points` to
+      its floor over its first 10 solves, then stays flat. Both
+      `ctf_challenges_public` (new `current_points` column, appended
+      after the existing ones since `CREATE OR REPLACE VIEW` can't
+      reorder) and `submit_ctf_flag()` call this same function, so the
+      learner-facing display and the grading function can never
+      disagree; the solve count the Nth solver sees is computed BEFORE
+      their own `INSERT`, so the first solver always gets the full
+      value. Web: admin challenge form gained a Min points field
+      (validated `<= Points`), both admin event forms' "not implemented
+      yet" disclaimers rewritten to explain the real behavior, and the
+      challenge/event detail pages now display `current_points` with a
+      "(decaying)" note when it differs from `points`. Mobile: the same
+      Min points field on the admin challenge form, the same disclaimer
+      rewrite on the admin event form, and both the flat CTF list and
+      challenge detail screen display `current_points`. New migration
+      `20260922000031_ctf_dynamic_scoring.sql` + SQL regression test
+      `027_ctf_dynamic_scoring.sql` (6 assertions, run against the full
+      migration chain locally: all pre-existing SQL tests still pass
+      too). Web: `tsc --noEmit`/ESLint clean, `npx vitest run` unchanged
+      at 316 tests (the new logic lives in SQL, tested there), `npm run
+      build` succeeds, the 9 pure-HTTP "mobile API auth" e2e tests still
+      pass (no Route Handler touched). Mobile: +2 `flutter test`s (202
+      total, was 200); `flutter analyze` clean; `flutter build web`
+      succeeds both configs. Auditing this surfaced a real, previously
+      undocumented mobile gap named below rather than folded in here: no
+      learner-facing CTF Events/leaderboard screen exists on mobile at
+      all. See ADR 0062.
+- [ ] A learner-facing CTF Events/leaderboard screen on mobile: web's
+      whole Arena/mission UI (event grouping, live/upcoming/ended
+      badges, countdown, `ctf_event_leaderboard()`; ADR 0021) has no
+      mobile counterpart -- mobile's `/ctf` equivalent has only ever been
+      the flat `ctf_challenges_public` list (`ctf_list_screen.dart`),
+      with `ctf_events` read nowhere outside the admin screens. Found
+      while auditing dynamic scoring's mobile parity (above), not
+      previously named anywhere in this file.
+- [ ] Everything else on mobile: beyond the CTF Events/leaderboard gap
+      just named, no further mobile-vs-web gap remains anywhere in this
+      app's feature set. This phase is a real vertical slice, not the
+      whole web app's feature set, and is named as such rather than
+      implied complete.
 - [ ] A real Android/iOS build and a real device/emulator click-through
       -- not done here; this sandbox has no Android SDK or Xcode. Needs a
       machine with those toolchains, same "needs a provisioned

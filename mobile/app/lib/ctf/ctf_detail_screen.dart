@@ -29,7 +29,7 @@ class _CtfDetailScreenState extends State<CtfDetailScreen> {
     final userId = client.auth.currentUser!.id;
     final challengeRow = await client
         .from('ctf_challenges_public')
-        .select('id, title, description, category, difficulty, points')
+        .select('id, title, description, category, difficulty, points, current_points')
         .eq('id', widget.challengeId)
         .single();
     final solvedRow = await client
@@ -79,7 +79,12 @@ class _CtfDetailScreenState extends State<CtfDetailScreen> {
                 ],
               ),
               const SizedBox(height: 4),
-              Text('${challenge.category} · ${challenge.difficulty} · ${challenge.points} pts'),
+              Text(
+                challenge.currentPoints < challenge.points
+                    ? '${challenge.category} · ${challenge.difficulty} · ${challenge.currentPoints} pts '
+                        '(started at ${challenge.points}, decaying)'
+                    : '${challenge.category} · ${challenge.difficulty} · ${challenge.currentPoints} pts',
+              ),
               if (challenge.description != null) ...[
                 const SizedBox(height: 16),
                 Text(challenge.description!),

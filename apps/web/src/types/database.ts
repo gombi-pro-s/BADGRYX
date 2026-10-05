@@ -395,6 +395,10 @@ export type CtfChallengeRow = {
   category: LabCategory;
   difficulty: DifficultyLevel;
   points: number;
+  // Decay floor for a dynamic-scoring event's challenge. NULL defaults to
+  // half of `points` (see ctf_challenge_current_points()). Unused for
+  // static-scoring events and for challenges with no event_id.
+  min_points: number | null;
   flag_hash: string;
   published: boolean;
 };
@@ -1221,6 +1225,12 @@ export interface Database {
           difficulty: DifficultyLevel;
           points: number;
           published: boolean;
+          // What solving this challenge RIGHT NOW would award -- equals
+          // `points` for a static-scoring event or an independent
+          // challenge, decays toward `min_points` for a dynamic one. Use
+          // this for display, never the flat `points` column, so it can
+          // never show a value submit_ctf_flag() wouldn't actually award.
+          current_points: number;
         };
         Relationships: [];
       };

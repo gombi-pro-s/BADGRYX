@@ -22,7 +22,7 @@ export default async function CtfEventDetailPage({ params }: { params: Promise<{
   const [{ data: challenges }, { data: solved }, { data: leaderboard }] = await Promise.all([
     supabase
       .from("ctf_challenges_public")
-      .select("id, title, category, difficulty, points")
+      .select("id, title, category, difficulty, points, current_points")
       .eq("event_id", eventId)
       .order("points"),
     supabase.from("ctf_submissions").select("challenge_id").eq("user_id", user.id).eq("correct", true),
@@ -54,7 +54,8 @@ export default async function CtfEventDetailPage({ params }: { params: Promise<{
                     <div>
                       <p className="text-sm font-medium text-foreground">{c.title}</p>
                       <p className="mt-0.5 text-xs text-foreground-subtle">
-                        {c.category} &middot; {c.difficulty} &middot; {c.points} pts
+                        {c.category} &middot; {c.difficulty} &middot; {c.current_points} pts
+                        {c.current_points < c.points && " (decaying)"}
                       </p>
                     </div>
                     {solvedIds.has(c.id) && <span className="shrink-0 text-xs font-medium text-success">Solved</span>}

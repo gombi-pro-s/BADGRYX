@@ -59,6 +59,7 @@ class AdminCtfChallenge {
     required this.category,
     required this.difficulty,
     required this.points,
+    required this.minPoints,
     required this.published,
     required this.eventId,
   });
@@ -70,6 +71,11 @@ class AdminCtfChallenge {
   final String category;
   final String difficulty;
   final int points;
+
+  /// Decay floor for a dynamic-scoring event's challenge (null defaults to
+  /// half of [points] -- see `ctf_challenge_current_points()`). Unused for
+  /// a static-scoring event or an independent challenge. See ADR 0062.
+  final int? minPoints;
   final bool published;
   final String? eventId;
 
@@ -82,6 +88,7 @@ class AdminCtfChallenge {
       category: row['category'] as String,
       difficulty: row['difficulty'] as String,
       points: row['points'] as int,
+      minPoints: row['min_points'] as int?,
       published: row['published'] as bool,
       eventId: row['event_id'] as String?,
     );

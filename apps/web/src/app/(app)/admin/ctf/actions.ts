@@ -31,16 +31,22 @@ const CATEGORIES: LabCategory[] = [
 ];
 const DIFFICULTIES: DifficultyLevel[] = ["beginner", "easy", "medium", "hard", "insane"];
 
-const createSchema = z.object({
-  slug: z.string().trim().regex(/^[a-z0-9-]{3,64}$/, "Lowercase letters, numbers, hyphens only."),
-  title: z.string().trim().min(1).max(200),
-  description: z.string().trim().max(4000).optional(),
-  category: z.enum(CATEGORIES as [LabCategory, ...LabCategory[]]),
-  difficulty: z.enum(DIFFICULTIES as [DifficultyLevel, ...DifficultyLevel[]]),
-  points: z.coerce.number().int().min(0).max(10000),
-  event_id: z.uuid().optional(),
-  plaintext: z.string().trim().min(4, "Flag must be at least 4 characters.").max(500),
-});
+const createSchema = z
+  .object({
+    slug: z.string().trim().regex(/^[a-z0-9-]{3,64}$/, "Lowercase letters, numbers, hyphens only."),
+    title: z.string().trim().min(1).max(200),
+    description: z.string().trim().max(4000).optional(),
+    category: z.enum(CATEGORIES as [LabCategory, ...LabCategory[]]),
+    difficulty: z.enum(DIFFICULTIES as [DifficultyLevel, ...DifficultyLevel[]]),
+    points: z.coerce.number().int().min(0).max(10000),
+    min_points: z.coerce.number().int().min(0).max(10000).optional(),
+    event_id: z.uuid().optional(),
+    plaintext: z.string().trim().min(4, "Flag must be at least 4 characters.").max(500),
+  })
+  .refine((data) => data.min_points === undefined || data.min_points <= data.points, {
+    message: "Min points can't be greater than Points.",
+    path: ["min_points"],
+  });
 
 export async function createChallengeAction(_prev: FormState, formData: FormData): Promise<FormState> {
   await requireAdmin();
@@ -51,6 +57,7 @@ export async function createChallengeAction(_prev: FormState, formData: FormData
     category: formData.get("category"),
     difficulty: formData.get("difficulty"),
     points: formData.get("points"),
+    min_points: formData.get("min_points") || undefined,
     event_id: formData.get("event_id") || undefined,
     plaintext: formData.get("plaintext"),
   });
@@ -64,6 +71,7 @@ export async function createChallengeAction(_prev: FormState, formData: FormData
     category: parsed.data.category,
     difficulty: parsed.data.difficulty,
     points: parsed.data.points,
+    min_points: parsed.data.min_points ?? null,
     event_id: parsed.data.event_id ?? null,
     flag_hash: hashFlag(parsed.data.plaintext),
   });
@@ -73,16 +81,22 @@ export async function createChallengeAction(_prev: FormState, formData: FormData
   return { error: null };
 }
 
-const updateSchema = z.object({
-  slug: z.string().trim().regex(/^[a-z0-9-]{3,64}$/, "Lowercase letters, numbers, hyphens only."),
-  title: z.string().trim().min(1).max(200),
-  description: z.string().trim().max(4000).optional(),
-  category: z.enum(CATEGORIES as [LabCategory, ...LabCategory[]]),
-  difficulty: z.enum(DIFFICULTIES as [DifficultyLevel, ...DifficultyLevel[]]),
-  points: z.coerce.number().int().min(0).max(10000),
-  event_id: z.uuid().optional(),
-  plaintext: z.string().trim().max(500).optional(), // blank = keep existing flag
-});
+const updateSchema = z
+  .object({
+    slug: z.string().trim().regex(/^[a-z0-9-]{3,64}$/, "Lowercase letters, numbers, hyphens only."),
+    title: z.string().trim().min(1).max(200),
+    description: z.string().trim().max(4000).optional(),
+    category: z.enum(CATEGORIES as [LabCategory, ...LabCategory[]]),
+    difficulty: z.enum(DIFFICULTIES as [DifficultyLevel, ...DifficultyLevel[]]),
+    points: z.coerce.number().int().min(0).max(10000),
+    min_points: z.coerce.number().int().min(0).max(10000).optional(),
+    event_id: z.uuid().optional(),
+    plaintext: z.string().trim().max(500).optional(), // blank = keep existing flag
+  })
+  .refine((data) => data.min_points === undefined || data.min_points <= data.points, {
+    message: "Min points can't be greater than Points.",
+    path: ["min_points"],
+  });
 
 export async function updateChallengeAction(
   challengeId: string,
@@ -97,6 +111,7 @@ export async function updateChallengeAction(
     category: formData.get("category"),
     difficulty: formData.get("difficulty"),
     points: formData.get("points"),
+    min_points: formData.get("min_points") || undefined,
     event_id: formData.get("event_id") || undefined,
     plaintext: formData.get("plaintext"),
   });
@@ -113,6 +128,7 @@ export async function updateChallengeAction(
     category: parsed.data.category,
     difficulty: parsed.data.difficulty,
     points: parsed.data.points,
+    min_points: parsed.data.min_points ?? null,
     event_id: parsed.data.event_id ?? null,
   };
   if (parsed.data.plaintext) {

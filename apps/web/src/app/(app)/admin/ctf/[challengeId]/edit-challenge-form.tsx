@@ -16,6 +16,7 @@ interface Initial {
   category: LabCategory;
   difficulty: DifficultyLevel;
   points: number;
+  min_points: number | null;
   event_id: string | null;
 }
 

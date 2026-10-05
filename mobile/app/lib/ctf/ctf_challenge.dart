@@ -6,6 +6,7 @@ class CtfChallenge {
     required this.category,
     required this.difficulty,
     required this.points,
+    required this.currentPoints,
   });
 
   final String id;
@@ -15,6 +16,14 @@ class CtfChallenge {
   final String difficulty;
   final int points;
 
+  /// What solving this challenge RIGHT NOW would award -- equals [points]
+  /// for a static-scoring event or an independent challenge, decays
+  /// toward the challenge's own floor for a dynamic-scoring event. Always
+  /// display this, never [points], so this screen can never show a value
+  /// `submit_ctf_flag()` wouldn't actually award. See ADR 0062 (mobile)
+  /// and 20260922000031_ctf_dynamic_scoring.sql (web/SQL).
+  final int currentPoints;
+
   factory CtfChallenge.fromRow(Map<String, dynamic> row) {
     return CtfChallenge(
       id: row['id'] as String,
@@ -23,6 +32,7 @@ class CtfChallenge {
       category: row['category'] as String,
       difficulty: row['difficulty'] as String,
       points: row['points'] as int,
+      currentPoints: row['current_points'] as int,
     );
   }
 }
