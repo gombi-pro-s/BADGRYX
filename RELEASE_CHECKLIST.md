@@ -839,11 +839,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
 - [x] All of the above verified passing locally before every commit
 - [x] Pushed to GitHub — Claude GitHub App access was granted mid-session
       (previously blocked; see git history for the resolution)
-- [ ] Actually observed green on a real GitHub Actions run: it wasn't,
+- [x] Actually observed green on a real GitHub Actions run: it wasn't,
       for several pushes, and local verification alone had missed it --
       this item stayed unchecked specifically so it would get checked
-      for real rather than assumed, not flipped until the push carrying
-      this fix is actually confirmed green. Checking the Actions tab (now
+      for real rather than assumed. Checking the Actions tab (now
       possible with this session's GitHub access) surfaced two genuine
       CI-only failures neither local run had caught:
       1. `flutter analyze` exits 1 on ANY issue, including the two
@@ -868,6 +867,10 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       Every other CI job (Lint & Typecheck, Unit Tests, DB Migrations &
       RLS Regression Tests, Build (Next.js), E2E Smoke Tests) was already
       genuinely green on every one of those pushes -- only these two.
+      Confirmed on the real run this fix's own push triggered (run
+      #106, commit `7a8c436`): all 7 jobs completed with conclusion
+      `success`, watched live via the GitHub Actions API rather than
+      assumed from the push succeeding.
 - [ ] Deploy job (no hosting target connected yet — see `MANUAL_SETUP.md` §5)
 
 ## Testing
