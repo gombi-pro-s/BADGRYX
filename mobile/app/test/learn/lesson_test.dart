@@ -84,4 +84,67 @@ void main() {
       expect(payload, {'q1': []});
     });
   });
+
+  group('pickPathText', () {
+    final base = LearningPathSummary(id: 'p1', title: 'English path', description: 'English description');
+    final spanish = LearningPathTranslation(
+      pathId: 'p1',
+      locale: 'es',
+      title: 'Ruta en español',
+      description: 'Descripción en español',
+    );
+
+    test('returns the base text when the locale is the default (en)', () {
+      final text = pickPathText(base, [spanish], 'en');
+      expect(text.title, 'English path');
+      expect(text.description, 'English description');
+    });
+
+    test('returns the matching translation when the locale has one', () {
+      final text = pickPathText(base, [spanish], 'es');
+      expect(text.title, 'Ruta en español');
+      expect(text.description, 'Descripción en español');
+    });
+
+    test('falls back to the base text when no translation matches the locale', () {
+      final text = pickPathText(base, [], 'es');
+      expect(text.title, 'English path');
+      expect(text.description, 'English description');
+    });
+
+    test('a path translation can have a null description, same as the base row', () {
+      final noDescription = LearningPathTranslation(pathId: 'p1', locale: 'es', title: 'Solo título', description: null);
+      final text = pickPathText(base, [noDescription], 'es');
+      expect(text.title, 'Solo título');
+      expect(text.description, isNull);
+    });
+  });
+
+  group('pickLessonText', () {
+    const base = (title: 'English lesson', contentMarkdown: 'English content');
+    final spanish = LessonTranslation(
+      lessonId: 'l1',
+      locale: 'es',
+      title: 'Lección en español',
+      contentMarkdown: 'Contenido en español',
+    );
+
+    test('returns the base text when the locale is the default (en)', () {
+      final text = pickLessonText(base, [spanish], 'en');
+      expect(text.title, 'English lesson');
+      expect(text.contentMarkdown, 'English content');
+    });
+
+    test('returns the matching translation when the locale has one', () {
+      final text = pickLessonText(base, [spanish], 'es');
+      expect(text.title, 'Lección en español');
+      expect(text.contentMarkdown, 'Contenido en español');
+    });
+
+    test('falls back to the base text when no translation matches the locale', () {
+      final text = pickLessonText(base, [], 'es');
+      expect(text.title, 'English lesson');
+      expect(text.contentMarkdown, 'English content');
+    });
+  });
 }

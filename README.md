@@ -417,9 +417,9 @@ and
   finally gives the `lesson` Mentor context deep link, ADR 0059,
   somewhere to attach — see ADR 0060) closes the last named gap in the
   mobile Mentor coverage too.
-  `flutter analyze` clean, 213 tests passing, `flutter build web`
+  `flutter analyze` clean, 226 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0064.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0065.
   Auditing Mentor/scoring coverage surfaced a real mobile gap this phase
   closed too: mobile's `/ctf` equivalent is no longer only the flat
   challenge list -- published events now group above it with a real
@@ -427,23 +427,29 @@ and
   `ctf_event_leaderboard()`'s own cross-user aggregate, mirroring web's
   Arena/mission UI (ADR 0021) in full. See ADR 0063. The admin Learning
   Paths screen also gained the same optional Spanish translation
-  fieldset the web admin forms have for paths and lessons (ADR 0064) --
-  but no mobile screen, including this one's own counterpart, actually
-  reads a locale back; that gap is named below rather than quietly
-  left undocumented.
+  fieldset the web admin forms have for paths and lessons (ADR 0064),
+  which surfaced a real, previously undocumented gap: no mobile screen
+  ever read a locale back, so no translation -- this one or the two-
+  releases-old `announcement_translations` -- was ever visible on
+  mobile itself. A new "Language" entry on the "More" menu closes that
+  gap: a stored, on-device locale preference (`shared_preferences`,
+  already a transitive dependency via `supabase_flutter`'s own session
+  persistence) now feeds the Dashboard's announcements and all of Learn
+  (path list, path detail, lesson viewer), each applying the same pick
+  function its web namesake uses. See ADR 0065.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (modules remain untranslated, by design --
 no body text and no edit form either, see ADR 0064; mobile has no
-locale-reading infrastructure anywhere, so no translation table is ever
-visible on mobile itself, not even the two-releases-old
-`announcement_translations`; canceling/managing an existing
-subscription on the mobile Billing screen (out of scope for both clients
-by design -- that's the payment provider's own dashboard/portal); a real
-Android/iOS build; and a real live/networked lab runtime beyond the
-virtual terminal/Cyber Range simulator).
+Profile/Security/Privacy settings screen of its own -- the new
+"Language" entry (ADR 0065) stands alone on the "More" menu rather than
+implying a Settings hub that doesn't otherwise exist; canceling/managing
+an existing subscription on the mobile Billing screen (out of scope for
+both clients by design -- that's the payment provider's own dashboard/
+portal); a real Android/iOS build; and a real live/networked lab
+runtime beyond the virtual terminal/Cyber Range simulator).
 
 ## Local development
 

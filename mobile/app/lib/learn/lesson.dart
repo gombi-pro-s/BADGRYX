@@ -1,3 +1,5 @@
+import '../i18n/locale.dart';
+
 class LearningPathSummary {
   LearningPathSummary({required this.id, required this.title, required this.description});
 
@@ -12,6 +14,42 @@ class LearningPathSummary {
       description: row['description'] as String?,
     );
   }
+}
+
+/// Mirrors `types/database.ts`'s own `LearningPathTranslationRow` (the
+/// subset `pickPathText()` actually reads).
+class LearningPathTranslation {
+  LearningPathTranslation({required this.pathId, required this.locale, required this.title, required this.description});
+
+  final String pathId;
+  final String locale;
+  final String title;
+  final String? description;
+
+  factory LearningPathTranslation.fromRow(Map<String, dynamic> row) {
+    return LearningPathTranslation(
+      pathId: row['path_id'] as String,
+      locale: row['locale'] as String,
+      title: row['title'] as String,
+      description: row['description'] as String?,
+    );
+  }
+}
+
+typedef PathText = ({String title, String? description});
+
+/// Direct port of `pickPathText()` (`lib/i18n/content-translation.ts`,
+/// ADR 0064): the base `LearningPathSummary` row IS the default-locale
+/// ('en') text; a translation row only exists for a non-default locale
+/// that has one. Falls back to the base text whenever `locale` is the
+/// default, or no translation row matches it. See ADR 0065 for this
+/// function's first mobile reader.
+PathText pickPathText(LearningPathSummary base, List<LearningPathTranslation> translations, String locale) {
+  if (locale == defaultLocale) return (title: base.title, description: base.description);
+  for (final t in translations) {
+    if (t.locale == locale) return (title: t.title, description: t.description);
+  }
+  return (title: base.title, description: base.description);
 }
 
 /// Mirrors `learn/[pathId]/page.tsx`'s own lesson-list row shape --
@@ -65,6 +103,41 @@ class LessonDetail {
       contentMarkdown: row['content_markdown'] as String,
     );
   }
+}
+
+/// Mirrors `types/database.ts`'s own `LessonTranslationRow` (the subset
+/// `pickLessonText()` actually reads).
+class LessonTranslation {
+  LessonTranslation({required this.lessonId, required this.locale, required this.title, required this.contentMarkdown});
+
+  final String lessonId;
+  final String locale;
+  final String title;
+  final String contentMarkdown;
+
+  factory LessonTranslation.fromRow(Map<String, dynamic> row) {
+    return LessonTranslation(
+      lessonId: row['lesson_id'] as String,
+      locale: row['locale'] as String,
+      title: row['title'] as String,
+      contentMarkdown: row['content_markdown'] as String,
+    );
+  }
+}
+
+typedef LessonText = ({String title, String contentMarkdown});
+
+/// Direct port of `pickLessonText()` (`lib/i18n/content-translation.ts`,
+/// ADR 0064). `base` only needs `title`/`contentMarkdown` -- a lesson
+/// summary row that has no `content_markdown` of its own (this app's
+/// `LessonSummary`, used for a title-only list row) passes `''` for it,
+/// the same way `learn/[pathId]/page.tsx` does on web.
+LessonText pickLessonText(({String title, String contentMarkdown}) base, List<LessonTranslation> translations, String locale) {
+  if (locale == defaultLocale) return base;
+  for (final t in translations) {
+    if (t.locale == locale) return (title: t.title, contentMarkdown: t.contentMarkdown);
+  }
+  return base;
 }
 
 class LessonQuizChoice {

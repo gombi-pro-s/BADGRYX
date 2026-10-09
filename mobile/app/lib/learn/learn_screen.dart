@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../i18n/locale.dart';
 import '../mentor/mentor_screen.dart';
 import '../mentor/modes.dart';
 import 'lesson.dart';
@@ -22,13 +23,34 @@ import 'lesson.dart';
 /// learner-facing dashboard), so this stays consistent with that
 /// existing convention rather than introducing the app's first one. See
 /// ADR 0060.
-Future<List<LearningPathSummary>> fetchLearningPaths(SupabaseClient client) async {
+/// Also reads the device's stored locale (ADR 0065) and the matching
+/// `learning_path_translations` rows -- the same second round-trip
+/// `/learn/page.tsx` makes rather than a join, since that table's own
+/// RLS already scopes it to exactly the published path ids above.
+Future<(List<LearningPathSummary>, Map<String, List<LearningPathTranslation>>, String)> fetchLearningPaths(
+  SupabaseClient client,
+) async {
   final rows = await client
       .from('learning_paths')
       .select('id, title, description')
       .eq('published', true)
       .order('order_index');
-  return (rows as List).map((row) => LearningPathSummary.fromRow(row as Map<String, dynamic>)).toList();
+  final paths = (rows as List).map((row) => LearningPathSummary.fromRow(row as Map<String, dynamic>)).toList();
+
+  final locale = await LocaleStore.getLocale();
+  final translationRows = paths.isEmpty
+      ? const []
+      : await client
+          .from('learning_path_translations')
+          .select('path_id, locale, title, description')
+          .inFilter('path_id', paths.map((p) => p.id).toList());
+  final translationsByPathId = <String, List<LearningPathTranslation>>{};
+  for (final row in translationRows) {
+    final t = LearningPathTranslation.fromRow(row as Map<String, dynamic>);
+    (translationsByPathId[t.pathId] ??= []).add(t);
+  }
+
+  return (paths, translationsByPathId, locale);
 }
 
 class LearnPathsListScreen extends StatefulWidget {
@@ -39,7 +61,7 @@ class LearnPathsListScreen extends StatefulWidget {
 }
 
 class _LearnPathsListScreenState extends State<LearnPathsListScreen> {
-  late Future<List<LearningPathSummary>> _future;
+  late Future<(List<LearningPathSummary>, Map<String, List<LearningPathTranslation>>, String)> _future;
 
   @override
   void initState() {
@@ -51,7 +73,7 @@ class _LearnPathsListScreenState extends State<LearnPathsListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Learn')),
-      body: FutureBuilder<List<LearningPathSummary>>(
+      body: FutureBuilder<(List<LearningPathSummary>, Map<String, List<LearningPathTranslation>>, String)>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -60,7 +82,7 @@ class _LearnPathsListScreenState extends State<LearnPathsListScreen> {
           if (snapshot.hasError) {
             return Center(child: Text('Could not load learning paths: ${snapshot.error}'));
           }
-          final paths = snapshot.data ?? [];
+          final (paths, translationsByPathId, locale) = snapshot.data ?? (<LearningPathSummary>[], <String, List<LearningPathTranslation>>{}, defaultLocale);
           if (paths.isEmpty) {
             return const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No learning paths are published yet.')));
           }
@@ -70,10 +92,11 @@ class _LearnPathsListScreenState extends State<LearnPathsListScreen> {
             separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final path = paths[index];
+              final text = pickPathText(path, translationsByPathId[path.id] ?? const [], locale);
               return Card(
                 child: ListTile(
-                  title: Text(path.title),
-                  subtitle: path.description != null ? Text(path.description!) : null,
+                  title: Text(text.title),
+                  subtitle: text.description != null ? Text(text.description!) : null,
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => LearnPathDetailScreen(pathId: path.id)),
@@ -97,8 +120,28 @@ class LearnPathDetailScreen extends StatefulWidget {
   State<LearnPathDetailScreen> createState() => _LearnPathDetailScreenState();
 }
 
+class _PathDetailData {
+  _PathDetailData({
+    required this.path,
+    required this.pathTranslation,
+    required this.modules,
+    required this.lessonsByModule,
+    required this.lessonTranslationsByLessonId,
+    required this.completedLessonIds,
+    required this.locale,
+  });
+
+  final LearningPathSummary path;
+  final LearningPathTranslation? pathTranslation;
+  final List<Map<String, dynamic>> modules;
+  final Map<String, List<LessonSummary>> lessonsByModule;
+  final Map<String, List<LessonTranslation>> lessonTranslationsByLessonId;
+  final Set<String> completedLessonIds;
+  final String locale;
+}
+
 class _LearnPathDetailScreenState extends State<LearnPathDetailScreen> {
-  late Future<(LearningPathSummary, List<Map<String, dynamic>>, Map<String, List<LessonSummary>>, Set<String>)> _future;
+  late Future<_PathDetailData> _future;
 
   @override
   void initState() {
@@ -106,7 +149,7 @@ class _LearnPathDetailScreenState extends State<LearnPathDetailScreen> {
     _future = _load();
   }
 
-  Future<(LearningPathSummary, List<Map<String, dynamic>>, Map<String, List<LessonSummary>>, Set<String>)> _load() async {
+  Future<_PathDetailData> _load() async {
     final client = Supabase.instance.client;
     final userId = client.auth.currentUser!.id;
     final pathRow = await client
@@ -134,7 +177,35 @@ class _LearnPathDetailScreenState extends State<LearnPathDetailScreen> {
         .where((row) => (row as Map<String, dynamic>)['completed_at'] != null)
         .map((row) => (row as Map<String, dynamic>)['lesson_id'] as String)
         .toSet();
-    return (path, (moduleRows as List).cast<Map<String, dynamic>>(), groupLessonsByModule(lessons), completedLessonIds);
+
+    final locale = await LocaleStore.getLocale();
+    final pathTranslationRow = await client
+        .from('learning_path_translations')
+        .select('path_id, locale, title, description')
+        .eq('path_id', widget.pathId)
+        .eq('locale', 'es')
+        .maybeSingle();
+    final lessonTranslationRows = lessons.isEmpty
+        ? const []
+        : await client
+            .from('lesson_translations')
+            .select('lesson_id, locale, title, content_markdown')
+            .inFilter('lesson_id', lessons.map((l) => l.id).toList());
+    final lessonTranslationsByLessonId = <String, List<LessonTranslation>>{};
+    for (final row in lessonTranslationRows) {
+      final t = LessonTranslation.fromRow(row as Map<String, dynamic>);
+      (lessonTranslationsByLessonId[t.lessonId] ??= []).add(t);
+    }
+
+    return _PathDetailData(
+      path: path,
+      pathTranslation: pathTranslationRow != null ? LearningPathTranslation.fromRow(pathTranslationRow) : null,
+      modules: (moduleRows as List).cast<Map<String, dynamic>>(),
+      lessonsByModule: groupLessonsByModule(lessons),
+      lessonTranslationsByLessonId: lessonTranslationsByLessonId,
+      completedLessonIds: completedLessonIds,
+      locale: locale,
+    );
   }
 
   Future<void> _refresh() async {
@@ -147,7 +218,7 @@ class _LearnPathDetailScreenState extends State<LearnPathDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Path')),
-      body: FutureBuilder<(LearningPathSummary, List<Map<String, dynamic>>, Map<String, List<LessonSummary>>, Set<String>)>(
+      body: FutureBuilder<_PathDetailData>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -156,18 +227,19 @@ class _LearnPathDetailScreenState extends State<LearnPathDetailScreen> {
           if (snapshot.hasError || !snapshot.hasData) {
             return Center(child: Text('Could not load this path: ${snapshot.error}'));
           }
-          final (path, modules, lessonsByModule, completedLessonIds) = snapshot.data!;
+          final data = snapshot.data!;
+          final pathText = pickPathText(data.path, data.pathTranslation != null ? [data.pathTranslation!] : const [], data.locale);
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(path.title, style: Theme.of(context).textTheme.headlineSmall),
-              if (path.description != null) ...[
+              Text(pathText.title, style: Theme.of(context).textTheme.headlineSmall),
+              if (pathText.description != null) ...[
                 const SizedBox(height: 4),
-                Text(path.description!),
+                Text(pathText.description!),
               ],
               const SizedBox(height: 16),
-              for (final mod in modules) ...[
-                if ((lessonsByModule[mod['id'] as String] ?? const <LessonSummary>[]).isNotEmpty) ...[
+              for (final mod in data.modules) ...[
+                if ((data.lessonsByModule[mod['id'] as String] ?? const <LessonSummary>[]).isNotEmpty) ...[
                   Text(
                     (mod['title'] as String).toUpperCase(),
                     style: Theme.of(context).textTheme.labelMedium,
@@ -175,10 +247,15 @@ class _LearnPathDetailScreenState extends State<LearnPathDetailScreen> {
                   const SizedBox(height: 4),
                   Card(
                     child: Column(
-                      children: (lessonsByModule[mod['id'] as String] ?? const <LessonSummary>[]).map((lesson) {
-                        final completed = completedLessonIds.contains(lesson.id);
+                      children: (data.lessonsByModule[mod['id'] as String] ?? const <LessonSummary>[]).map((lesson) {
+                        final completed = data.completedLessonIds.contains(lesson.id);
+                        final lessonText = pickLessonText(
+                          (title: lesson.title, contentMarkdown: ''),
+                          data.lessonTranslationsByLessonId[lesson.id] ?? const [],
+                          data.locale,
+                        );
                         return ListTile(
-                          title: Text(lesson.title),
+                          title: Text(lessonText.title),
                           trailing: Text(
                             completed ? 'Read' : '${lesson.estimatedMinutes} min',
                             style: completed ? TextStyle(color: Theme.of(context).colorScheme.primary) : null,
@@ -222,7 +299,7 @@ class LessonViewerScreen extends StatefulWidget {
 }
 
 class _LessonViewerScreenState extends State<LessonViewerScreen> {
-  late Future<(LessonDetail, LessonQuiz?)> _future;
+  late Future<(LessonDetail, LessonText, LessonQuiz?)> _future;
   bool _marked = false;
   final Map<String, String> _answers = {};
   ({bool passed, num score})? _result;
@@ -235,7 +312,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
     _future = _load();
   }
 
-  Future<(LessonDetail, LessonQuiz?)> _load() async {
+  Future<(LessonDetail, LessonText, LessonQuiz?)> _load() async {
     final client = Supabase.instance.client;
     final lessonRow = await client
         .from('lessons')
@@ -245,6 +322,19 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
         .single();
     final lesson = LessonDetail.fromRow(lessonRow);
 
+    final locale = await LocaleStore.getLocale();
+    final translationRow = await client
+        .from('lesson_translations')
+        .select('lesson_id, locale, title, content_markdown')
+        .eq('lesson_id', widget.lessonId)
+        .eq('locale', 'es')
+        .maybeSingle();
+    final lessonText = pickLessonText(
+      (title: lesson.title, contentMarkdown: lesson.contentMarkdown),
+      translationRow != null ? [LessonTranslation.fromRow(translationRow)] : const [],
+      locale,
+    );
+
     await _markRead();
 
     final linkedQuiz = await client
@@ -253,15 +343,15 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
         .eq('lesson_id', widget.lessonId)
         .eq('published', true)
         .maybeSingle();
-    if (linkedQuiz == null) return (lesson, null);
+    if (linkedQuiz == null) return (lesson, lessonText, null);
 
     final quizRows = await client
         .from('quiz_questions_for_attempt')
         .select('quiz_id, title, passing_score, question_id, question_text, question_type, choice_id, choice_text')
         .eq('quiz_id', linkedQuiz['id'] as String);
-    if ((quizRows as List).isEmpty) return (lesson, null);
+    if ((quizRows as List).isEmpty) return (lesson, lessonText, null);
 
-    return (lesson, groupLessonQuizRows(quizRows.cast<Map<String, dynamic>>()));
+    return (lesson, lessonText, groupLessonQuizRows(quizRows.cast<Map<String, dynamic>>()));
   }
 
   /// Mirrors `mark-read.tsx`'s own "once per mount" upsert -- UX
@@ -307,7 +397,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Lesson')),
-      body: FutureBuilder<(LessonDetail, LessonQuiz?)>(
+      body: FutureBuilder<(LessonDetail, LessonText, LessonQuiz?)>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -316,13 +406,13 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
           if (snapshot.hasError || !snapshot.hasData) {
             return Center(child: Text('Could not load this lesson: ${snapshot.error}'));
           }
-          final (lesson, quiz) = snapshot.data!;
+          final (lesson, lessonText, quiz) = snapshot.data!;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
               Row(
                 children: [
-                  Expanded(child: Text(lesson.title, style: Theme.of(context).textTheme.headlineSmall)),
+                  Expanded(child: Text(lessonText.title, style: Theme.of(context).textTheme.headlineSmall)),
                   TextButton.icon(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(
@@ -330,7 +420,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                           contextType: 'lesson',
                           contextId: lesson.id,
                           initialMode: MentorMode.teach,
-                          focusTitle: lesson.title,
+                          focusTitle: lessonText.title,
                         ),
                       ),
                     ),
@@ -340,7 +430,7 @@ class _LessonViewerScreenState extends State<LessonViewerScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(lesson.contentMarkdown),
+              Text(lessonText.contentMarkdown),
               if (quiz != null) ...[
                 const SizedBox(height: 24),
                 Container(

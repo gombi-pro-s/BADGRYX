@@ -12,6 +12,7 @@ import '../mentor/mentor_screen.dart';
 import '../orgs/orgs_list_screen.dart';
 import '../reports/reports_screen.dart';
 import '../scanner/scanner_list_screen.dart';
+import '../settings/language_screen.dart';
 
 class _MoreItem {
   const _MoreItem(this.icon, this.label, this.builder);
@@ -50,6 +51,7 @@ class _MoreScreenState extends State<MoreScreen> {
     _MoreItem(Icons.security_outlined, 'Security Scanner', (_) => const ScannerListScreen()),
     _MoreItem(Icons.credit_card_outlined, 'Billing', (_) => const BillingScreen()),
     _MoreItem(Icons.groups_outlined, 'Organizations', (_) => const OrgsListScreen()),
+    _MoreItem(Icons.language_outlined, 'Language', (_) => const LanguageScreen()),
   ];
 
   static const _adminItem = _MoreItem(Icons.admin_panel_settings_outlined, 'Admin', _buildAdminScreen);

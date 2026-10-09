@@ -62,6 +62,14 @@ dependencies:
   # describes.
   crypto: ^3.0.6
 
+  # Already a transitive dependency (via supabase_flutter, which uses it
+  # to persist the auth session); declared directly now that the new
+  # Language setting calls it itself to persist the chosen locale across
+  # app restarts -- the same "genuinely needed, already present, no
+  # reasonable hand-rolled alternative for on-device key-value storage"
+  # reasoning as http/crypto's own promotion above. See ADR 0065.
+  shared_preferences: ^2.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1063,7 +1063,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 213 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 226 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1418,19 +1418,31 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `flutter test`s needed (no new pure logic); `flutter analyze`
       clean, `flutter test` passes (213 total, unchanged), `flutter
       build web` succeeds both configs. See ADR 0064.
-- [ ] Mobile has no locale-reading infrastructure anywhere — no
-      `/settings`-equivalent Language section, no stored locale
-      preference, nothing that reads a user's locale at all. This is a
-      real, previously undocumented gap, surfaced while auditing the
-      admin Learning Paths screen above for translation parity: it
-      affects not just this phase's `learning_path_translations`/
-      `lesson_translations` but also the two-releases-old
-      `announcement_translations` (ADR 0038/0043) — every Spanish
-      translation ever authored through a mobile admin/org form has only
-      ever been visible through the web app, never on mobile itself.
-      Fixing this needs a new settings screen, a storage decision, and
-      an audit of every screen that renders translatable content — a
-      separate, larger decision, not bundled into ADR 0064.
+- [x] Mobile locale-reading infrastructure — closes the gap named above:
+      a new "Language" entry on the "More" menu (not folded into a
+      Settings hub that doesn't otherwise exist on mobile) lets a
+      learner pick English/Español, persisted on-device via
+      `shared_preferences` (promoted from transitive to direct
+      dependency — already used by `supabase_flutter` to persist the
+      auth session, no new dependency) under the key `icorepen_locale`.
+      New `lib/i18n/locale.dart` mirrors `lib/i18n/locales.ts` exactly
+      (`supportedLocales`/`defaultLocale`/`isSupportedLocale()`,
+      `LocaleStore.getLocale()`/`.setLocale()`). Three screens now read
+      it back and apply the matching pick function, direct ports of
+      their web namesakes: the Dashboard's announcements
+      (`pickAnnouncementText()`), and Learn's path list, path detail
+      (header + lesson list), and lesson viewer (`pickPathText()`/
+      `pickLessonText()`). No new state-management dependency — each
+      screen reads the stored locale once per load, the same per-request
+      model web's own cookie read uses; a push-route screen (Learn's
+      path/lesson detail) reloads fresh on every visit, while the
+      Dashboard tab (kept alive in the bottom nav) picks up a changed
+      locale on its existing pull-to-refresh. Still doesn't cover a
+      Profile/Security/Privacy settings screen, since none of those
+      exist on mobile yet — "Language" stands alone rather than implying
+      a Settings hub that isn't there. +13 `flutter test`s (226 total,
+      was 213); `flutter analyze` clean; `flutter build web` succeeds
+      both configs. See ADR 0065.
 - [ ] Everything else on mobile: no named mobile-vs-web gap remains
       anywhere in this app's feature set. This phase is a real vertical
       slice, not the whole web app's feature set, and is named as such

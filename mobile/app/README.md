@@ -13,7 +13,11 @@ for what's built so far and what's honestly still ahead.
 - Five bottom-nav tabs, plus three more screens reachable behind "More"
   (see ADR 0032 for why this replaced a flat, growing tab bar):
   - **Home**: `/dashboard`'s equivalent -- your real display name, your
-    real active plan (or "Free"), and up to 5 real active announcements.
+    real active plan (or "Free"), and up to 5 real active announcements,
+    shown in Spanish instead of English when the device's Language
+    setting (see "Language" under More, ADR 0065) is set to Spanish and
+    the announcement has a translation (`pickAnnouncementText()`, the
+    same function `/dashboard` itself uses).
   - **Labs**: `/labs`'s equivalent -- published labs, start guided/
     unguided, unlock hints, a real flag submit through the same
     `submit_lab_flag()` RPC the web app calls, and, for terminal-backed
@@ -73,12 +77,11 @@ for what's built so far and what's honestly still ahead.
       screen and grades through the real `submit_quiz_attempt()` RPC,
       same single-choice-only-even-for-`multi_choice` limitation
       `quiz-attempt.tsx` has on web. Plain RLS-scoped Postgrest/RPC, no
-      Route Handler. See ADR 0060. Always shows the English title/
-      content, even for a path or lesson with a Spanish translation
-      authored through the admin screen above or the web CMS -- this app
-      has no locale-reading infrastructure anywhere (no Language
-      setting, no stored preference), so no translated content type is
-      ever rendered on mobile. See ADR 0064.
+      Route Handler. See ADR 0060. Shows the Spanish translation
+      instead of the English title/content when the device's Language
+      setting (see "Language" under More, ADR 0065) is set to Spanish --
+      the same `pickPathText()`/`pickLessonText()` web's own `/learn`
+      pages use.
     - **Exams**: `/exams`'s equivalent -- a real countdown timer, single/
       multi-choice answers, grading exclusively through
       `submit_quiz_attempt()`. Same honestly-documented limitation as the
@@ -172,6 +175,13 @@ for what's built so far and what's honestly still ahead.
       the web CMS) on the create/edit form (ADR 0043/0046). Plain
       RLS-scoped Postgrest/RPC throughout this whole screen, no Route
       Handler needed anywhere in Organizations.
+    - **Language**: pick English or Español, persisted on-device via
+      `shared_preferences` (`icorepen_locale`). Feeds the Dashboard's
+      announcements and all of Learn (path list, path detail, lesson
+      viewer) -- the only content types with a real translation table
+      today. Not a general Settings screen: this app has no Profile/
+      Security/Privacy screen of its own yet, so "Language" stands
+      alone rather than implying a hub that isn't there. See ADR 0065.
     - **Admin**: shown only when `user_roles` says the signed-in user is
       staff (admin or moderator, mirroring `is_staff()` -- see ADR 0049),
       the first staff-only mobile screen. Today it holds six real flows:
@@ -221,10 +231,9 @@ for what's built so far and what's honestly still ahead.
       (`learning_path_translations`/`lesson_translations`, same upsert-
       or-delete-on-blank gate the org announcement form uses, both
       fields required for a lesson since its `content_markdown` is NOT
-      NULL) -- admin-authoring parity with the web CMS only; this screen
-      (and every other mobile screen) never reads a locale back, so a
-      translation entered here is only ever visible through the web app.
-      See ADR 0064. Also Labs -- create/edit (title/
+      NULL). See ADR 0064; a translation entered here now also shows up
+      on the Learn screen itself once the device's Language setting is
+      set to Spanish (ADR 0065). Also Labs -- create/edit (title/
       slug/category/difficulty/minutes/points/description, publish
       toggle, inline skill tagger), a hints manager (level 1-5, point
       cost, add/remove), and a flags manager (label, variant seed, a

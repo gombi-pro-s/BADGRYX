@@ -35,4 +35,32 @@ void main() {
       expect(planNameFromSubscriptionRow({'plan_id': 'p1', 'status': 'active', 'plans': null}), 'Free');
     });
   });
+
+  group('pickAnnouncementText', () {
+    final base = Announcement(id: 'a1', title: 'English title', bodyMarkdown: 'English body');
+    final spanish = AnnouncementTranslation(
+      announcementId: 'a1',
+      locale: 'es',
+      title: 'Título en español',
+      bodyMarkdown: 'Cuerpo en español',
+    );
+
+    test('returns the base text when the locale is the default (en)', () {
+      final text = pickAnnouncementText(base, [spanish], 'en');
+      expect(text.title, 'English title');
+      expect(text.bodyMarkdown, 'English body');
+    });
+
+    test('returns the matching translation when the locale has one', () {
+      final text = pickAnnouncementText(base, [spanish], 'es');
+      expect(text.title, 'Título en español');
+      expect(text.bodyMarkdown, 'Cuerpo en español');
+    });
+
+    test('falls back to the base text when no translation matches the locale', () {
+      final text = pickAnnouncementText(base, [], 'es');
+      expect(text.title, 'English title');
+      expect(text.bodyMarkdown, 'English body');
+    });
+  });
 }
