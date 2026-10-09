@@ -1063,7 +1063,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 226 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 239 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1443,6 +1443,39 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       a Settings hub that isn't there. +13 `flutter test`s (226 total,
       was 213); `flutter analyze` clean; `flutter build web` succeeds
       both configs. See ADR 0065.
+- [x] Mobile Profile editing screen — narrows the Profile/Security/
+      Privacy gap named above: a new "Profile" entry (next to
+      "Language", still no general Settings hub) lets a learner edit
+      `display_name`/`username`/`bio`/`timezone`, the same plain
+      Postgrest `profiles` update `updateProfileAction` makes --
+      `profiles_update_own` RLS is the real boundary on both clients,
+      no RPC, no Route Handler. New `validateProfileUpdate()` is a
+      direct port of `profileSchema` (zod), checked in the same field
+      order zod's `issues[0]` reports first; a caught
+      `PostgrestException` with code `23505` shows "That username is
+      already taken.", the same message the web action returns for the
+      same error code. +13 `flutter test`s (239 total, was 226);
+      `flutter analyze` clean; `flutter build web` succeeds both
+      configs; no new dependency, no new backend endpoint. See
+      ADR 0066.
+- [ ] Mobile Security (MFA enrollment) screen — still open. Supabase
+      Auth's `enroll()` already returns a plain-text TOTP secret
+      alongside the QR code (verified against the real `gotrue` Dart
+      package), and web's own form shows that secret as a manual-entry
+      fallback already, so this needs no new QR-rendering dependency.
+      It's a materially larger phase than Profile's, though: mobile's
+      `lib/auth/` has zero AAL/MFA handling today, so closing this
+      needs both an enrollment screen and a login-time step-up check,
+      roughly doubling ADR 0097's own scope. See ADR 0066's Context.
+- [ ] Mobile Privacy screen (data export + account deletion) — still
+      open. Export is ~19 parallel RLS-scoped reads, a moderate,
+      mechanical port either way. Deletion is the one piece across all
+      three settings screens that cannot be done with Postgrest alone:
+      `deleteMyAccountAction` calls `createAdminClient()`
+      (`service_role`), reachable today only as a cookie-session Server
+      Action with no existing Route Handler -- closing this needs a
+      genuinely new Bearer-authed endpoint, the `requireApiUser()`
+      pattern ADR 0033 established. See ADR 0066's Context.
 - [ ] Everything else on mobile: no named mobile-vs-web gap remains
       anywhere in this app's feature set. This phase is a real vertical
       slice, not the whole web app's feature set, and is named as such

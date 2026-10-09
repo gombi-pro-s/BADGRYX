@@ -417,9 +417,9 @@ and
   finally gives the `lesson` Mentor context deep link, ADR 0059,
   somewhere to attach — see ADR 0060) closes the last named gap in the
   mobile Mentor coverage too.
-  `flutter analyze` clean, 226 tests passing, `flutter build web`
+  `flutter analyze` clean, 239 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0065.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0066.
   Auditing Mentor/scoring coverage surfaced a real mobile gap this phase
   closed too: mobile's `/ctf` equivalent is no longer only the flat
   challenge list -- published events now group above it with a real
@@ -436,20 +436,29 @@ and
   already a transitive dependency via `supabase_flutter`'s own session
   persistence) now feeds the Dashboard's announcements and all of Learn
   (path list, path detail, lesson viewer), each applying the same pick
-  function its web namesake uses. See ADR 0065.
+  function its web namesake uses. See ADR 0065. A new "Profile" entry
+  next to "Language" lets a learner edit their display name/username/
+  bio/timezone -- the same plain Postgrest `profiles` update
+  `/settings`'s own form makes, with the same client-side validation
+  (`validateProfileUpdate()`, a direct port of `profileSchema`) and the
+  same "That username is already taken." message on a unique-constraint
+  conflict. Security (MFA) and Privacy (export/delete) screens remain
+  open -- see ADR 0066.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (modules remain untranslated, by design --
 no body text and no edit form either, see ADR 0064; mobile has no
-Profile/Security/Privacy settings screen of its own -- the new
-"Language" entry (ADR 0065) stands alone on the "More" menu rather than
-implying a Settings hub that doesn't otherwise exist; canceling/managing
-an existing subscription on the mobile Billing screen (out of scope for
-both clients by design -- that's the payment provider's own dashboard/
-portal); a real Android/iOS build; and a real live/networked lab
-runtime beyond the virtual terminal/Cyber Range simulator).
+Security (MFA enrollment/login step-up) or Privacy (data export,
+account deletion) screen -- Profile closed (ADR 0066), but those two
+remain, with account deletion needing a genuinely new Bearer-authed
+Route Handler since it's the one piece that can't be done with
+Postgrest alone; canceling/managing an existing subscription on the
+mobile Billing screen (out of scope for both clients by design --
+that's the payment provider's own dashboard/portal); a real Android/
+iOS build; and a real live/networked lab runtime beyond the virtual
+terminal/Cyber Range simulator).
 
 ## Local development
 

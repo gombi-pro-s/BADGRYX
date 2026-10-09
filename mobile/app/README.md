@@ -175,13 +175,22 @@ for what's built so far and what's honestly still ahead.
       the web CMS) on the create/edit form (ADR 0043/0046). Plain
       RLS-scoped Postgrest/RPC throughout this whole screen, no Route
       Handler needed anywhere in Organizations.
+    - **Profile**: edit display name/username/bio/timezone -- the same
+      plain `profiles` Postgrest update `/settings`'s own form makes
+      (`profiles_update_own` RLS is the real boundary on both clients,
+      no RPC, no Route Handler). `validateProfileUpdate()` is a direct
+      port of `profileSchema` (zod), same field order, same "That
+      username is already taken." message on the unique-constraint
+      conflict (`PostgrestException` code `23505`). See ADR 0066.
     - **Language**: pick English or Español, persisted on-device via
       `shared_preferences` (`icorepen_locale`). Feeds the Dashboard's
       announcements and all of Learn (path list, path detail, lesson
       viewer) -- the only content types with a real translation table
-      today. Not a general Settings screen: this app has no Profile/
-      Security/Privacy screen of its own yet, so "Language" stands
-      alone rather than implying a hub that isn't there. See ADR 0065.
+      today. See ADR 0065. Neither this nor Profile is a general
+      Settings screen: this app still has no Security/Privacy screen of
+      its own, so both stand alone rather than implying a hub that
+      isn't there (see ADR 0066's Context for why those two remain
+      open).
     - **Admin**: shown only when `user_roles` says the signed-in user is
       staff (admin or moderator, mirroring `is_staff()` -- see ADR 0049),
       the first staff-only mobile screen. Today it holds six real flows:
