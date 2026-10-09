@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/env.dart';
+import '../orgs/org_announcement.dart' show shouldUpsertSpanishTranslation;
 import 'admin_path.dart';
 
 /// Mirrors `admin/paths/page.tsx` + `[pathId]/page.tsx` +
@@ -229,6 +230,8 @@ class _AdminPathDetailScreenState extends State<AdminPathDetailScreen> {
   final _titleController = TextEditingController();
   final _slugController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _titleEsController = TextEditingController();
+  final _descriptionEsController = TextEditingController();
   final _moduleTitleController = TextEditingController();
   final _moduleSlugController = TextEditingController();
   final _moduleDescriptionController = TextEditingController();
@@ -266,6 +269,16 @@ class _AdminPathDetailScreenState extends State<AdminPathDetailScreen> {
       _titleController.text = path.title;
       _slugController.text = path.slug;
       _descriptionController.text = path.description ?? '';
+      final translationRow = await client
+          .from('learning_path_translations')
+          .select('title, description')
+          .eq('path_id', widget.pathId)
+          .eq('locale', 'es')
+          .maybeSingle();
+      if (translationRow != null) {
+        _titleEsController.text = translationRow['title'] as String;
+        _descriptionEsController.text = translationRow['description'] as String? ?? '';
+      }
       setState(() {
         _published = path.published;
         _modules = (moduleRows as List).map((row) => AdminModuleSummary.fromRow(row as Map<String, dynamic>)).toList();
@@ -295,7 +308,8 @@ class _AdminPathDetailScreenState extends State<AdminPathDetailScreen> {
       _error = null;
     });
     try {
-      await Supabase.instance.client
+      final client = Supabase.instance.client;
+      await client
           .from('learning_paths')
           .update({
             'slug': slug,
@@ -303,6 +317,7 @@ class _AdminPathDetailScreenState extends State<AdminPathDetailScreen> {
             'description': _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
           })
           .eq('id', widget.pathId);
+      await _upsertSpanishTranslation(client, _titleEsController.text.trim(), _descriptionEsController.text.trim());
       _changed = true;
       setState(() => _saving = false);
     } catch (e) {
@@ -311,6 +326,20 @@ class _AdminPathDetailScreenState extends State<AdminPathDetailScreen> {
         _saving = false;
       });
     }
+  }
+
+  /// Mirrors admin/paths/actions.ts's upsertPathSpanishTranslation()
+  /// exactly: a path's description is itself optional on the base row too,
+  /// so only the title is the both-fields-or-neither gate here (unlike
+  /// announcement/lesson translations, which require both). See ADR 0064.
+  Future<void> _upsertSpanishTranslation(SupabaseClient client, String titleEs, String descriptionEs) {
+    if (titleEs.isNotEmpty) {
+      return client.from('learning_path_translations').upsert(
+        {'path_id': widget.pathId, 'locale': 'es', 'title': titleEs, 'description': descriptionEs.isEmpty ? null : descriptionEs},
+        onConflict: 'path_id,locale',
+      );
+    }
+    return client.from('learning_path_translations').delete().eq('path_id', widget.pathId).eq('locale', 'es');
   }
 
   Future<void> _togglePublished(bool value) async {
@@ -487,6 +516,37 @@ class _AdminPathDetailScreenState extends State<AdminPathDetailScreen> {
                     maxLines: 3,
                     maxLength: 2000,
                     decoration: const InputDecoration(labelText: 'Description', alignLabelWithHint: true),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Spanish translation (optional) -- shown instead of the text above when a learner's "
+                          'language is set to Spanish. Leave the title blank to remove it.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _titleEsController,
+                          maxLength: 200,
+                          decoration: const InputDecoration(labelText: 'Title (Spanish)'),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _descriptionEsController,
+                          maxLines: 3,
+                          maxLength: 2000,
+                          decoration: const InputDecoration(labelText: 'Description (Spanish)', alignLabelWithHint: true),
+                        ),
+                      ],
+                    ),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 8),
@@ -827,6 +887,8 @@ class _AdminLessonDetailScreenState extends State<AdminLessonDetailScreen> {
   final _summaryController = TextEditingController();
   final _contentController = TextEditingController();
   final _minutesController = TextEditingController();
+  final _titleEsController = TextEditingController();
+  final _contentEsController = TextEditingController();
 
   bool _loading = true;
   bool _changed = false;
@@ -860,6 +922,16 @@ class _AdminLessonDetailScreenState extends State<AdminLessonDetailScreen> {
       _summaryController.text = lesson.summary ?? '';
       _contentController.text = lesson.contentMarkdown;
       _minutesController.text = lesson.estimatedMinutes.toString();
+      final translationRow = await client
+          .from('lesson_translations')
+          .select('title, content_markdown')
+          .eq('lesson_id', widget.lessonId)
+          .eq('locale', 'es')
+          .maybeSingle();
+      if (translationRow != null) {
+        _titleEsController.text = translationRow['title'] as String;
+        _contentEsController.text = translationRow['content_markdown'] as String;
+      }
       setState(() {
         _published = lesson.published;
         _allSkills = (allSkillsRows as List).cast<Map<String, dynamic>>();
@@ -900,7 +972,8 @@ class _AdminLessonDetailScreenState extends State<AdminLessonDetailScreen> {
       _error = null;
     });
     try {
-      await Supabase.instance.client
+      final client = Supabase.instance.client;
+      await client
           .from('lessons')
           .update({
             'slug': slug,
@@ -910,6 +983,7 @@ class _AdminLessonDetailScreenState extends State<AdminLessonDetailScreen> {
             'estimated_minutes': minutes,
           })
           .eq('id', widget.lessonId);
+      await _upsertSpanishTranslation(client, _titleEsController.text.trim(), _contentEsController.text.trim());
       _changed = true;
       setState(() => _saving = false);
     } catch (e) {
@@ -918,6 +992,20 @@ class _AdminLessonDetailScreenState extends State<AdminLessonDetailScreen> {
         _saving = false;
       });
     }
+  }
+
+  /// Mirrors admin/paths/actions.ts's upsertLessonSpanishTranslation()
+  /// exactly: both title AND content are required on the base lesson row,
+  /// so shouldUpsertSpanishTranslation()'s both-fields-or-neither rule
+  /// (the same one admin_ctf.dart etc. reuse) applies here too. See ADR 0064.
+  Future<void> _upsertSpanishTranslation(SupabaseClient client, String titleEs, String contentEs) {
+    if (shouldUpsertSpanishTranslation(titleEs, contentEs)) {
+      return client.from('lesson_translations').upsert(
+        {'lesson_id': widget.lessonId, 'locale': 'es', 'title': titleEs, 'content_markdown': contentEs},
+        onConflict: 'lesson_id,locale',
+      );
+    }
+    return client.from('lesson_translations').delete().eq('lesson_id', widget.lessonId).eq('locale', 'es');
   }
 
   Future<void> _togglePublished(bool value) async {
@@ -1013,6 +1101,37 @@ class _AdminLessonDetailScreenState extends State<AdminLessonDetailScreen> {
                     maxLines: 12,
                     decoration: const InputDecoration(labelText: 'Content (Markdown)', alignLabelWithHint: true),
                     style: const TextStyle(fontFamily: 'monospace'),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Spanish translation (optional) -- shown instead of the text above when a learner's "
+                          'language is set to Spanish. Leave both fields blank to remove it.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _titleEsController,
+                          maxLength: 200,
+                          decoration: const InputDecoration(labelText: 'Title (Spanish)'),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _contentEsController,
+                          maxLines: 12,
+                          decoration: const InputDecoration(labelText: 'Content (Markdown, Spanish)', alignLabelWithHint: true),
+                          style: const TextStyle(fontFamily: 'monospace'),
+                        ),
+                      ],
+                    ),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 8),

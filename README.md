@@ -294,7 +294,11 @@ and
   Spanish translation on the admin/org announcement forms, rendered on
   `/dashboard` instead of the English text when the viewer's locale is
   Spanish, RLS-scoped identically to the announcement it translates. See
-  ADR 0038.
+  ADR 0038. Extended to learning paths and lessons (`learning_path_translations`/
+  `lesson_translations`, same optional-fieldset pattern on the admin
+  forms, rendered on `/learn` and the lesson-reading page) -- modules
+  stay untranslated by design, since a module has no body text and no
+  edit form either. See ADR 0064.
 - **Mobile (Flutter, `mobile/app`)**: a real first vertical slice, not
   the whole web app — Supabase Auth (sign up/log in/log out/persisted
   session, same password policy as the web app) and seven real,
@@ -415,23 +419,30 @@ and
   mobile Mentor coverage too.
   `flutter analyze` clean, 213 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0063.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0064.
   Auditing Mentor/scoring coverage surfaced a real mobile gap this phase
   closed too: mobile's `/ctf` equivalent is no longer only the flat
   challenge list -- published events now group above it with a real
   live/upcoming/ended badge, a ticking countdown, and
   `ctf_event_leaderboard()`'s own cross-user aggregate, mirroring web's
-  Arena/mission UI (ADR 0021) in full. See ADR 0063.
+  Arena/mission UI (ADR 0021) in full. See ADR 0063. The admin Learning
+  Paths screen also gained the same optional Spanish translation
+  fieldset the web admin forms have for paths and lessons (ADR 0064) --
+  but no mobile screen, including this one's own counterpart, actually
+  reads a locale back; that gap is named below rather than quietly
+  left undocumented.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
-tracked list of what remains (content translations for
-other user-authored content types beyond announcements (paths, lessons,
-etc.), canceling/managing an existing
+tracked list of what remains (modules remain untranslated, by design --
+no body text and no edit form either, see ADR 0064; mobile has no
+locale-reading infrastructure anywhere, so no translation table is ever
+visible on mobile itself, not even the two-releases-old
+`announcement_translations`; canceling/managing an existing
 subscription on the mobile Billing screen (out of scope for both clients
-by design -- that's the payment provider's own dashboard/portal), a real
-Android/iOS build, and a real live/networked lab runtime beyond the
+by design -- that's the payment provider's own dashboard/portal); a real
+Android/iOS build; and a real live/networked lab runtime beyond the
 virtual terminal/Cyber Range simulator).
 
 ## Local development

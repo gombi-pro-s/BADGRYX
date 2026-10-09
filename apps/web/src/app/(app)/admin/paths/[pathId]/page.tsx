@@ -14,9 +14,10 @@ export default async function AdminPathDetailPage({
   const { pathId } = await params;
   const supabase = await createClient();
 
-  const [{ data: path }, { data: modules }] = await Promise.all([
+  const [{ data: path }, { data: modules }, { data: translation }] = await Promise.all([
     supabase.from("learning_paths").select("id, slug, title, description, published").eq("id", pathId).single(),
     supabase.from("modules").select("id, slug, title, published, order_index").eq("path_id", pathId).order("order_index"),
+    supabase.from("learning_path_translations").select("title, description").eq("path_id", pathId).eq("locale", "es").maybeSingle(),
   ]);
 
   if (!path) notFound();
@@ -38,7 +39,16 @@ export default async function AdminPathDetailPage({
 
       <div className="mb-8 rounded-lg border border-border bg-surface p-6">
         <h3 className="mb-4 text-sm font-semibold text-foreground">Path details</h3>
-        <EditPathForm pathId={path.id} initial={{ slug: path.slug, title: path.title, description: path.description ?? "" }} />
+        <EditPathForm
+          pathId={path.id}
+          initial={{
+            slug: path.slug,
+            title: path.title,
+            description: path.description ?? "",
+            title_es: translation?.title ?? null,
+            description_es: translation?.description ?? null,
+          }}
+        />
       </div>
 
       <h3 className="mb-3 text-sm font-semibold text-foreground">Modules</h3>

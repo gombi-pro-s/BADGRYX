@@ -12,7 +12,13 @@ export function EditPathForm({
   initial,
 }: {
   pathId: string;
-  initial: { slug: string; title: string; description: string };
+  initial: {
+    slug: string;
+    title: string;
+    description: string;
+    title_es: string | null;
+    description_es: string | null;
+  };
 }) {
   const action = updatePathAction.bind(null, pathId);
   const [state, formAction, pending] = useActionState(action, initialState);
@@ -39,6 +45,27 @@ export function EditPathForm({
           maxLength={2000}
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-accent"
         />
+      </div>
+      <div className="rounded-md border border-border p-3">
+        <p className="mb-3 text-xs font-medium text-foreground-subtle">
+          Spanish translation (optional) &mdash; shown instead of the text above when a learner&apos;s language is
+          set to Spanish. Leave the title blank to remove the translation.
+        </p>
+        <div className="mb-3">
+          <Label htmlFor="title_es">Title (Spanish)</Label>
+          <Input id="title_es" name="title_es" defaultValue={initial.title_es ?? ""} maxLength={200} />
+        </div>
+        <div>
+          <Label htmlFor="description_es">Description (Spanish)</Label>
+          <textarea
+            id="description_es"
+            name="description_es"
+            defaultValue={initial.description_es ?? ""}
+            rows={2}
+            maxLength={2000}
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-accent"
+          />
+        </div>
       </div>
       <FormError>{state.error}</FormError>
       <Button type="submit" disabled={pending}>

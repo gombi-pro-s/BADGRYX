@@ -14,7 +14,7 @@ export default async function AdminLessonDetailPage({
   const { pathId, moduleId, lessonId } = await params;
   const supabase = await createClient();
 
-  const [{ data: mod }, { data: lesson }, { data: allSkills }, { data: lessonSkills }] = await Promise.all([
+  const [{ data: mod }, { data: lesson }, { data: allSkills }, { data: lessonSkills }, { data: translation }] = await Promise.all([
     supabase.from("modules").select("id, title").eq("id", moduleId).single(),
     supabase
       .from("lessons")
@@ -23,6 +23,7 @@ export default async function AdminLessonDetailPage({
       .single(),
     supabase.from("skills").select("id, name, category_id").order("name"),
     supabase.from("lesson_skills").select("skill_id").eq("lesson_id", lessonId),
+    supabase.from("lesson_translations").select("title, content_markdown").eq("lesson_id", lessonId).eq("locale", "es").maybeSingle(),
   ]);
 
   if (!mod || !lesson) notFound();
@@ -57,6 +58,8 @@ export default async function AdminLessonDetailPage({
             summary: lesson.summary ?? "",
             content_markdown: lesson.content_markdown,
             estimated_minutes: lesson.estimated_minutes,
+            title_es: translation?.title ?? null,
+            content_markdown_es: translation?.content_markdown ?? null,
           }}
         />
       </div>

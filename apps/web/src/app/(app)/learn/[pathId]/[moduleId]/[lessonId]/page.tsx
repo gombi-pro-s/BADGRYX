@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { requireUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { getLocale } from "@/lib/i18n/cookie";
+import { pickLessonText } from "@/lib/i18n/content-translation";
 import { MarkRead } from "./mark-read";
 import { QuizAttempt } from "./quiz-attempt";
 
@@ -21,6 +23,7 @@ export default async function LessonPage({
   const { pathId, moduleId, lessonId } = await params;
   const user = await requireUser();
   const supabase = await createClient();
+  const locale = await getLocale();
 
   const { data: lesson } = await supabase
     .from("lessons")
@@ -30,6 +33,14 @@ export default async function LessonPage({
     .single();
 
   if (!lesson) notFound();
+
+  const { data: lessonTranslation } = await supabase
+    .from("lesson_translations")
+    .select("locale, title, content_markdown")
+    .eq("lesson_id", lesson.id)
+    .eq("locale", "es")
+    .maybeSingle();
+  const lessonText = pickLessonText(lesson, lessonTranslation ? [lessonTranslation] : [], locale);
 
   const { data: linkedQuiz } = await supabase
     .from("quizzes")
@@ -80,7 +91,7 @@ export default async function LessonPage({
         &larr; Back
       </Link>
       <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-foreground">{lesson.title}</h1>
+        <h1 className="text-2xl font-semibold text-foreground">{lessonText.title}</h1>
         <Link
           href={`/mentor?contextType=lesson&contextId=${lesson.id}&mode=teach`}
           className="shrink-0 text-xs font-medium text-accent hover:underline"
@@ -89,7 +100,7 @@ export default async function LessonPage({
         </Link>
       </div>
       <article className="prose prose-sm max-w-none text-foreground [&_a]:text-accent [&_code]:text-accent [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:font-semibold [&_p]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border [&_pre]:bg-background-subtle [&_pre]:p-3 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6">
-        <ReactMarkdown>{lesson.content_markdown}</ReactMarkdown>
+        <ReactMarkdown>{lessonText.content_markdown}</ReactMarkdown>
       </article>
 
       {quiz && (

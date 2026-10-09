@@ -207,6 +207,18 @@ export type LearningPathRow = {
   updated_at: string;
 };
 
+/** See the comment above AnnouncementTranslationRow -- same shape, `locale`
+ * kept as plain `string` here too. */
+export type LearningPathTranslationRow = {
+  id: string;
+  path_id: string;
+  locale: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ModuleRow = {
   id: string;
   path_id: string;
@@ -229,6 +241,16 @@ export type LessonRow = {
   estimated_minutes: number;
   order_index: number;
   published: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LessonTranslationRow = {
+  id: string;
+  lesson_id: string;
+  locale: string;
+  title: string;
+  content_markdown: string;
   created_at: string;
   updated_at: string;
 };
@@ -840,6 +862,12 @@ export interface Database {
         Update: Partial<LearningPathRow>;
         Relationships: [];
       };
+      learning_path_translations: {
+        Row: LearningPathTranslationRow;
+        Insert: Partial<LearningPathTranslationRow> & { path_id: string; locale: string; title: string };
+        Update: Partial<LearningPathTranslationRow>;
+        Relationships: [];
+      };
       modules: {
         Row: ModuleRow;
         Insert: Partial<ModuleRow> & { path_id: string; slug: string; title: string };
@@ -850,6 +878,12 @@ export interface Database {
         Row: LessonRow;
         Insert: Partial<LessonRow> & { module_id: string; slug: string; title: string };
         Update: Partial<LessonRow>;
+        Relationships: [];
+      };
+      lesson_translations: {
+        Row: LessonTranslationRow;
+        Insert: Partial<LessonTranslationRow> & { lesson_id: string; locale: string; title: string; content_markdown: string };
+        Update: Partial<LessonTranslationRow>;
         Relationships: [];
       };
       lesson_skills: {

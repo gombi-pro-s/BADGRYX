@@ -32,6 +32,26 @@ export function CreatePathForm() {
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground-subtle focus-visible:outline-2 focus-visible:outline-accent"
         />
       </div>
+      <div className="rounded-md border border-border p-3">
+        <p className="mb-3 text-xs font-medium text-foreground-subtle">
+          Spanish translation (optional) &mdash; shown instead of the text above when a learner&apos;s language is
+          set to Spanish. Leave the title blank to skip it.
+        </p>
+        <div className="mb-3">
+          <Label htmlFor="title_es">Title (Spanish)</Label>
+          <Input id="title_es" name="title_es" maxLength={200} />
+        </div>
+        <div>
+          <Label htmlFor="description_es">Description (Spanish)</Label>
+          <textarea
+            id="description_es"
+            name="description_es"
+            rows={2}
+            maxLength={2000}
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground-subtle focus-visible:outline-2 focus-visible:outline-accent"
+          />
+        </div>
+      </div>
       <FormError>{state.error}</FormError>
       <Button type="submit" disabled={pending}>
         {pending ? "Creating..." : "Create path"}

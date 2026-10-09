@@ -73,7 +73,12 @@ for what's built so far and what's honestly still ahead.
       screen and grades through the real `submit_quiz_attempt()` RPC,
       same single-choice-only-even-for-`multi_choice` limitation
       `quiz-attempt.tsx` has on web. Plain RLS-scoped Postgrest/RPC, no
-      Route Handler. See ADR 0060.
+      Route Handler. See ADR 0060. Always shows the English title/
+      content, even for a path or lesson with a Spanish translation
+      authored through the admin screen above or the web CMS -- this app
+      has no locale-reading infrastructure anywhere (no Language
+      setting, no stored preference), so no translated content type is
+      ever rendered on mobile. See ADR 0064.
     - **Exams**: `/exams`'s equivalent -- a real countdown timer, single/
       multi-choice answers, grading exclusively through
       `submit_quiz_attempt()`. Same honestly-documented limitation as the
@@ -211,7 +216,15 @@ for what's built so far and what's honestly still ahead.
       minutes, publish toggle, and an inline skill tagger for
       `lesson_skills`). `order_index` stays at its schema default on
       every insert here too, same as the web, which has no reordering
-      control anywhere. See ADR 0055. Also Labs -- create/edit (title/
+      control anywhere. See ADR 0055. Both the path and lesson forms
+      also have an optional "Spanish translation" fieldset
+      (`learning_path_translations`/`lesson_translations`, same upsert-
+      or-delete-on-blank gate the org announcement form uses, both
+      fields required for a lesson since its `content_markdown` is NOT
+      NULL) -- admin-authoring parity with the web CMS only; this screen
+      (and every other mobile screen) never reads a locale back, so a
+      translation entered here is only ever visible through the web app.
+      See ADR 0064. Also Labs -- create/edit (title/
       slug/category/difficulty/minutes/points/description, publish
       toggle, inline skill tagger), a hints manager (level 1-5, point
       cost, add/remove), and a flags manager (label, variant seed, a

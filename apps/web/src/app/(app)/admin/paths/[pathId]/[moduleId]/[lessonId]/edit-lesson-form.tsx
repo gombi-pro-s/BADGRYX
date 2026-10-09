@@ -13,6 +13,8 @@ interface Initial {
   summary: string;
   content_markdown: string;
   estimated_minutes: number;
+  title_es: string | null;
+  content_markdown_es: string | null;
 }
 
 export function EditLessonForm({
@@ -67,6 +69,26 @@ export function EditLessonForm({
           rows={16}
           className="w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm text-foreground focus-visible:outline-2 focus-visible:outline-accent"
         />
+      </div>
+      <div className="rounded-md border border-border p-3">
+        <p className="mb-3 text-xs font-medium text-foreground-subtle">
+          Spanish translation (optional) &mdash; shown instead of the text above when a learner&apos;s language is
+          set to Spanish. Leave both blank to remove the translation.
+        </p>
+        <div className="mb-3">
+          <Label htmlFor="title_es">Title (Spanish)</Label>
+          <Input id="title_es" name="title_es" defaultValue={initial.title_es ?? ""} maxLength={200} />
+        </div>
+        <div>
+          <Label htmlFor="content_markdown_es">Content (Spanish, Markdown)</Label>
+          <textarea
+            id="content_markdown_es"
+            name="content_markdown_es"
+            defaultValue={initial.content_markdown_es ?? ""}
+            rows={16}
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm text-foreground focus-visible:outline-2 focus-visible:outline-accent"
+          />
+        </div>
       </div>
       <FormError>{state.error}</FormError>
       <Button type="submit" disabled={pending}>

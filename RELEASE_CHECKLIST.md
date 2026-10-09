@@ -256,6 +256,20 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       Other user-authored content types (paths, lessons, etc.) remain
       untranslated — a separate, larger decision, not bundled into this
       one. See ADR 0038.
+- [x] Content translations extended to learning paths and lessons —
+      `learning_path_translations`/`lesson_translations` (same shape and
+      RLS pattern as `announcement_translations`, mirrored through the
+      parent row's own `_select_published_or_staff`/`_staff_write`
+      policies via `EXISTS`), the same optional Spanish fieldset on the
+      admin path/lesson forms (path translation requires only a title —
+      a path's own description is optional too; a lesson translation
+      requires both title and content, since `content_markdown` is NOT
+      NULL on the base row), and `/learn`, `/learn/[pathId]`, and the
+      lesson-reading page all rendering the matching translation (via
+      the pure, unit-tested `pickPathText()`/`pickLessonText()`) instead
+      of the raw English row. Modules remain untranslated by design — no
+      body text and no edit form either, so there's nothing to add a
+      fieldset to. +7 vitest tests (323 total). See ADR 0064.
 - [x] Bulk import/export of content — scoped to learning paths (the one
       content type with a real FK hierarchy; labs/CTF are only informally
       tied to a path via shared skill tags, and their flags are stored only
@@ -1393,6 +1407,30 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `flutter test`s (213 total, was 202); `flutter analyze` clean;
       `flutter build web` succeeds both configs. No named mobile-vs-web
       gap remains anywhere in this app's CTF coverage. See ADR 0063.
+- [x] Admin Learning Paths screen gains the same optional Spanish
+      translation fieldset as the web admin CMS (ADR 0064) — the path
+      form upserts/deletes `learning_path_translations`, the lesson form
+      upserts/deletes `lesson_translations`, both re-using
+      `shouldUpsertSpanishTranslation()`'s both-fields-or-neither rule
+      for the lesson form and a title-only gate for the path form. Admin-
+      authoring parity only, per the gap named directly below — this
+      screen does not read any translation back either. No new
+      `flutter test`s needed (no new pure logic); `flutter analyze`
+      clean, `flutter test` passes (213 total, unchanged), `flutter
+      build web` succeeds both configs. See ADR 0064.
+- [ ] Mobile has no locale-reading infrastructure anywhere — no
+      `/settings`-equivalent Language section, no stored locale
+      preference, nothing that reads a user's locale at all. This is a
+      real, previously undocumented gap, surfaced while auditing the
+      admin Learning Paths screen above for translation parity: it
+      affects not just this phase's `learning_path_translations`/
+      `lesson_translations` but also the two-releases-old
+      `announcement_translations` (ADR 0038/0043) — every Spanish
+      translation ever authored through a mobile admin/org form has only
+      ever been visible through the web app, never on mobile itself.
+      Fixing this needs a new settings screen, a storage decision, and
+      an audit of every screen that renders translatable content — a
+      separate, larger decision, not bundled into ADR 0064.
 - [ ] Everything else on mobile: no named mobile-vs-web gap remains
       anywhere in this app's feature set. This phase is a real vertical
       slice, not the whole web app's feature set, and is named as such

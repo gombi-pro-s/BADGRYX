@@ -25,7 +25,32 @@ const pathSchema = z.object({
   slug: slugSchema,
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).optional(),
+  title_es: z.string().trim().max(200).optional(),
+  description_es: z.string().trim().max(2000).optional(),
 });
+
+/**
+ * Upserts or removes the path's Spanish translation depending on whether
+ * the title field is filled in -- a path's translation is optional, and
+ * (unlike announcements) description is itself optional on the base row,
+ * so only the title is the "both-fields-or-neither" gate here. See ADR 0064.
+ */
+async function upsertPathSpanishTranslation(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  pathId: string,
+  titleEs: string | undefined,
+  descriptionEs: string | undefined,
+) {
+  if (titleEs) {
+    const { error } = await supabase
+      .from("learning_path_translations")
+      .upsert({ path_id: pathId, locale: "es", title: titleEs, description: descriptionEs || null }, { onConflict: "path_id,locale" });
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("learning_path_translations").delete().eq("path_id", pathId).eq("locale", "es");
+    if (error) throw new Error(error.message);
+  }
+}
 
 export async function createPathAction(_prev: FormState, formData: FormData): Promise<FormState> {
   // requireAdmin() is UX-fast-fail here; the real enforcement is the
@@ -35,17 +60,29 @@ export async function createPathAction(_prev: FormState, formData: FormData): Pr
     slug: formData.get("slug"),
     title: formData.get("title"),
     description: formData.get("description"),
+    title_es: formData.get("title_es"),
+    description_es: formData.get("description_es"),
   });
   if (!parsed.success) return { error: firstIssue(parsed, "Invalid input.") };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("learning_paths").insert({
-    slug: parsed.data.slug,
-    title: parsed.data.title,
-    description: parsed.data.description || null,
-    created_by: admin.id,
-  });
-  if (error) return { error: error.code === "23505" ? "That slug is already in use." : error.message };
+  const { data: created, error } = await supabase
+    .from("learning_paths")
+    .insert({
+      slug: parsed.data.slug,
+      title: parsed.data.title,
+      description: parsed.data.description || null,
+      created_by: admin.id,
+    })
+    .select("id")
+    .single();
+  if (error || !created) return { error: error?.code === "23505" ? "That slug is already in use." : (error?.message ?? "Could not create the path.") };
+
+  try {
+    await upsertPathSpanishTranslation(supabase, created.id, parsed.data.title_es, parsed.data.description_es);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not save the Spanish translation." };
+  }
 
   revalidatePath("/admin/paths");
   return { error: null };
@@ -61,6 +98,8 @@ export async function updatePathAction(
     slug: formData.get("slug"),
     title: formData.get("title"),
     description: formData.get("description"),
+    title_es: formData.get("title_es"),
+    description_es: formData.get("description_es"),
   });
   if (!parsed.success) return { error: firstIssue(parsed, "Invalid input.") };
 
@@ -74,6 +113,12 @@ export async function updatePathAction(
     })
     .eq("id", pathId);
   if (error) return { error: error.message };
+
+  try {
+    await upsertPathSpanishTranslation(supabase, pathId, parsed.data.title_es, parsed.data.description_es);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not save the Spanish translation." };
+  }
 
   revalidatePath("/admin/paths");
   revalidatePath(`/admin/paths/${pathId}`);
@@ -142,7 +187,33 @@ const lessonSchema = z.object({
   summary: z.string().trim().max(500).optional(),
   content_markdown: z.string().trim().min(1, "Lesson content is required."),
   estimated_minutes: z.coerce.number().int().min(1).max(600),
+  title_es: z.string().trim().max(200).optional(),
+  content_markdown_es: z.string().trim().optional(),
 });
+
+/**
+ * Upserts or removes the lesson's Spanish translation. Unlike the path
+ * translation above, both title AND content are required on the base
+ * lesson row (content_markdown is NOT NULL there), so the same
+ * both-fields-or-neither rule announcement_translations uses applies
+ * here too. See ADR 0064.
+ */
+async function upsertLessonSpanishTranslation(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  lessonId: string,
+  titleEs: string | undefined,
+  contentEs: string | undefined,
+) {
+  if (titleEs && contentEs) {
+    const { error } = await supabase
+      .from("lesson_translations")
+      .upsert({ lesson_id: lessonId, locale: "es", title: titleEs, content_markdown: contentEs }, { onConflict: "lesson_id,locale" });
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.from("lesson_translations").delete().eq("lesson_id", lessonId).eq("locale", "es");
+    if (error) throw new Error(error.message);
+  }
+}
 
 export async function createLessonAction(
   pathId: string,
@@ -157,19 +228,33 @@ export async function createLessonAction(
     summary: formData.get("summary"),
     content_markdown: formData.get("content_markdown"),
     estimated_minutes: formData.get("estimated_minutes"),
+    title_es: formData.get("title_es"),
+    content_markdown_es: formData.get("content_markdown_es"),
   });
   if (!parsed.success) return { error: firstIssue(parsed, "Invalid input.") };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("lessons").insert({
-    module_id: moduleId,
-    slug: parsed.data.slug,
-    title: parsed.data.title,
-    summary: parsed.data.summary || null,
-    content_markdown: parsed.data.content_markdown,
-    estimated_minutes: parsed.data.estimated_minutes,
-  });
-  if (error) return { error: error.code === "23505" ? "That slug already exists in this module." : error.message };
+  const { data: created, error } = await supabase
+    .from("lessons")
+    .insert({
+      module_id: moduleId,
+      slug: parsed.data.slug,
+      title: parsed.data.title,
+      summary: parsed.data.summary || null,
+      content_markdown: parsed.data.content_markdown,
+      estimated_minutes: parsed.data.estimated_minutes,
+    })
+    .select("id")
+    .single();
+  if (error || !created) {
+    return { error: error?.code === "23505" ? "That slug already exists in this module." : (error?.message ?? "Could not create the lesson.") };
+  }
+
+  try {
+    await upsertLessonSpanishTranslation(supabase, created.id, parsed.data.title_es, parsed.data.content_markdown_es);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not save the Spanish translation." };
+  }
 
   revalidatePath(`/admin/paths/${pathId}/${moduleId}`);
   return { error: null };
@@ -189,6 +274,8 @@ export async function updateLessonAction(
     summary: formData.get("summary"),
     content_markdown: formData.get("content_markdown"),
     estimated_minutes: formData.get("estimated_minutes"),
+    title_es: formData.get("title_es"),
+    content_markdown_es: formData.get("content_markdown_es"),
   });
   if (!parsed.success) return { error: firstIssue(parsed, "Invalid input.") };
 
@@ -204,6 +291,12 @@ export async function updateLessonAction(
     })
     .eq("id", lessonId);
   if (error) return { error: error.message };
+
+  try {
+    await upsertLessonSpanishTranslation(supabase, lessonId, parsed.data.title_es, parsed.data.content_markdown_es);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not save the Spanish translation." };
+  }
 
   revalidatePath(`/admin/paths/${pathId}/${moduleId}/${lessonId}`);
   return { error: null };
