@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiUser } from "@/lib/auth/api";
 
 /**
  * Every query below explicitly filters to the caller's own id, even where
@@ -10,10 +9,17 @@ import { createClient } from "@/lib/supabase/server";
  * admin exporting their own data must never see it silently widen to
  * include other users' rows just because their role grants broader read
  * access elsewhere in the app.
+ *
+ * Uses `requireApiUser()` rather than `requireUser()` so the mobile app
+ * can call this directly with a Bearer token, same as every other
+ * mobile-facing Route Handler in this app (see ADR 0033/0067) --
+ * `apps/web`'s own browser callers keep working unchanged, since they
+ * never send that header and this falls through to the cookie path.
  */
-export async function GET() {
-  const user = await requireUser();
-  const supabase = await createClient();
+export async function GET(request: Request) {
+  const auth = await requireApiUser(request);
+  if ("unauthorized" in auth) return auth.unauthorized;
+  const { user, supabase } = auth;
 
   const [
     profile,

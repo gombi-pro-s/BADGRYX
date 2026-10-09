@@ -13,6 +13,7 @@ import '../orgs/orgs_list_screen.dart';
 import '../reports/reports_screen.dart';
 import '../scanner/scanner_list_screen.dart';
 import '../settings/language_screen.dart';
+import '../settings/privacy_screen.dart';
 import '../settings/profile_screen.dart';
 
 class _MoreItem {
@@ -54,6 +55,7 @@ class _MoreScreenState extends State<MoreScreen> {
     _MoreItem(Icons.groups_outlined, 'Organizations', (_) => const OrgsListScreen()),
     _MoreItem(Icons.person_outline, 'Profile', (_) => const ProfileScreen()),
     _MoreItem(Icons.language_outlined, 'Language', (_) => const LanguageScreen()),
+    _MoreItem(Icons.privacy_tip_outlined, 'Privacy & data', (_) => const PrivacyScreen()),
   ];
 
   static const _adminItem = _MoreItem(Icons.admin_panel_settings_outlined, 'Admin', _buildAdminScreen);

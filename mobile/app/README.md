@@ -186,10 +186,20 @@ for what's built so far and what's honestly still ahead.
       `shared_preferences` (`icorepen_locale`). Feeds the Dashboard's
       announcements and all of Learn (path list, path detail, lesson
       viewer) -- the only content types with a real translation table
-      today. See ADR 0065. Neither this nor Profile is a general
-      Settings screen: this app still has no Security/Privacy screen of
-      its own, so both stand alone rather than implying a hub that
-      isn't there (see ADR 0066's Context for why those two remain
+      today. See ADR 0065.
+    - **Privacy & data**: export everything tied to your account as
+      JSON (`GET /api/account/export`, shown in a copy-to-clipboard
+      dialog, same pattern as the admin Learning Paths screen's path
+      export) and permanently delete your account (a "type your email
+      to confirm" flow against a new `POST /api/account/delete`) --
+      both Bearer-authed, both calling the exact same shared
+      `deleteAccount()`/`confirmsAccountDeletion()` the web Server
+      Action already used, see ADR 0033/0067. Deleting signs out
+      locally on success, the same end state web's own redirect
+      reaches. Neither this, Profile, nor Language is a general
+      Settings screen: this app still has no Security screen of its
+      own, so all three stand alone rather than implying a hub that
+      isn't there (see ADR 0066's Context for why that one remains
       open).
     - **Admin**: shown only when `user_roles` says the signed-in user is
       staff (admin or moderator, mirroring `is_staff()` -- see ADR 0049),

@@ -1063,7 +1063,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 239 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 245 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1467,15 +1467,36 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `lib/auth/` has zero AAL/MFA handling today, so closing this
       needs both an enrollment screen and a login-time step-up check,
       roughly doubling ADR 0097's own scope. See ADR 0066's Context.
-- [ ] Mobile Privacy screen (data export + account deletion) — still
-      open. Export is ~19 parallel RLS-scoped reads, a moderate,
-      mechanical port either way. Deletion is the one piece across all
-      three settings screens that cannot be done with Postgrest alone:
-      `deleteMyAccountAction` calls `createAdminClient()`
-      (`service_role`), reachable today only as a cookie-session Server
-      Action with no existing Route Handler -- closing this needs a
-      genuinely new Bearer-authed endpoint, the `requireApiUser()`
-      pattern ADR 0033 established. See ADR 0066's Context.
+- [x] Mobile Privacy screen (data export + account deletion) — closes
+      the gap named above. On web: `GET /api/account/export` switched
+      from `requireUser()` to `requireApiUser()` so a Bearer-only mobile
+      caller can reach it (browser callers unaffected -- no Bearer
+      header means it falls through to the cookie path, same as every
+      other mobile-facing Route Handler, ADR 0033). New
+      `POST /api/account/delete`, Bearer-authed, and a new shared
+      `deleteAccount()` (`lib/account/delete-account.ts`) that both it
+      and the existing `deleteMyAccountAction` Server Action now call --
+      the actual audit-log-then-`admin.auth.admin.deleteUser()`
+      sequence exists in exactly one place, following the same
+      `importPathBundle()` precedent ADR 0058 set. A Route Handler has
+      no `redirect()` equivalent, so it returns `{ ok: true }` and
+      leaves navigation to the caller. New
+      `confirmsAccountDeletion()` (`lib/account/confirm-deletion.ts`,
+      no `"server-only"` so it's usable from either side) is the pure
+      "does the typed string match the account's own email" check both
+      routes and the mobile app itself run. On mobile: a new "Privacy &
+      data" entry on "More" -- Export shows the bundle JSON in a
+      copy-to-clipboard dialog, the same pattern the admin Learning
+      Paths screen's path export already established; Delete starts
+      collapsed, expands into a "type your email to confirm" field
+      (checked client-side with the Dart port of
+      `confirmsAccountDeletion()` before any network call), and signs
+      out locally on success so `AuthGate` shows the login screen again
+      -- the same end state web's own redirect reaches. +6 `vitest`
+      tests (329 total, was 323) and +6 `flutter test`s (245 total, was
+      239); `tsc`/ESLint/`flutter analyze` all clean; `npm run build`
+      and `flutter build web` (both configs) succeed; no new
+      dependency. See ADR 0067.
 - [ ] Everything else on mobile: no named mobile-vs-web gap remains
       anywhere in this app's feature set. This phase is a real vertical
       slice, not the whole web app's feature set, and is named as such
