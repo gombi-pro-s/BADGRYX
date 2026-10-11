@@ -41,4 +41,30 @@ void main() {
       expect(validatePassword('Abcdefghijkl'), 'Password must include a number.');
     });
   });
+
+  group('isValidTotpCode', () {
+    test('accepts a 6-digit code', () {
+      expect(isValidTotpCode('123456'), isTrue);
+    });
+
+    test('accepts a 6-digit code with surrounding whitespace', () {
+      expect(isValidTotpCode('  123456  '), isTrue);
+    });
+
+    test('rejects fewer than 6 digits', () {
+      expect(isValidTotpCode('12345'), isFalse);
+    });
+
+    test('rejects more than 6 digits', () {
+      expect(isValidTotpCode('1234567'), isFalse);
+    });
+
+    test('rejects non-digit characters', () {
+      expect(isValidTotpCode('12345a'), isFalse);
+    });
+
+    test('rejects an empty string', () {
+      expect(isValidTotpCode(''), isFalse);
+    });
+  });
 }

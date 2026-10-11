@@ -1063,7 +1063,7 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       existing subscription isn't built on either client -- same
       provider-dashboard-self-service design as checkout itself. See
       ADR 0037/0047.)
-- [x] `flutter analyze` clean, 245 `flutter test`s passing, `flutter build
+- [x] `flutter analyze` clean, 255 `flutter test`s passing, `flutter build
       web` succeeding both with and without `--dart-define=API_BASE_URL=...`
       (verified in a sandbox with no Android SDK/Xcode/GTK -- see
       ADR 0026); wired into CI (`.github/workflows/ci.yml`'s `mobile` job,
@@ -1458,15 +1458,38 @@ verified even if code exists. Nothing here is marked `[x]` on assumption.
       `flutter analyze` clean; `flutter build web` succeeds both
       configs; no new dependency, no new backend endpoint. See
       ADR 0066.
-- [ ] Mobile Security (MFA enrollment) screen — still open. Supabase
-      Auth's `enroll()` already returns a plain-text TOTP secret
-      alongside the QR code (verified against the real `gotrue` Dart
-      package), and web's own form shows that secret as a manual-entry
-      fallback already, so this needs no new QR-rendering dependency.
-      It's a materially larger phase than Profile's, though: mobile's
-      `lib/auth/` has zero AAL/MFA handling today, so closing this
-      needs both an enrollment screen and a login-time step-up check,
-      roughly doubling ADR 0097's own scope. See ADR 0066's Context.
+- [x] Mobile Security (MFA) screen — closes the last item in the
+      Profile/Security/Privacy trio. New `lib/settings/security_screen.
+      dart`: lists verified TOTP factors with a two-step "Remove"
+      confirm, and an "Add authenticator app" flow (cleans up any
+      abandoned unverified factor first, same as `enrollTotpFactorAction`)
+      that shows the TOTP secret as plain-text manual entry only --
+      `enroll()`'s QR code is an SVG data URI Flutter's `Image` widget
+      can't render without a new dependency, and the plain-text secret
+      is an officially documented fallback for exactly this case, not a
+      workaround. Logs the same `mfa.enrollment_started`/`_completed`/
+      `factor_removed` audit events via `log_audit_event()`, already
+      callable directly from mobile by any authenticated user (`GRANT
+      EXECUTE ... TO authenticated`, confirmed against the real
+      migration). Login step-up: new `needsMfaStepUp()`
+      (`lib/auth/mfa.dart`) is a direct port of `requireUser()`/
+      `signInAction()`'s own AAL check; `AuthGate` -- mobile's one real
+      analog to `requireUser()`, since every post-sign-in screen already
+      funnels through it the same way `LoginScreen` already relies on
+      its stream to swap to `HomeShell` -- now shows a new
+      `VerifyMfaScreen` instead of `HomeShell` whenever that check is
+      true, and stops on its own once `challengeAndVerify()` succeeds
+      (it fires `AuthChangeEvent.mfaChallengeVerified` on the same
+      stream `AuthGate` listens to). `VerifyMfaScreen` adds a "Log out
+      instead" link web's page doesn't have -- a deliberate,
+      mobile-specific addition, since a stuck browser tab still has an
+      address bar to escape with and a mobile screen with no session
+      and no back-stack doesn't. +10 `flutter test`s (255 total, was
+      245); `flutter analyze` clean; `flutter build web` succeeds both
+      configs; no new dependency, no new migration (MFA state lives
+      entirely in GoTrue's own tables, same as web). See ADR 0068, which
+      also corrects an "ADR 0097" citation error in ADR 0066/0067 (no
+      such ADR exists; the real MFA design doc is ADR 0015).
 - [x] Mobile Privacy screen (data export + account deletion) — closes
       the gap named above. On web: `GET /api/account/export` switched
       from `requireUser()` to `requireApiUser()` so a Bearer-only mobile

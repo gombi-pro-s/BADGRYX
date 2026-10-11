@@ -10,7 +10,7 @@ ADR 0066 named Security (MFA) and Privacy (export/delete) as the two
 remaining pieces of mobile's missing Profile/Security/Privacy settings
 surface. Privacy is the one worth closing next: unlike MFA (which needs
 new login-time AAL handling on top of enrollment UI, roughly doubling
-ADR 0097's own scope), Privacy is two self-contained operations, and
+ADR 0015's own scope), Privacy is two self-contained operations, and
 closing it finally exercises the Bearer-token Route Handler pattern
 (ADR 0033) for the one thing in this app that genuinely cannot be done
 with Postgrest alone: account deletion needs the GoTrue Admin API

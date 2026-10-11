@@ -15,6 +15,7 @@ import '../scanner/scanner_list_screen.dart';
 import '../settings/language_screen.dart';
 import '../settings/privacy_screen.dart';
 import '../settings/profile_screen.dart';
+import '../settings/security_screen.dart';
 
 class _MoreItem {
   const _MoreItem(this.icon, this.label, this.builder);
@@ -54,6 +55,7 @@ class _MoreScreenState extends State<MoreScreen> {
     _MoreItem(Icons.credit_card_outlined, 'Billing', (_) => const BillingScreen()),
     _MoreItem(Icons.groups_outlined, 'Organizations', (_) => const OrgsListScreen()),
     _MoreItem(Icons.person_outline, 'Profile', (_) => const ProfileScreen()),
+    _MoreItem(Icons.lock_outline, 'Security', (_) => const SecurityScreen()),
     _MoreItem(Icons.language_outlined, 'Language', (_) => const LanguageScreen()),
     _MoreItem(Icons.privacy_tip_outlined, 'Privacy & data', (_) => const PrivacyScreen()),
   ];

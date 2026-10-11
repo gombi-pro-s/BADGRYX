@@ -417,9 +417,9 @@ and
   finally gives the `lesson` Mentor context deep link, ADR 0059,
   somewhere to attach — see ADR 0060) closes the last named gap in the
   mobile Mentor coverage too.
-  `flutter analyze` clean, 245 tests passing, `flutter build web`
+  `flutter analyze` clean, 255 tests passing, `flutter build web`
   succeeding both with and without `API_BASE_URL` set, wired into CI. See
-  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0067.
+  [`mobile/app/README.md`](./mobile/app/README.md) and ADRs 0026–0068.
   Auditing Mentor/scoring coverage surfaced a real mobile gap this phase
   closed too: mobile's `/ctf` equivalent is no longer only the flat
   challenge list -- published events now group above it with a real
@@ -451,24 +451,30 @@ and
   phase has needed, since account deletion requires the GoTrue Admin
   API no RLS-scoped Postgrest call can reach. The actual deletion logic
   (`deleteAccount()`) is shared between this route and the web Server
-  Action that already existed, not hand-ported twice. Security (MFA
-  enrollment + login step-up) is the one Profile/Security/Privacy item
-  still open -- see ADR 0067.
+  Action that already existed, not hand-ported twice. See ADR 0067. A
+  new "Security" entry closes the last item in that trio: an
+  enrollment screen for TOTP authenticator apps (secret shown as
+  plain-text manual entry only -- the QR code is an SVG data URI
+  Flutter can't render without a new dependency) and a real login-time
+  step-up check. Mobile has no `requireUser()`-style middleware layer,
+  so `AuthGate` -- the one place every post-sign-in screen already
+  funnels through -- is where that check lives, showing a new
+  `VerifyMfaScreen` instead of `HomeShell` until the challenge is
+  verified. See ADR 0068.
 
 ## What's not built yet
 
 See [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md) for the full, honestly
 tracked list of what remains (modules remain untranslated, by design --
-no body text and no edit form either, see ADR 0064; mobile has no
-Security (MFA enrollment/login step-up) screen -- Profile (ADR 0066)
-and Privacy (ADR 0067) closed, Security is the one Profile/Security/
-Privacy item left, needing both an enrollment screen and new login-time
-AAL handling mobile's `lib/auth/` has none of today; canceling/managing
-an existing subscription on the
-mobile Billing screen (out of scope for both clients by design --
-that's the payment provider's own dashboard/portal); a real Android/
-iOS build; and a real live/networked lab runtime beyond the virtual
-terminal/Cyber Range simulator).
+no body text and no edit form either, see ADR 0064; mobile's Profile/
+Security/Privacy trio is now fully closed (ADR 0066/0067/0068), though
+as four separate "More" entries rather than one Settings hub -- folding
+them under a shared landing page is a possible, purely cosmetic
+follow-up, not a functional gap; canceling/managing an existing
+subscription on the mobile Billing screen (out of scope for both
+clients by design -- that's the payment provider's own dashboard/
+portal); a real Android/iOS build; and a real live/networked lab
+runtime beyond the virtual terminal/Cyber Range simulator).
 
 ## Local development
 

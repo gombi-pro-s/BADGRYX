@@ -23,7 +23,7 @@ secret as a manual-entry fallback, so mobile could skip rendering a QR
 image entirely -- but it's a materially larger phase: mobile's
 `lib/auth/` has zero AAL/MFA handling today, so it would need both an
 enrollment screen and a login-time step-up check, roughly doubling
-ADR 0097's own scope. Account deletion is the one piece in all three
+ADR 0015's own scope. Account deletion is the one piece in all three
 that cannot be done with Postgrest alone: `deleteMyAccountAction` calls
 `createAdminClient()` (`service_role`), reachable today only as a
 cookie-session Server Action, with no existing Route Handler --

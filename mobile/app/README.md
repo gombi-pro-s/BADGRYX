@@ -9,7 +9,10 @@ for what's built so far and what's honestly still ahead.
 
 - Real Supabase Auth: sign up (email/password, same password policy as
   `apps/web`), log in, log out, session persisted across app restarts by
-  `supabase_flutter`.
+  `supabase_flutter`. A verified TOTP factor (added under More ->
+  Security) means logging in isn't enough on its own: `AuthGate` shows
+  a step-up screen for the 6-digit code before anything else, the same
+  real enforcement web's `requireUser()` provides -- see ADR 0068.
 - Five bottom-nav tabs, plus three more screens reachable behind "More"
   (see ADR 0032 for why this replaced a flat, growing tab bar):
   - **Home**: `/dashboard`'s equivalent -- your real display name, your
@@ -182,6 +185,21 @@ for what's built so far and what's honestly still ahead.
       port of `profileSchema` (zod), same field order, same "That
       username is already taken." message on the unique-constraint
       conflict (`PostgrestException` code `23505`). See ADR 0066.
+    - **Security**: add/remove a TOTP authenticator app factor --
+      `enroll(factorType: FactorType.totp)`, a two-step "Remove"
+      confirm for each verified factor, the same `mfa.enrollment_
+      started`/`_completed`/`factor_removed` audit events web's own
+      form logs. Shows the TOTP secret as plain-text manual entry only,
+      never the QR image -- `enroll()`'s QR code is an SVG data URI,
+      and Flutter's `Image` widget can't render SVG without a new
+      dependency; the plain-text secret is an officially documented
+      fallback for exactly this case, not a workaround. A verified
+      factor also makes `AuthGate` -- the one place every post-sign-in
+      screen already funnels through, no middleware layer needed --
+      show a login-time step-up screen (`VerifyMfaScreen`, a 6-digit
+      code check) instead of the Home shell until it's verified, the
+      mobile-architecture equivalent of web's `requireUser()` AAL
+      check. See ADR 0068.
     - **Language**: pick English or Español, persisted on-device via
       `shared_preferences` (`icorepen_locale`). Feeds the Dashboard's
       announcements and all of Learn (path list, path detail, lesson
@@ -196,11 +214,13 @@ for what's built so far and what's honestly still ahead.
       `deleteAccount()`/`confirmsAccountDeletion()` the web Server
       Action already used, see ADR 0033/0067. Deleting signs out
       locally on success, the same end state web's own redirect
-      reaches. Neither this, Profile, nor Language is a general
-      Settings screen: this app still has no Security screen of its
-      own, so all three stand alone rather than implying a hub that
-      isn't there (see ADR 0066's Context for why that one remains
-      open).
+      reaches.
+    - None of Profile, Security, Language, or Privacy & data is folded
+      into a single general Settings screen -- they're four standalone
+      "More" entries. Mobile has no Settings hub to fold them under
+      yet; building one is a possible, purely cosmetic follow-up, not a
+      functional gap, since every piece a hub would hold already
+      exists on its own.
     - **Admin**: shown only when `user_roles` says the signed-in user is
       staff (admin or moderator, mirroring `is_staff()` -- see ADR 0049),
       the first staff-only mobile screen. Today it holds six real flows:

@@ -23,3 +23,10 @@ String? validatePassword(String? password) {
   if (!value.contains(RegExp(r'[0-9]'))) return 'Password must include a number.';
   return null;
 }
+
+final RegExp _totpCodePattern = RegExp(r'^\d{6}$');
+
+/// Mirrors `settings/security/actions.ts`'s `/^\d{6}$/.test(code)` check,
+/// used identically by both the enrollment-verify and login-step-up
+/// forms on web -- see ADR 0068.
+bool isValidTotpCode(String code) => _totpCodePattern.hasMatch(code.trim());
